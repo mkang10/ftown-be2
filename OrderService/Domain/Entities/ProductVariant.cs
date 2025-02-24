@@ -15,8 +15,6 @@ public partial class ProductVariant
 
     public decimal Price { get; set; }
 
-    public int? StockQuantity { get; set; }
-
     public string? ImagePath { get; set; }
 
     public string? Sku { get; set; }
@@ -34,6 +32,8 @@ public partial class ProductVariant
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
     public virtual Product Product { get; set; } = null!;
+
+    public virtual ICollection<StoreStock> StoreStocks { get; set; } = new List<StoreStock>();
 
     public virtual ICollection<WishListItem> WishListItems { get; set; } = new List<WishListItem>();
 }

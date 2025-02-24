@@ -1,6 +1,11 @@
 ﻿
 
+using Application.Interfaces;
+using Application.UseCases;
+using Domain.Entities;
+using Domain.Interfaces;
 using Infrastructure;
+using Infrastructure.Clients;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.AppStarts
@@ -20,11 +25,41 @@ namespace API.AppStarts
                 options.UseSqlServer(configuration.GetConnectionString("DBDefault"));
             });
 
+            //Inject Services
+
+            services.AddHttpClient<ICustomerServiceClient, CustomerServiceClient>(client =>
+            {
+                client.BaseAddress = new Uri("https://localhost:7264/api/");
+            });
+            services.AddHttpClient<IInventoryServiceClient, InventoryServiceClient>(client =>
+            {
+                client.BaseAddress = new Uri("https://localhost:7265/api/");
+            });
+            services.AddHttpClient<IPayOSService, PayOSService>(client =>
+            {
+                var serviceProvider = services.BuildServiceProvider();
+                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+
+                var payOSBaseUrl = configuration["PayOS:ApiUrl"];
+                client.BaseAddress = new Uri(payOSBaseUrl);
+            });
+
             // use DI here
+
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+            //Repository
 
+            services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<IPaymentRepository, PaymentRepository>();
+            services.AddScoped<IShippingAddressRepository, ShippingAddressRepository>();
+            //Handler
 
-            //services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<CreateOrderHandler>();
+            services.AddScoped<ProcessPaymentHandler>();
+            services.AddScoped<AutoSelectStoreHandler>();
+
+            
 
 
 
@@ -33,7 +68,6 @@ namespace API.AppStarts
 
             services.AddHttpContextAccessor();
 
-            //services.AddScoped<IUserService, UserServices>();
 
         }
 

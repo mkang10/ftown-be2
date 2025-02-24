@@ -1,5 +1,8 @@
 ﻿
 
+using Application.UseCases;
+using Domain.Entities;
+using Domain.Interfaces;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,9 +25,24 @@ namespace API.AppStarts
 
             // use DI here
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            // Repository
+
+            services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<IStoreRepository, StoreRepository>();
+            services.AddScoped<IStoreStockRepository, StoreStockRepository>();
 
 
-            //services.AddScoped<IOrderRepository, OrderRepository>();
+            // Handler
+
+            services.AddScoped<GetAllProductsHandler>();
+            services.AddScoped<GetProductDetailHandler>();
+            services.AddScoped<GetProductVariantByIdHandler>();
+            services.AddScoped<GetAllStoresHandler>();
+            services.AddScoped<GetStoreByIdHandler>();
+            services.AddScoped<CreateStoreHandler>();
+            services.AddScoped<UpdateStoreHandler>();
+            services.AddScoped<DeleteStoreHandler>();
+            services.AddScoped<GetStoreStockByVariantHandler>();
 
 
 

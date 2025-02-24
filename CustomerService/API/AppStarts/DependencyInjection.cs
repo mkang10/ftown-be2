@@ -1,5 +1,8 @@
 ﻿
 
+using Application.UseCases;
+using Domain.Entities;
+using Domain.Interfaces;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,7 +25,11 @@ namespace API.AppStarts
 
             // use DI here
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-
+            services.AddScoped<IEditProfileRepository, EditProfileRepository>();
+            services.AddScoped<EditProfileHandler>();
+            services.AddScoped<GetCustomerProfileHandler>();
+            services.AddScoped<ICartRepository, CartRepository>();  
+            services.AddScoped<CartHandler>();
 
             //services.AddScoped<IOrderRepository, OrderRepository>();
 
