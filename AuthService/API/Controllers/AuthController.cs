@@ -1,6 +1,8 @@
 ﻿using Application.Interfaces;
 using Domain.DTO.Request;
+using Domain.DTO.Response;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 
 namespace WebAPI.Controllers
@@ -22,19 +24,31 @@ namespace WebAPI.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginReq loginDTO)
         {
-            var response = await _authService.AuthenticateAsync(loginDTO.Username, loginDTO.Password);
-
-            if (response == null)
+            try
             {
-                return Unauthorized(new { message = "Tài khoản hoặc mật khẩu không chính xác!" });
-            }
+                var response = await _authService.AuthenticateAsync(loginDTO.Username, loginDTO.Password);
 
-            if (response.Account.IsActive == false)
+                if (response == null)
+                {
+                    // Không tìm thấy user hoặc thông tin đăng nhập không chính xác
+                    return NotFound(new ResponseDTO<object>(null, false, "Tài khoản hoặc mật khẩu không chính xác!"));
+                }
+
+                // Giả sử response.Account có thuộc tính IsActive để xác định trạng thái tài khoản
+                if (response.Account == null || response.Account.IsActive != true)
+                {
+                    return StatusCode(403, new ResponseDTO<object>(null, false, "Tài khoản đang bị vô hiệu hóa!"));
+                }
+
+
+                // Đăng nhập thành công
+                return Ok(new ResponseDTO<object>(response, true, "Đăng nhập thành công!"));
+            }
+            catch (Exception ex)
             {
-                return Forbid("Tài khoản đang bị vô hiệu hóa!");
+                // Ở đây bạn có thể log exception (ex) vào hệ thống log của doanh nghiệp
+                return StatusCode(500, new ResponseDTO<object>(null, false, "Đã có lỗi xảy ra từ phía server. Vui lòng thử lại sau!"));
             }
-
-            return Ok(response);
         }
 
         /// <summary>
@@ -43,14 +57,26 @@ namespace WebAPI.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterReq registerDTO)
         {
-            var response = await _authService.RegisterAsync(registerDTO);
-
-            if (response.Token == null)
+            try
             {
-                return BadRequest(new { message = "Tên đăng nhập đã tồn tại!" });
-            }
+                var response = await _authService.RegisterAsync(registerDTO);
 
-            return Ok(response);
+                if (response == null || string.IsNullOrEmpty(response.Token))
+                {
+                    // Tên đăng nhập đã tồn tại hoặc đăng ký không thành công
+                    return Conflict(new ResponseDTO<object>(null, false, "Tên đăng nhập đã tồn tại!"));
+                }
+
+                // Đăng ký thành công
+                return Ok(new ResponseDTO<object>(response, true, "Đăng ký thành công!"));
+            }
+            catch (Exception ex)
+            {
+                // Log exception (ex) nếu cần thiết
+                return StatusCode(500, new ResponseDTO<object>(null, false, "Đã có lỗi xảy ra từ phía server. Vui lòng thử lại sau!"));
+            }
         }
     }
+
 }
+
