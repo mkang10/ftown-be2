@@ -20,12 +20,6 @@ namespace Domain.DTO.Response
 
         public string Email { get; set; } = null!;
 
-        public string PasswordHash { get; set; } = null!;
-
-        public string? PhoneNumber { get; set; }
-
-        public string? Address { get; set; }
-
         public DateTime? CreatedDate { get; set; }
 
         public DateTime? LastLoginDate { get; set; }
