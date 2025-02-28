@@ -146,5 +146,44 @@ namespace Application.UseCases
                 throw;
             }
         }
+        //public async Task<bool> HandlePaymentWebhook(PaymentWebhookRequest request)
+        //{
+        //    var payment = await _paymentRepository.GetPaymentByOrderIdAsync(request.OrderId);
+        //    if (payment == null)
+        //    {
+        //        return false;
+        //    }
+
+        //    if (request.PaymentStatus == "Paid")
+        //    {
+        //        payment.PaymentStatus = "Paid";
+        //        await _paymentRepository.UpdatePaymentAsync(payment);
+
+        //        // Lấy đơn hàng liên quan
+        //        var order = await _orderRepository.GetOrderByIdAsync(request.OrderId);
+        //        if (order == null)
+        //        {
+        //            return false;
+        //        }
+
+        //        order.Status = "Confirmed"; // ✅ Đơn hàng chuyển sang trạng thái đã xác nhận
+
+        //        // Lấy danh sách sản phẩm trong đơn hàng
+        //        var orderDetails = await _orderRepository.GetOrderDetailsByOrderIdAsync(request.OrderId);
+
+        //        // ✅ Cập nhật tồn kho khi thanh toán hoàn tất
+        //        var updateStockSuccess = await _inventoryServiceClient.UpdateStockAfterOrderAsync(order.StoreId, orderDetails);
+        //        if (!updateStockSuccess)
+        //        {
+        //            return false; // Không thể cập nhật tồn kho
+        //        }
+
+        //        await _unitOfWork.SaveChangesAsync();
+        //        return true;
+        //    }
+
+        //    return false;
+        //}
+
     }
 }

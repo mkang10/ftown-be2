@@ -12,5 +12,6 @@ namespace Application.Interfaces
         Task<ProductVariant?> GetProductVariantByIdAsync(int productVariantId);
         Task<List<Store>> GetAllStoresAsync();
         Task<int> GetStockQuantityAsync(int storeId, int variantId);
+        Task<bool> UpdateStockAfterOrderAsync(int storeId, List<OrderDetail> orderDetails);
     }
 }

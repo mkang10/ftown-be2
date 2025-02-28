@@ -66,5 +66,15 @@ namespace Infrastructure.Clients
                 return null;
             }
         }
+        public async Task<ProductVariantResponse?> GetProductVariantById(int variantId)
+        {
+            var response = await _httpClient.GetAsync($"products/variant/{variantId}");
+
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            var result = await response.Content.ReadFromJsonAsync<ResponseDTO<ProductVariantResponse>>();
+            return result?.Data;
+        }
     }
 }

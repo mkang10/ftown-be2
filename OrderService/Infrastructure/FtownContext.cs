@@ -61,6 +61,8 @@ public partial class FtownContext : DbContext
 
     public virtual DbSet<Product> Products { get; set; }
 
+    public virtual DbSet<ProductImage> ProductImages { get; set; }
+
     public virtual DbSet<ProductVariant> ProductVariants { get; set; }
 
     public virtual DbSet<ReplyFeedback> ReplyFeedbacks { get; set; }
@@ -633,6 +635,23 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Category).WithMany(p => p.Products)
                 .HasForeignKey(d => d.CategoryId)
                 .HasConstraintName("FK__Product__Categor__57DD0BE4");
+        });
+
+        modelBuilder.Entity<ProductImage>(entity =>
+        {
+            entity.HasKey(e => e.ProductImageId).HasName("PK__ProductI__07B2B1B8E48E40EB");
+
+            entity.ToTable("ProductImage");
+
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.ImagePath).HasMaxLength(255);
+
+            entity.HasOne(d => d.Product).WithMany(p => p.ProductImages)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ProductImage_Product");
         });
 
         modelBuilder.Entity<ProductVariant>(entity =>

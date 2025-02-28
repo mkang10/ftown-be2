@@ -1,8 +1,11 @@
-﻿using Application.Interfaces;
+﻿using Application.DTO.Request;
+using Application.DTO.Response;
+using Application.Interfaces;
 using Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -32,11 +35,13 @@ namespace Infrastructure.Clients
                     return null;
                 }
 
-                // Deserialize trực tiếp vào entity ProductVariant
-                return JsonSerializer.Deserialize<ProductVariant>(responseData, new JsonSerializerOptions
+                // Deserialize thành ResponseDTO<ProductVariant> và trả về Data
+                var result = JsonSerializer.Deserialize<ResponseDTO<ProductVariant>>(responseData, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
+
+                return result?.Data;
             }
             catch (HttpRequestException ex)
             {
@@ -49,7 +54,7 @@ namespace Infrastructure.Clients
         {
             try
             {
-                // Gọi endpoint GET api/stores, giả sử API trả về JSON của List<Store>
+                // Gọi endpoint GET api/stores, giả sử API trả về JSON của ResponseDTO<List<Store>>
                 var response = await _httpClient.GetAsync("stores");
                 if (!response.IsSuccessStatusCode)
                 {
@@ -60,13 +65,13 @@ namespace Infrastructure.Clients
                 var responseData = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"[DEBUG] Stores API Response: {responseData}");
 
-                // Deserialize trực tiếp vào List<Store>
-                var stores = JsonSerializer.Deserialize<List<Store>>(responseData, new JsonSerializerOptions
+                // Deserialize thành ResponseDTO<List<Store>> và trả về Data
+                var result = JsonSerializer.Deserialize<ResponseDTO<List<Store>>>(responseData, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
 
-                return stores ?? new List<Store>();
+                return result?.Data ?? new List<Store>();
             }
             catch (HttpRequestException ex)
             {
@@ -90,22 +95,53 @@ namespace Infrastructure.Clients
                 var responseData = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"[DEBUG] Stock API Response: {responseData}");
 
-                // Nếu API trả về số nguyên dạng plain text
-                if (int.TryParse(responseData, out int stockQuantity))
+                // Giả sử API trả về ResponseDTO<int> chứa số lượng tồn kho
+                var result = JsonSerializer.Deserialize<ResponseDTO<int>>(responseData, new JsonSerializerOptions
                 {
-                    return stockQuantity;
-                }
+                    PropertyNameCaseInsensitive = true
+                });
 
-                // Nếu API trả về JSON thì có thể deserialize như sau:
-                // var stockResponse = JsonSerializer.Deserialize<StockResponse>(responseData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                // return stockResponse?.StockQuantity ?? 0;
-
-                return 0;
+                return result?.Data ?? 0;
             }
             catch (HttpRequestException ex)
             {
                 Console.WriteLine($"[ERROR] Lỗi kết nối đến InventoryService: {ex.Message}");
                 return 0;
+            }
+        }
+        /// <summary>
+        /// Gửi yêu cầu giảm tồn kho sau khi đơn hàng được tạo thành công.
+        /// </summary>
+        public async Task<bool> UpdateStockAfterOrderAsync(int storeId, List<OrderDetail> orderDetails)
+        {
+            try
+            {
+                // Chuyển đổi danh sách OrderDetail thành StockUpdateRequest
+                var stockUpdateRequest = new StockUpdateRequest
+                {
+                    StoreId = storeId,
+                    Items = orderDetails.Select(od => new StockItemResponse
+                    {
+                        VariantId = od.ProductVariantId,
+                        Quantity = od.Quantity
+                    }).ToList()
+                };
+
+                // Gửi request đến InventoryService
+                var response = await _httpClient.PostAsJsonAsync("stores/update-after-order", stockUpdateRequest);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"[ERROR] Không thể cập nhật tồn kho: {response.StatusCode}");
+                    return false;
+                }
+
+                return await response.Content.ReadFromJsonAsync<bool>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Lỗi khi gọi UpdateStockAfterOrderAsync: {ex.Message}");
+                return false;
             }
         }
     }

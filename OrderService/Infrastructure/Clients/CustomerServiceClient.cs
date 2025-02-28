@@ -4,6 +4,7 @@ using Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -24,21 +25,20 @@ namespace Infrastructure.Clients
             try
             {
                 var response = await _httpClient.GetAsync($"cart/{accountId}");
-
                 if (!response.IsSuccessStatusCode)
                 {
                     Console.WriteLine($"[ERROR] Không thể lấy giỏ hàng. Mã lỗi: {response.StatusCode}");
                     return null;
                 }
 
-                var responseData = await response.Content.ReadAsStringAsync();
-
-                Console.WriteLine($"[DEBUG] Dữ liệu từ API: {responseData}"); // ✅ Debug JSON đầu vào
-
-                return JsonSerializer.Deserialize<List<CartItem>>(responseData, new JsonSerializerOptions
+                // Deserialize theo kiểu ResponseDTO<List<CartItem>>
+                var result = await response.Content.ReadFromJsonAsync<ResponseDTO<List<CartItem>>>(new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
-                }) ?? new List<CartItem>(); // ✅ Trả về danh sách `CartItem`
+                });
+
+                Console.WriteLine($"[DEBUG] Dữ liệu từ API: {result}");
+                return result?.Data ?? new List<CartItem>();
             }
             catch (Exception ex)
             {
@@ -46,6 +46,7 @@ namespace Infrastructure.Clients
                 return null;
             }
         }
+
         public async Task ClearCartAfterOrderAsync(int accountId)
         {
             try
@@ -56,14 +57,20 @@ namespace Infrastructure.Clients
                 {
                     Console.WriteLine($"[ERROR] Không thể xóa giỏ hàng sau khi tạo đơn hàng. Mã lỗi: {response.StatusCode}");
                 }
+                else
+                {
+                    // Nếu cần đọc phản hồi từ API theo kiểu DTO
+                    var result = await response.Content.ReadFromJsonAsync<ResponseDTO<bool>>(new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    Console.WriteLine($"[DEBUG] Kết quả xóa giỏ hàng: {result?.Message}");
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[ERROR] Lỗi khi xóa giỏ hàng sau khi tạo đơn hàng: {ex.Message}");
             }
         }
-
-
     }
-
 }

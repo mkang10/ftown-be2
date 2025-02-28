@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Application.DTO.Response;
+using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -40,5 +41,34 @@ namespace Infrastructure
                 .Where(ss => ss.VariantId == variantId)
                 .ToListAsync();
         }
+        public async Task<bool> UpdateStockAfterOrderAsync(int storeId, List<(int VariantId, int Quantity)> stockUpdates)
+        {
+            foreach (var update in stockUpdates)
+            {
+                // Tìm bản ghi tồn kho dựa trên storeId và VariantId
+                var storeStock = await _context.StoreStocks
+                    .FirstOrDefaultAsync(s => s.StoreId == storeId && s.VariantId == update.VariantId);
+
+                if (storeStock == null)
+                {
+                    // Nếu không tìm thấy bản ghi, trả về false
+                    return false;
+                }
+
+                if (storeStock.StockQuantity < update.Quantity)
+                {
+                    // Nếu số lượng tồn kho không đủ để trừ
+                    return false;
+                }
+
+                // Giảm tồn kho theo số lượng đặt
+                storeStock.StockQuantity -= update.Quantity;
+                _context.StoreStocks.Update(storeStock);
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
     }
 }

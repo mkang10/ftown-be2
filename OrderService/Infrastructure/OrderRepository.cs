@@ -60,6 +60,14 @@ namespace Infrastructure
             _context.OrderDetails.AddRange(orderDetails);
             await _context.SaveChangesAsync();
         }
-
+        public async Task<List<Order>> GetOrdersByStatusAsync(string status)
+        {
+            return await _context.Orders
+                .Where(o => o.Status == status)
+                .Include(o => o.OrderDetails)
+                .Include(o => o.Payments)
+                .OrderByDescending(o => o.CreatedDate)
+                .ToListAsync();
+        }
     }
 }
