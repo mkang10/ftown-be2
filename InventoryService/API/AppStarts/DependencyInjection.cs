@@ -24,6 +24,22 @@ namespace API.AppStarts
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowLocalhost",
+                    builder => builder.WithOrigins("http://localhost:3000")
+                                      .AllowAnyMethod()
+                                      .AllowAnyHeader());
+            });
+
+            // Repository
+
+            services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<IStoreRepository, StoreRepository>();
+            services.AddScoped<IStoreStockRepository, StoreStockRepository>();
+
+
+
             //services.AddScoped<IOrderRepository, OrderRepository>();
 
 
