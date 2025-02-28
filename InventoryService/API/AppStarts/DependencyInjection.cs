@@ -38,14 +38,8 @@ namespace API.AppStarts
                 return new ElasticClient(settings);
             });
 
-            // Repository
+       
 
-            services.AddScoped<IProductRepository, ProductRepository>();
-            services.AddScoped<IStoreRepository, StoreRepository>();
-            services.AddScoped<IStoreStockRepository, StoreStockRepository>();
-            
-
-            // Handler
 
             services.AddScoped<GetAllProductsHandler>();
             services.AddScoped<GetProductDetailHandler>();
@@ -58,6 +52,24 @@ namespace API.AppStarts
             services.AddScoped<GetStoreStockByVariantHandler>();
             services.AddScoped<ProductSyncService>();
             services.AddScoped<UpdateStockAfterOrderHandler>();
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowLocalhost",
+                    builder => builder.WithOrigins("http://localhost:3000")
+                                      .AllowAnyMethod()
+                                      .AllowAnyHeader());
+            });
+
+            // Repository
+
+            services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<IStoreRepository, StoreRepository>();
+            services.AddScoped<IStoreStockRepository, StoreStockRepository>();
+
+
+
+
 
 
 
