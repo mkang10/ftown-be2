@@ -13,7 +13,7 @@ public partial class Store
 
     public string Location { get; set; } = null!;
 
-    public int ManagerId { get; set; }
+    public int? ManagerId { get; set; }
 
     public DateTime? CreatedDate { get; set; }
 
@@ -29,11 +29,13 @@ public partial class Store
 
     public virtual ICollection<InventoryTransaction> InventoryTransactions { get; set; } = new List<InventoryTransaction>();
 
-    public virtual Account Manager { get; set; } = null!;
+    public virtual Account? Manager { get; set; }
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
     public virtual ShopManagerDetail? ShopManagerDetail { get; set; }
 
     public virtual ICollection<StaffDetail> StaffDetails { get; set; } = new List<StaffDetail>();
+
+    public virtual ICollection<StoreStock> StoreStocks { get; set; } = new List<StoreStock>();
 }
