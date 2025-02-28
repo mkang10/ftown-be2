@@ -22,13 +22,13 @@ namespace Application.UseCases
             _mapper = mapper;
         }
 
-        public async Task<RoleRequestDTO> Create(RoleRequestDTO role)
+        public async Task<RoleCreateRequestDTO> Create(RoleCreateRequestDTO role)
         {
             try
             {
                 var map = _mapper.Map<Role>(role);
                 var userCreate = await _repo.CreateRole(map);
-                var resutl = _mapper.Map<RoleRequestDTO>(userCreate);
+                var resutl = _mapper.Map<RoleCreateRequestDTO>(userCreate);
                 return resutl;
             }
             catch (Exception ex)

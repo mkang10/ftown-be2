@@ -1,6 +1,9 @@
 ﻿using Application.DTO.Request;
+using Application.DTO.Response;
+using Application.Enum;
 using Application.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -24,34 +27,38 @@ namespace API.Controllers
                 var data = await _service.GetAll();
                 if (data == null)
                 {
-                    return BadRequest();
+                    var notFoundResponse = new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString());
+                    return NotFound(notFoundResponse);
                 }
-                return Ok(data);
+                var successResponse = new MessageRespondDTO<object>(data, true, StatusSuccess.Success.ToString());
+                return Ok(successResponse);
             }
             catch (Exception ex)
             {
-
-                return BadRequest();
+                var errorResponse = new MessageRespondDTO<object>(null, false, "An error occurred: " + ex.Message);
+                return BadRequest(errorResponse);
             }
 
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> Create(RoleRequestDTO role)
+        public async Task<IActionResult> Create([FromBody] RoleCreateRequestDTO role)
         {
             try
             {
-                var data = await _service.Create(role);
-                if (data == null)
-                {
-                    return BadRequest();
-                }
-                return Ok(data);
+               
+                    var data = await _service.Create(role);
+                    if (data == null)
+                    {
+                        return BadRequest(new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString()));
+                    }
+
+                    return Ok(new MessageRespondDTO<RoleCreateRequestDTO>(data, true, StatusSuccess.Success.ToString()));
+                
             }
             catch (Exception ex)
             {
-
-                return BadRequest();
+                return BadRequest(new MessageRespondDTO<object>(null, false, ex.Message));
             }
 
         }
@@ -64,14 +71,15 @@ namespace API.Controllers
                 var result = await _service.Delete(id);
                 if (result)
                 {
-                    return Ok();
+                    return Ok(new MessageRespondDTO<object>(null, true, StatusSuccess.Success.ToString()));
                 }
-                return BadRequest();
+                return BadRequest(new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString()));
             }
             catch (Exception ex)
             {
 
-                return BadRequest();
+                var errorResponse = new MessageRespondDTO<object>(null, false, "An error occurred: " + ex.Message);
+                return BadRequest(errorResponse);
             }
         }
 
@@ -82,23 +90,24 @@ namespace API.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+                    return BadRequest(new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString()));
                 }
 
                 bool isUpdated = await _service.Update(id, role);
 
                 if (isUpdated)
                 {
-                    return Ok();
+                    return Ok(new MessageRespondDTO<object>(null, true, StatusSuccess.Success.ToString()));
                 }
                 else
                 {
-                    return NotFound();
+                    return NotFound(new MessageRespondDTO<object>(null, false, "Wrong Id to update!"));
                 }
             }
             catch (Exception ex)
             {
-                return BadRequest();
+                var errorResponse = new MessageRespondDTO<object>(null, false, "An error occurred: " + ex.Message);
+                return BadRequest(errorResponse);
             }
         }
     }

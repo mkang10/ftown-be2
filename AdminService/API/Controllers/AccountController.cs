@@ -1,10 +1,17 @@
 ﻿using Application.DTO.Request;
+using Application.DTO.Response;
+using Application.Enum;
 using Application.Interfaces;
 using Domain.Commons;
 using Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using static Application.DTO.Response.MessageRespondDTO<T>;
+
+internal class T
+{
+}
 
 namespace API.Controllers
 {
@@ -14,7 +21,7 @@ namespace API.Controllers
     {
         private readonly IUserManagementService _service;
 
-        public AccountController( IUserManagementService service)
+        public AccountController(IUserManagementService service)
         {
             _service = service;
         }
@@ -26,14 +33,16 @@ namespace API.Controllers
                 var result = await _service.getAccountInfoById(id);
                 if (result == null)
                 {
-                    return NotFound();
+                    var notFoundResponse = new MessageRespondDTO<object>(null, false, "User not found.");
+                    return NotFound(notFoundResponse);
                 }
-                return Ok(result);
-
+                var successResponse = new MessageRespondDTO<object>(result, true, "User retrieved successfully.");
+                return Ok(successResponse);
             }
             catch (Exception ex)
             {
-                return BadRequest();
+                var errorResponse = new MessageRespondDTO<object>(null, false, "An error occurred: " + ex.Message);
+                return BadRequest(errorResponse);
             }
         }
         [HttpGet]
@@ -45,7 +54,8 @@ namespace API.Controllers
 
                 if (result == null)
                 {
-                    return NotFound();
+                    var notFoundResponse = new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString());
+                    return NotFound(notFoundResponse);
                 }
                 else
                 {
@@ -61,50 +71,54 @@ namespace API.Controllers
 
                     Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(metadata));
                 }
-                return Ok(result);
+                var successResponse = new MessageRespondDTO<object>(result, true, StatusSuccess.Success.ToString());
+                return Ok(successResponse);
             }
             catch (Exception ex)
             {
-                return BadRequest();
+                var errorResponse = new MessageRespondDTO<object>(null, false, "An error occurred: " + ex.Message);
+                return BadRequest(errorResponse);
             }
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> CreateRoute(UserRequestDTO user)
+        public async Task<IActionResult> Create(CreateUserRequestWithPasswordDTO user)
         {
             try
             {
                 var data = await _service.createUser(user);
                 if (data == null)
                 {
-                    return BadRequest();
+                    return BadRequest(new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString()));
                 }
-                return Ok(data);
+                return Ok(new MessageRespondDTO<CreateUserRequestWithPasswordDTO>(data, true, StatusSuccess.Success.ToString()));
             }
             catch (Exception ex)
             {
-
-                return BadRequest();
+                return BadRequest(new MessageRespondDTO<object>(null, false, ex.Message));
             }
-
         }
 
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteUserById(int id)
         {
+            var response = new MessageResponseButNoData();
+
             try
             {
                 var result = await _service.deleteUser(id);
                 if (result)
                 {
-                    return Ok();
+                    return Ok(new MessageRespondDTO<object>(null, true, StatusSuccess.Success.ToString()));
+
                 }
-                return BadRequest();
+                return BadRequest(new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString()));
+
             }
             catch (Exception ex)
             {
-
-                return BadRequest();
+                var errorResponse = new MessageRespondDTO<object>(null, false, "An error occurred: " + ex.Message);
+                return BadRequest(errorResponse);
             }
         }
 
@@ -115,23 +129,52 @@ namespace API.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+                    return BadRequest(new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString()));
                 }
 
                 bool isUpdated = await _service.updateUser(id, user);
 
                 if (isUpdated)
                 {
-                    return Ok();
+                    return Ok(new MessageRespondDTO<object>(null, true, StatusSuccess.Success.ToString()));
                 }
                 else
                 {
-                    return NotFound();
+                    return NotFound(new MessageRespondDTO<object>(null, false, "Wrong Id to update!"));
                 }
             }
             catch (Exception ex)
             {
-                return BadRequest();
+                var errorResponse = new MessageRespondDTO<object>(null, false,  ex.Message);
+                return BadRequest(errorResponse);
+            }
+        }
+
+        [HttpPut("banned/{id}")]
+        public async Task<IActionResult> BanOrActiveUser(int id, BanUserRequestDTO user)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString()));
+                }
+
+                bool isUpdated = await _service.banUser(id, user);
+
+                if (isUpdated)
+                {
+                    return Ok(new MessageRespondDTO<object>(null, false, StatusSuccess.Success.ToString()));
+                }
+                else
+                {
+                    return NotFound(new MessageRespondDTO<object>(null, false, "Wrong Id to update!"));
+                }
+            }
+            catch (Exception ex)
+            {
+                var errorResponse = new MessageRespondDTO<object>(null, false, "An error occurred: " + ex.Message);
+                return BadRequest(errorResponse);
             }
         }
     }

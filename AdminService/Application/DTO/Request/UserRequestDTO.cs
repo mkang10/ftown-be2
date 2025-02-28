@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Application.DTO.Request
@@ -13,8 +14,6 @@ namespace Application.DTO.Request
         public string FullName { get; set; } = null!;
 
         public string Email { get; set; } = null!;
-
-        public string PasswordHash { get; set; } = null!;
 
         public string? PhoneNumber { get; set; }
 
@@ -29,5 +28,26 @@ namespace Application.DTO.Request
         public int RoleId { get; set; }
 
         public string? ImagePath { get; set; }
+    }
+
+    public class CreateUserRequestWithPasswordDTO
+    {
+        public string FullName { get; set; } = null!;
+
+        public string Email { get; set; } = null!;
+
+        public string? PhoneNumber { get; set; }
+
+        public string? Address { get; set; }
+
+        public DateTime? CreatedDate { get; set; }
+
+        public DateTime? LastLoginDate { get; set; }
+
+        public bool? IsActive { get; set; }
+        public int RoleId { get; set; }
+
+        public string? ImagePath { get; set; }
+        public string PasswordHash { get; set; } 
     }
 }

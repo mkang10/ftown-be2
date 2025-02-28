@@ -5,6 +5,8 @@ using Domain.Commons;
 using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Newtonsoft.Json;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,27 +17,67 @@ namespace Application.UseCases
 {
     public class GetAccountHandler : IUserManagementService
     {
+        private readonly IConnectionMultiplexer _redis;
         private readonly IUserManagementRepository _userManagementRepository;
+        private const string CacheKey = "UserAccounts";
         private readonly IMapper _mapper;
 
-        public GetAccountHandler(IUserManagementRepository userManagementRepository, IMapper mapper)
+        public GetAccountHandler(IConnectionMultiplexer redis, IUserManagementRepository userManagementRepository, IMapper mapper)
         {
+            _redis = redis;
             _userManagementRepository = userManagementRepository;
             _mapper = mapper;
         }
 
-        public async Task<UserRequestDTO> createUser(UserRequestDTO user)
+        public async Task<bool> banUser(int id, BanUserRequestDTO user)
         {
             try
             {
+                var userData = await _userManagementRepository.GetUserById(id);
+                if (userData == null)
+                {
+                    return false;
+                }
+
+                _mapper.Map(user, userData);
+                await _userManagementRepository.UpdateUser(userData);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Fail to ban user {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<CreateUserRequestWithPasswordDTO> createUser(CreateUserRequestWithPasswordDTO user)
+        {
+            try
+            {
+                // check roleid
+                if (user.RoleId != 2 && user.RoleId != 3)
+                {
+                    throw new Exception("Wrong roleId");
+                }
+                // Encrypte
+                user.PasswordHash = EncryptPassword("funkytown123");
+
                 var map = _mapper.Map<Account>(user);
                 var userCreate = await _userManagementRepository.CreateUser(map);
-                var resutl = _mapper.Map<UserRequestDTO>(userCreate);
-                return resutl;
+                var result = _mapper.Map<CreateUserRequestWithPasswordDTO>(userCreate);
+                return result;
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.Message);
+            }
+        }
+        private string EncryptPassword(string password)
+        {
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            {
+                var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+                return Convert.ToBase64String(bytes);
             }
         }
 
@@ -68,26 +110,64 @@ namespace Application.UseCases
             throw new NotImplementedException();
         }
 
-        public async Task<Account> getAccountInfoById(int id)
+        public async Task<UserRequestDTO> getAccountInfoById(int id)
         {
-            var data = await _userManagementRepository.GetUserById(id);
+            try
+            {
+                var data = await _userManagementRepository.GetUserById(id);
+                if (data == null)
+                {
+                    throw new Exception("User does not exsist!");
+                }
+                var dataModel = _mapper.Map<UserRequestDTO>(data);
 
-            return data;
+                return dataModel;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("An error occur: " +ex.Message);    
+            }
         }
 
         public async Task<Pagination<UserRequestDTO>> GetAllUserAscyn(PaginationParameter paginationParameter)
         {
-            var trips = await _userManagementRepository.GetAllUser(paginationParameter);
-            if (!trips.Any())
+            try
             {
-                return null;
-            }
-            var tripModels = _mapper.Map<List<UserRequestDTO>>(trips);
+                var cacheKey = "UserAccounts"; 
+                var db = _redis.GetDatabase();
 
-            return new Pagination<UserRequestDTO>(tripModels,
-                trips.TotalCount,
-                trips.CurrentPage,
-                trips.PageSize);
+                // check cache null or not ?
+                var cachedData = await db.StringGetAsync(cacheKey);
+                if (cachedData.HasValue)
+                {
+                    // if not null , deserialize object
+                    var cachedResult = JsonConvert.DeserializeObject<Pagination<UserRequestDTO>>(cachedData);
+                    return cachedResult;
+                }
+
+                // if null cache, get data from db and write it down cache
+                var trips = await _userManagementRepository.GetAllUser(paginationParameter);
+                if (!trips.Any())
+                {
+                    throw new Exception("No data!");
+                }
+
+                var tripModels = _mapper.Map<List<UserRequestDTO>>(trips);
+
+                // write down cache
+                var paginationResult = new Pagination<UserRequestDTO>(tripModels,
+                    trips.TotalCount,
+                    trips.CurrentPage,
+                    trips.PageSize);
+                await db.StringSetAsync(cacheKey, JsonConvert.SerializeObject(paginationResult), TimeSpan.FromMinutes(30)); 
+
+                return paginationResult;
+            }
+            
+            catch (Exception ex)
+            {
+                throw new Exception("An error occurred: " + ex.Message);
+            }
         }
 
         public async Task<bool> updateUser(int id, UserRequestDTO user)
@@ -97,7 +177,7 @@ namespace Application.UseCases
                 var userData = await _userManagementRepository.GetUserById(id);
                 if (userData == null)
                 {
-                    return false;
+                    throw new Exception("No data!");
                 }
 
                 _mapper.Map(user, userData);
@@ -106,9 +186,7 @@ namespace Application.UseCases
             }
             catch (Exception ex)
             {
-                // Log the exception
-                Console.WriteLine($"Fail to update user info {ex.Message}");
-                return false;
+                throw new Exception("An error occur: " + ex.Message);
             }
         }
     }

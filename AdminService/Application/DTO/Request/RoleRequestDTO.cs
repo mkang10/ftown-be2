@@ -14,4 +14,11 @@ namespace Application.DTO.Request
 
         public string? Description { get; set; }
     }
+    public class RoleCreateRequestDTO
+    {
+
+        public string RoleName { get; set; } = null!;
+
+        public string? Description { get; set; }
+    }
 }

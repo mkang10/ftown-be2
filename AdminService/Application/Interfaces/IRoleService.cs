@@ -10,7 +10,7 @@ namespace Application.Interfaces
     public interface IRoleService
     {
         public Task<List<RoleRequestDTO>> GetAll();
-        public Task<RoleRequestDTO> Create(RoleRequestDTO role);
+        public Task<RoleCreateRequestDTO> Create(RoleCreateRequestDTO role);
         public Task<bool> Delete(int id);
         public Task<bool> Update(int id, RoleRequestDTO role);
     }
