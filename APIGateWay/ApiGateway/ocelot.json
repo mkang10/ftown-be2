@@ -2,11 +2,11 @@
   "Routes": [
     {
       "DownstreamPathTemplate": "/api/auth/login",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5091
+          "Port": 7261
         }
       ],
       "UpstreamPathTemplate": "/auth/login",
@@ -14,11 +14,11 @@
     },
     {
       "DownstreamPathTemplate": "/api/auth/register",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5091
+          "Port": 7261
         }
       ],
       "UpstreamPathTemplate": "/auth/register",
@@ -26,11 +26,11 @@
     },
     {
       "DownstreamPathTemplate": "/api/cart/{id}",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5096
+          "Port": 7264
         }
       ],
       "UpstreamPathTemplate": "/cart/{id}",
@@ -38,11 +38,11 @@
     },
     {
       "DownstreamPathTemplate": "/api/cart/{id}/add",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5096
+          "Port": 7264
         }
       ],
       "UpstreamPathTemplate": "/cart/{id}/add",
@@ -50,11 +50,11 @@
     },
     {
       "DownstreamPathTemplate": "/api/cart/{id}/remove/{productVariantId}",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5096
+          "Port": 7264
         }
       ],
       "UpstreamPathTemplate": "/cart/{id}/remove/{productVariantId}",
@@ -62,11 +62,11 @@
     },
     {
       "DownstreamPathTemplate": "/api/cart/{id}/clear",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5096
+          "Port": 7264
         }
       ],
       "UpstreamPathTemplate": "/cart/{id}/clear",
@@ -74,11 +74,11 @@
     },
     {
       "DownstreamPathTemplate": "/api/products/view-all",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5097
+          "Port": 7265
         }
       ],
       "UpstreamPathTemplate": "/products/view-all",
@@ -86,11 +86,11 @@
     },
     {
       "DownstreamPathTemplate": "/api/products/{productId}",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5097
+          "Port": 7265
         }
       ],
       "UpstreamPathTemplate": "/products/{productId}",
@@ -98,7 +98,7 @@
     },
     {
       "DownstreamPathTemplate": "/api/order/{everything}",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
