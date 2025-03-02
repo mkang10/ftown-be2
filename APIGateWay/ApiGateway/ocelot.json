@@ -2,11 +2,11 @@
   "Routes": [
     {
       "DownstreamPathTemplate": "/api/auth/login",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5091
+          "Port": 7261
         }
       ],
       "UpstreamPathTemplate": "/auth/login",
@@ -18,7 +18,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5091
+          "Port": 7261
         }
       ],
       "UpstreamPathTemplate": "/auth/register",
@@ -30,7 +30,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5096
+          "Port": 7264
         }
       ],
       "UpstreamPathTemplate": "/cart/{id}",
@@ -42,7 +42,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5096
+          "Port": 7264
         }
       ],
       "UpstreamPathTemplate": "/cart/{id}/add",
@@ -54,7 +54,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5096
+          "Port": 7264
         }
       ],
       "UpstreamPathTemplate": "/cart/{id}/remove/{productVariantId}",
@@ -66,7 +66,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5096
+          "Port": 7264
         }
       ],
       "UpstreamPathTemplate": "/cart/{id}/clear",
@@ -98,7 +98,7 @@
     },
     {
       "DownstreamPathTemplate": "/api/order/{everything}",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
