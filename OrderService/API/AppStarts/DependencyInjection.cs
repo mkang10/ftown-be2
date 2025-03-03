@@ -63,6 +63,10 @@ namespace API.AppStarts
             services.AddScoped<GetShippingAddressHandler>();
             services.AddScoped<GetOrderHistoryHandler>();
             services.AddScoped<GetOrdersByStatusHandler>();
+            services.AddScoped<GetSelectedCartItemsHandler>();
+            services.AddScoped<CheckOutHandler>();
+            services.AddScoped<ShippingCostHandler>();
+            services.AddScoped<GetOrderDetailHandler>();
 
             
 

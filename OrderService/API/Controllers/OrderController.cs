@@ -13,12 +13,14 @@ namespace API.Controllers
         private readonly ILogger<OrderController> _logger;
         private readonly GetOrderHistoryHandler _getOrderHistoryHandler;
         private readonly GetOrdersByStatusHandler _getOrdersByStatusHandler;
-        public OrderController(CreateOrderHandler createOrderHandler, ILogger<OrderController> logger, GetOrderHistoryHandler getOrderHistoryHandler, GetOrdersByStatusHandler getOrdersByStatusHandler)
+        private readonly GetOrderDetailHandler _getOrderDetailHandler;
+        public OrderController(CreateOrderHandler createOrderHandler, ILogger<OrderController> logger, GetOrderHistoryHandler getOrderHistoryHandler, GetOrdersByStatusHandler getOrdersByStatusHandler, GetOrderDetailHandler getOrderDetailHandler)
         {
             _createOrderHandler = createOrderHandler;
             _logger = logger;
             _getOrderHistoryHandler = getOrderHistoryHandler;
             _getOrdersByStatusHandler = getOrdersByStatusHandler;
+            _getOrderDetailHandler = getOrderDetailHandler; 
         }
 
         /// <summary>
@@ -67,6 +69,16 @@ namespace API.Controllers
             var orders = await _getOrdersByStatusHandler.HandleAsync(status);
             return Ok(new ResponseDTO<List<OrderResponse>>(orders, true, $"Danh sách đơn hàng với trạng thái {status} được lấy thành công."));
         }
+        [HttpGet("{orderId}/details")]
+        public async Task<IActionResult> GetOrderDetails(int orderId)
+        {
+            var orderDetailResponse = await _getOrderDetailHandler.HandleAsync(orderId);
+            if (orderDetailResponse == null)
+            {
+                return NotFound(new ResponseDTO<OrderDetailResponseWrapper>(null, false, "Không tìm thấy đơn hàng."));
+            }
 
+            return Ok(new ResponseDTO<OrderDetailResponseWrapper>(orderDetailResponse, true, "Lấy chi tiết đơn hàng thành công!"));
+        }
     }
 }

@@ -4,7 +4,11 @@ using Application.Interfaces;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +19,7 @@ namespace Application.UseCases
 {
     public class CreateOrderHandler
     {
+        private readonly IDistributedCache _cache;
         private readonly IOrderRepository _orderRepository;
         private readonly ICustomerServiceClient _customerServiceClient;
         private readonly IInventoryServiceClient _inventoryServiceClient;
@@ -27,7 +32,11 @@ namespace Application.UseCases
         private readonly GetShippingAddressHandler _getShippingAddressHandler;
         private readonly IMapper _mapper;
         private readonly IOrderHistoryRepository _orderHistoryRepository;
+        private readonly GetSelectedCartItemsHandler _getSelectedCartItemsHandler;
+        private readonly ILogger<CreateOrderHandler> _logger;
+        private readonly ShippingCostHandler _shippingCostHandler;
         public CreateOrderHandler(
+            IDistributedCache cache,
             IOrderRepository orderRepository,
             ICustomerServiceClient customerServiceClient,
             IInventoryServiceClient inventoryServiceClient,
@@ -39,8 +48,12 @@ namespace Application.UseCases
             IShippingAddressRepository shippingAddressRepository,
             GetShippingAddressHandler getShippingAddressHandler,
             IMapper mapper,
-            IOrderHistoryRepository orderHistoryRepository)
+            IOrderHistoryRepository orderHistoryRepository,
+            GetSelectedCartItemsHandler getSelectedCartItemsHandler,
+            ShippingCostHandler shippingCostHandler,
+            ILogger<CreateOrderHandler> logger)
         {
+            _cache = cache;
             _mapper = mapper;
             _orderRepository = orderRepository;
             _customerServiceClient = customerServiceClient;
@@ -53,6 +66,9 @@ namespace Application.UseCases
             _shippingAddressRepository = shippingAddressRepository;
             _getShippingAddressHandler = getShippingAddressHandler;
             _orderHistoryRepository = orderHistoryRepository;
+            _getSelectedCartItemsHandler = getSelectedCartItemsHandler;
+            _shippingCostHandler = shippingCostHandler;
+            _logger = logger;
         }
 
         public async Task<OrderResponse?> Handle(CreateOrderRequest request)
@@ -62,46 +78,62 @@ namespace Application.UseCases
 
             try
             {
-                // 1. Lấy thông tin địa chỉ giao hàng dựa trên ShippingAddressId
-                var shippingAddress = await _getShippingAddressHandler.HandleAsync(request.ShippingAddressId, request.AccountId);
-                if (shippingAddress == null)
+                // 1. Lấy thông tin phiên checkout từ Redis bằng CheckOutSessionId
+                var cacheKey = $"checkout:{request.CheckOutSessionId}";
+                var checkoutDataJson = await _cache.GetStringAsync(cacheKey);
+                if (string.IsNullOrEmpty(checkoutDataJson))
+                {
+                    await _unitOfWork.RollbackAsync();
+                    return null; // Hoặc có thể fallback lấy thông tin từ các service
+                }
+                var checkoutData = JsonConvert.DeserializeObject<CheckOutData>(checkoutDataJson);
+                if (checkoutData == null)
                 {
                     await _unitOfWork.RollbackAsync();
                     return null;
                 }
 
-                // 2. Lấy giỏ hàng từ CustomerService
-                var cart = await _customerServiceClient.GetCartAsync(request.AccountId) ?? new List<CartItem>();
+                // Xác định ShippingAddressId cần dùng:
+                // Nếu request có ShippingAddressId mới thì ưu tiên dùng nó, nếu không dùng ShippingAddressId lưu trong phiên checkout.
+                int shippingAddressId = request.ShippingAddressId ?? checkoutData.ShippingAddressId;
 
-                var orderItems = new List<OrderItemRequest>();
-                foreach (var item in cart)
+                // Lấy thông tin địa chỉ giao hàng dựa trên shippingAddressId được xác định
+                var shippingAddress = await _getShippingAddressHandler.HandleAsync(shippingAddressId, request.AccountId);
+                if (shippingAddress == null)
                 {
-                    // Lấy thông tin sản phẩm từ InventoryService
-                    var productVariant = await _inventoryServiceClient.GetProductVariantByIdAsync(item.ProductVariantId);
-                    if (productVariant == null)
-                        continue;
-
-                    orderItems.Add(new OrderItemRequest
-                    {
-                        ProductVariantId = item.ProductVariantId,
-                        Quantity = item.Quantity,
-                        Price = productVariant.Price
-                    });
+                    await _unitOfWork.RollbackAsync();
+                    return null;
+                }
+                decimal shippingCost;
+                if (request.ShippingAddressId.HasValue && request.ShippingAddressId.Value != checkoutData.ShippingAddressId)
+                {
+                    shippingCost = _shippingCostHandler.CalculateShippingCost(shippingAddress.City, shippingAddress.District);
+                }
+                else
+                {
+                    shippingCost = checkoutData.ShippingCost;
                 }
 
-                // 3. Tính tổng tiền đơn hàng
-                var totalAmount = await CalculateTotalAmountAsync(orderItems);
+                // 3. Lấy lại danh sách sản phẩm đã chọn từ phiên checkout (để đảm bảo số lượng, giá cả chưa thay đổi)
+                // Có thể thực hiện kiểm tra lại tồn kho tại đây nếu cần.
+                var orderItems = checkoutData.Items;
+                if (orderItems == null || !orderItems.Any())
+                {
+                    await _unitOfWork.RollbackAsync();
+                    return null;
+                }
+
+                // 4. Lấy tổng tiền và phí vận chuyển đã tính từ phiên checkout
+                var totalAmount = checkoutData.OrderTotal;
                 if (totalAmount <= 0)
                 {
                     await _unitOfWork.RollbackAsync();
                     return null;
                 }
 
-                // 4. Tính phí vận chuyển dựa vào thông tin từ ShippingAddress
-                decimal shippingCost = GetShippingCost(shippingAddress.City, shippingAddress.District);
-
                 // 5. Xác định cửa hàng (Store)
-                int storeId = request.StoreId ?? await _autoSelectStoreHandler.AutoSelectStoreAsync(orderItems, shippingAddress.City, shippingAddress.District);
+                int storeId = request.StoreId ?? await _autoSelectStoreHandler.AutoSelectStoreAsync(
+                    orderItems, shippingAddress.City, shippingAddress.District);
                 if (storeId == 0)
                 {
                     await _unitOfWork.RollbackAsync();
@@ -110,30 +142,25 @@ namespace Application.UseCases
 
                 // 6. Tạo Order và copy snapshot thông tin từ ShippingAddress
                 var newOrder = _mapper.Map<Order>(shippingAddress);
-
-                // Sau đó bổ sung các thông tin khác mà không thuộc ShippingAddress
                 newOrder.AccountId = request.AccountId;
                 newOrder.CreatedDate = DateTime.UtcNow;
-                newOrder.Status = "Pending";
                 newOrder.OrderTotal = totalAmount;
                 newOrder.ShippingCost = shippingCost;
                 newOrder.ShippingAddressId = shippingAddress.AddressId;
-                
+                // Thiết lập trạng thái ban đầu tùy theo phương thức thanh toán (sẽ cập nhật sau)
+                newOrder.Status = request.PaymentMethod == "PAYOS" ? "Pending Payment" : "Confirmed";
+                newOrder.StoreId = storeId;
 
                 // Lưu Order (chưa commit)
                 await _orderRepository.CreateOrderAsync(newOrder);
                 await _unitOfWork.SaveChangesAsync();
 
-                // Tạo OrderDetails từ orderItems (sử dụng hàm tách riêng)
+                // 7. Tạo OrderDetails từ orderItems
                 var orderDetails = CreateOrderDetails(newOrder, orderItems);
 
                 // Xử lý theo PaymentMethod
                 if (request.PaymentMethod == "PAYOS")
                 {
-                    newOrder.Status = "Pending Payment";
-                    newOrder.StoreId = storeId;
-                    
-
                     // Gọi PayOS tạo link thanh toán
                     var paymentUrl = await _payOSService.CreatePayment(newOrder.OrderId, totalAmount + shippingCost, request.PaymentMethod);
                     if (string.IsNullOrEmpty(paymentUrl))
@@ -142,7 +169,7 @@ namespace Application.UseCases
                         return null;
                     }
 
-                    // Tạo payment (chưa lưu commit)
+                    // Tạo đối tượng Payment (chưa commit)
                     var payment = new Payment
                     {
                         OrderId = newOrder.OrderId,
@@ -155,17 +182,19 @@ namespace Application.UseCases
 
                     // Lưu OrderDetails
                     await _orderRepository.SaveOrderDetailsAsync(orderDetails);
-
-                    // Gán danh sách OrderDetails cho Order (để AutoMapper ánh xạ)
                     newOrder.OrderDetails = orderDetails;
 
-                    // Xóa giỏ hàng sau khi đặt đơn
-                    await _customerServiceClient.ClearCartAfterOrderAsync(request.AccountId);
+                    // Sau khi đặt hàng thành công, xóa sản phẩm khỏi giỏ hàng
+                    var productVariantIds = orderItems.Select(i => i.ProductVariantId).ToList();
+                    var cartCleared = await _customerServiceClient.ClearCartAfterOrderAsync(request.AccountId, productVariantIds);
+                    if (!cartCleared)
+                    {
+                        _logger.LogWarning("Không thể xóa sản phẩm khỏi giỏ hàng sau khi đặt hàng. AccountId: {AccountId}", request.AccountId);
+                    }
 
                     // Commit transaction
                     await _unitOfWork.CommitAsync();
 
-                    // Sử dụng AutoMapper ánh xạ Order sang OrderResponse và bổ sung PaymentUrl
                     var orderResponse = _mapper.Map<OrderResponse>(newOrder);
                     orderResponse.PaymentMethod = request.PaymentMethod;
                     orderResponse.PaymentUrl = paymentUrl;
@@ -175,22 +204,26 @@ namespace Application.UseCases
                 {
                     // Lưu OrderDetails
                     await _orderRepository.SaveOrderDetailsAsync(orderDetails);
-                    newOrder.Status = "Confirmed";
-                    newOrder.StoreId = storeId;
                     newOrder.OrderDetails = orderDetails;
-                    
-                    // ✅ Cập nhật tồn kho ngay lập tức
+
+                    // Cập nhật tồn kho ngay lập tức
                     var updateStockSuccess = await _inventoryServiceClient.UpdateStockAfterOrderAsync(storeId, orderDetails);
                     if (!updateStockSuccess)
                     {
                         await _unitOfWork.RollbackAsync();
                         return null;
                     }
-                    // Xóa giỏ hàng sau khi đặt đơn
-                    await _customerServiceClient.ClearCartAfterOrderAsync(request.AccountId);
-                    // 📌 Ghi lại lịch sử đơn hàng
+
+                    // Xóa sản phẩm đã đặt khỏi giỏ hàng
+                    var productVariantIds = orderItems.Select(i => i.ProductVariantId).ToList();
+                    var cartCleared = await _customerServiceClient.ClearCartAfterOrderAsync(request.AccountId, productVariantIds);
+                    if (!cartCleared)
+                    {
+                        _logger.LogWarning("Không thể xóa sản phẩm khỏi giỏ hàng sau khi đặt hàng. AccountId: {AccountId}", request.AccountId);
+                    }
+
+                    // Ghi lại lịch sử đơn hàng
                     await AddOrderHistory(newOrder.OrderId, "Confirmed", request.AccountId, "Đơn hàng đã được xác nhận.");
-                    // Commit transaction
                     await _unitOfWork.CommitAsync();
 
                     var orderResponse = _mapper.Map<OrderResponse>(newOrder);
@@ -209,7 +242,6 @@ namespace Application.UseCases
         }
 
 
-
         ///////////////////////////////////////////////////////
         private List<OrderDetail> CreateOrderDetails(Order newOrder, List<OrderItemRequest> orderItems)
         {
@@ -221,16 +253,6 @@ namespace Application.UseCases
                 PriceAtPurchase = item.Price,
                 DiscountApplied = 0
             }).ToList();
-        }
-
-        /// 📌 Tính phí vận chuyển
-        private decimal GetShippingCost(string city, string district)
-        {
-             var urbanAreas = new List<string> { "Hà Nội", "Hồ Chí Minh", "Đà Nẵng" };
-             decimal urbanFee = decimal.TryParse(_configuration["ShippingFees:Urban"], out var uFee) ? uFee : 20000;
-             decimal suburbanFee = decimal.TryParse(_configuration["ShippingFees:Suburban"], out var sFee) ? sFee : 35000;
-
-             return urbanAreas.Contains(city) ? urbanFee : suburbanFee;
         }
 
         /// 📌 Tính tổng tiền đơn hàng
