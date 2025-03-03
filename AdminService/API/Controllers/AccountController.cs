@@ -123,7 +123,7 @@ namespace API.Controllers
         }
 
         [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateUser(int id, UserRequestDTO user)
+        public async Task<IActionResult> UpdateUser(int id, CreateUserRequestWithPasswordDTO user)
         {
             try
             {

@@ -14,7 +14,7 @@ namespace Application.Interfaces
         public Task<Pagination<UserRequestDTO>> GetAllUserAscyn(PaginationParameter paginationParameter);
         public Task<CreateUserRequestWithPasswordDTO> createUser(CreateUserRequestWithPasswordDTO user);
         public Task<bool> deleteUser(int id);
-        public Task<bool> updateUser(int id, UserRequestDTO user);
+        public Task<bool> updateUser(int id, CreateUserRequestWithPasswordDTO user);
         public Task<bool> banUser(int id, BanUserRequestDTO user);
 
 

@@ -5,6 +5,7 @@ using Domain.Commons;
 using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Nest;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 using System;
@@ -17,13 +18,16 @@ namespace Application.UseCases
 {
     public class GetAccountHandler : IUserManagementService
     {
+        private readonly ElasticClient _client;
         private readonly IConnectionMultiplexer _redis;
         private readonly IUserManagementRepository _userManagementRepository;
         private const string CacheKey = "UserAccounts";
         private readonly IMapper _mapper;
 
-        public GetAccountHandler(IConnectionMultiplexer redis, IUserManagementRepository userManagementRepository, IMapper mapper)
+        public GetAccountHandler(ElasticClient client, IConnectionMultiplexer redis, 
+            IUserManagementRepository userManagementRepository, IMapper mapper)
         {
+            _client = client;
             _redis = redis;
             _userManagementRepository = userManagementRepository;
             _mapper = mapper;
@@ -92,6 +96,10 @@ namespace Application.UseCases
                 }
 
                 await _userManagementRepository.DeleteUser(user);
+                // call redis and delete 1 of item in cache
+                var db = _redis.GetDatabase();
+                await db.KeyDeleteAsync("UserAccounts"); 
+
                 return true;
             }
             catch (Exception ex)
@@ -159,7 +167,7 @@ namespace Application.UseCases
                     trips.TotalCount,
                     trips.CurrentPage,
                     trips.PageSize);
-                await db.StringSetAsync(cacheKey, JsonConvert.SerializeObject(paginationResult), TimeSpan.FromMinutes(30)); 
+                await db.StringSetAsync(cacheKey, JsonConvert.SerializeObject(paginationResult), TimeSpan.FromMinutes(5)); 
 
                 return paginationResult;
             }
@@ -169,8 +177,9 @@ namespace Application.UseCases
                 throw new Exception("An error occurred: " + ex.Message);
             }
         }
+        
 
-        public async Task<bool> updateUser(int id, UserRequestDTO user)
+        public async Task<bool> updateUser(int id, CreateUserRequestWithPasswordDTO user)
         {
             try
             {
@@ -181,12 +190,22 @@ namespace Application.UseCases
                 }
 
                 _mapper.Map(user, userData);
+
                 await _userManagementRepository.UpdateUser(userData);
+
+                var db = _redis.GetDatabase();
+                //delete old cache
+                await db.KeyDeleteAsync("UserAccounts");
+                var paginationParameter = new PaginationParameter();
+                // call and wite new cache to redis
+                var updatedUsers = await _userManagementRepository.GetAllUser(paginationParameter);
+                await db.StringSetAsync("UserAccounts", JsonConvert.SerializeObject(updatedUsers), TimeSpan.FromMinutes(5));
+
                 return true;
             }
             catch (Exception ex)
             {
-                throw new Exception("An error occur: " + ex.Message);
+                throw new Exception("An error occurred: " + ex.Message);
             }
         }
     }

@@ -28,6 +28,8 @@ namespace Application.DTO.Request
         public int RoleId { get; set; }
 
         public string? ImagePath { get; set; }
+
+        
     }
 
     public class CreateUserRequestWithPasswordDTO
