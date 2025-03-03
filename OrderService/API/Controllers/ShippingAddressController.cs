@@ -1,4 +1,5 @@
 ﻿using Application.DTO.Request;
+using Application.UseCases;
 using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -12,12 +13,14 @@ namespace API.Controllers
     {
         private readonly IShippingAddressRepository _shippingAddressRepository;
         private readonly ILogger<ShippingAddressController> _logger;
-
+        private readonly ShippingCostHandler _shippingCostHandler;
         public ShippingAddressController(IShippingAddressRepository shippingAddressRepository,
-                                         ILogger<ShippingAddressController> logger)
+                                         ILogger<ShippingAddressController> logger,
+                                         ShippingCostHandler shippingCostHandler)
         {
             _shippingAddressRepository = shippingAddressRepository;
             _logger = logger;
+            _shippingCostHandler = shippingCostHandler;
         }
 
         [HttpPost]
@@ -52,6 +55,12 @@ namespace API.Controllers
             if (address == null)
                 return NotFound();
             return Ok(address);
+        }
+        [HttpGet("cost")]
+        public IActionResult GetShippingCost([FromQuery] string city, [FromQuery] string district)
+        {
+            var shippingCost = _shippingCostHandler.CalculateShippingCost(city, district);
+            return Ok(new { shippingCost });
         }
     }
 

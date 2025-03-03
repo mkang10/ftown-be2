@@ -23,6 +23,7 @@ namespace Domain.Interfaces
 
         // Xóa toàn bộ giỏ hàng trong Database
         Task ClearCartInDatabase(int accountId);
+        Task RemoveSelectedItemsFromCart(int accountId, List<int> selectedProductVariantIds);
     }
 
 }

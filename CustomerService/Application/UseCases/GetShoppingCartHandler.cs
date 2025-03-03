@@ -161,13 +161,15 @@ namespace Application.UseCases
         }
 
         // --- Clear Cart After Order ---
-        public async Task ClearCartAfterOrderAsync(int accountId)
+        public async Task ClearCartAfterOrderAsync(int accountId, List<int> selectedProductVariantIds)
         {
-            // Xóa giỏ hàng trong DB
-            await _cartRepository.ClearCartInDatabase(accountId);
-            // Xóa cache
+            // ✅ Xóa sản phẩm đã đặt hàng khỏi DB
+            await _cartRepository.RemoveSelectedItemsFromCart(accountId, selectedProductVariantIds);
+
+            // ✅ Cập nhật lại cache Redis
             await _redisCacheService.RemoveCacheAsync(GetCartKey(accountId));
         }
+
 
     }
 }

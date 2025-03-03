@@ -13,7 +13,7 @@ namespace Application.UseCases
     public class EditProfileHandler
     {
         private readonly IEditProfileRepository _editProfileRepository;
-        private readonly IMapper _mapper;
+        private readonly IMapper _mapper; // Inject AutoMapper
 
         public EditProfileHandler(IEditProfileRepository editProfileRepository, IMapper mapper)
         {
@@ -35,20 +35,9 @@ namespace Application.UseCases
                 return new EditProfileResponse { Success = false, Message = "Customer details not found" };
             }
 
-            // Cập nhật Account
-            account.FullName = request.FullName;
-            account.Email = request.Email;
-            account.PhoneNumber = request.PhoneNumber;
-            account.Address = request.Address;
-            account.ImagePath = request.ImagePath;
-
-            // Cập nhật CustomerDetail
-            customerDetail.LoyaltyPoints = request.LoyaltyPoints;
-            customerDetail.MembershipLevel = request.MembershipLevel;
-            customerDetail.DateOfBirth = request.DateOfBirth;
-            customerDetail.Gender = request.Gender;
-            customerDetail.CustomerType = request.CustomerType;
-            customerDetail.PreferredPaymentMethod = request.PreferredPaymentMethod;
+            // Sử dụng AutoMapper để cập nhật Account và CustomerDetail
+            _mapper.Map(request, account);
+            _mapper.Map(request, customerDetail);
 
             // Lưu vào database
             await _editProfileRepository.UpdateAccountAsync(account);
@@ -57,4 +46,5 @@ namespace Application.UseCases
             return new EditProfileResponse { Success = true, Message = "Profile updated successfully" };
         }
     }
+
 }

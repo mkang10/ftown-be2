@@ -28,9 +28,9 @@ namespace Application.UseCases
             string cacheKey = $"variant:{variantId}";
 
             // 🔍 Kiểm tra cache trước khi gọi database
-            var cachedVariant = await _cacheService.GetCacheAsync<ProductVariantResponse>(cacheKey);
-            if (cachedVariant != null)
-                return cachedVariant;
+            //var cachedVariant = await _cacheService.GetCacheAsync<ProductVariantResponse>(cacheKey);
+            //if (cachedVariant != null)
+            //    return cachedVariant;
 
             // ❌ Không có cache, truy vấn database
             var productVariant = await _productRepository.GetProductVariantByIdAsync(variantId);

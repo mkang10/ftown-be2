@@ -11,6 +11,8 @@ namespace Domain.Interfaces
     {
         Task<ShippingAddress?> GetByIdAsync(int addressId);
         Task CreateAsync(ShippingAddress address);
-        // Thêm các phương thức Update, Delete, GetByAccount nếu cần
+
+        Task<ShippingAddress?> GetDefaultShippingAddressAsync(int accountId);
+        Task<List<ShippingAddress>> GetShippingAddressesByAccountIdAsync(int accountId);
     }
 }
