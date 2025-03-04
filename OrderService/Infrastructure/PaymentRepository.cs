@@ -28,7 +28,10 @@ namespace Infrastructure
             return await _context.Payments
                 .FirstOrDefaultAsync(p => p.OrderId == orderId);
         }
-
+        public async Task<Payment?> GetPaymentByOrderIdAsync(long orderId)
+        {
+            return await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId);
+        }
         public async Task UpdatePaymentAsync(Payment payment)
         {
             _context.Payments.Update(payment);

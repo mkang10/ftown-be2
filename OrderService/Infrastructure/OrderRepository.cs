@@ -32,7 +32,10 @@ namespace Infrastructure
                 .Include(o => o.OrderDetails)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
         }
-
+        public async Task<Order?> GetOrderByIdAsync(long orderId)
+        {
+            return await _context.Orders.FirstOrDefaultAsync(o => o.OrderId== orderId);
+        }
         public async Task<List<Order>> GetOrderHistoryByAccountIdAsync(int accountId)
         {
             return await _context.Orders
