@@ -1,10 +1,16 @@
 using API.AppStarts;
+using Infrastructure;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 // Add services to the container.
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
+
+// ??ng ký CloudinaryService
+builder.Services.AddSingleton<CloudinaryService>();
+
 var redisConfig = builder.Configuration.GetSection("Redis");
 string redisConnectionString = $"{redisConfig["Host"]}:{redisConfig["Port"]},password={redisConfig["Password"]}";
 builder.Services.AddStackExchangeRedisCache(options =>

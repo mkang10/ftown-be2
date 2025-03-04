@@ -102,6 +102,7 @@ namespace Application.UseCases
                 {
                     ProductVariantId = item.ProductVariantId,
                     ProductName = item.ProductName,
+                    ImageUrl = item.ImageUrl,
                     Color = item.Color,
                     Size = item.Size,
                     Quantity = item.Quantity,

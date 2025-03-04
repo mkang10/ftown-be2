@@ -26,7 +26,7 @@ namespace API.AppStarts
             });
 
             //Inject Services
-
+            
             services.AddHttpClient<ICustomerServiceClient, CustomerServiceClient>(client =>
             {
                 client.BaseAddress = new Uri("https://localhost:7264/api/");
@@ -67,6 +67,7 @@ namespace API.AppStarts
             services.AddScoped<CheckOutHandler>();
             services.AddScoped<ShippingCostHandler>();
             services.AddScoped<GetOrderDetailHandler>();
+            services.AddScoped<UpdateOrderStatusHandler>();
 
             
 

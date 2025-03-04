@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Net.payOS;
 using Net.payOS.Types;
 using System;
@@ -14,14 +15,27 @@ namespace Infrastructure
     {
         private readonly PayOS _payOS;
         private readonly HttpClient _httpClient;
-        public PayOSService(IConfiguration configuration, HttpClient httpClient)
+        private readonly ILogger<PayOSService> _logger;
+        public PayOSService(IConfiguration configuration, HttpClient httpClient, ILogger<PayOSService> logger)
         {
             string apiKey = configuration["PayOS:ApiKey"];
             string clientId = configuration["PayOS:ClientId"];
             string checksumKey = configuration["PayOS:ChecksumKey"];
+            string webhookUrl = configuration["PayOS:WebhookUrl"];
 
             _payOS = new PayOS(clientId, apiKey, checksumKey);
             _httpClient = httpClient;
+            _logger = logger;
+            try
+            {
+                _payOS.confirmWebhook(webhookUrl);
+                _logger.LogInformation($"Webhook URL registered successfully: {webhookUrl}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to register Webhook URL with payOS");
+            }
+
         }
 
         public async Task<string?> CreatePayment(int orderId, decimal amount, string paymentMethod)
@@ -38,7 +52,6 @@ namespace Infrastructure
                 items: items,
                 cancelUrl: "http://localhost:7266/api/payment/cancel",
                 returnUrl: $"http://localhost:3000/order-confirmation?orderId={orderId}"
-                //callbackUrl: "http://localhost:7266/api/payment/callback"
             );
 
             var createPayment = await _payOS.createPaymentLink(paymentData);
