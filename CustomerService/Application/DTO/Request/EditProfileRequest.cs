@@ -20,8 +20,8 @@ namespace Application.DTO.Request
         public string? Address { get; set; }
         public string? ImagePath { get; set; }
 
-        public int? LoyaltyPoints { get; set; }
-        public string? MembershipLevel { get; set; }
+        //public int? LoyaltyPoints { get; set; }
+        //public string? MembershipLevel { get; set; }
         public DateOnly? DateOfBirth { get; set; }
         public string? Gender { get; set; }
         public string? CustomerType { get; set; }

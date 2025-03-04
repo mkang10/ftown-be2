@@ -1,9 +1,19 @@
-using API.AppStarts;
+﻿using API.AppStarts;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 // Add services to the container.
+
+//Add CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigins",
+        policy => policy
+            .WithOrigins("http://localhost:3000", "https://vietnong.id.vn") // Thêm nguồn mới
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
 
 // Add depen
 builder.Services.InstallService(builder.Configuration);
@@ -20,6 +30,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors("AllowSpecificOrigins");
 
 app.UseHttpsRedirection();
 

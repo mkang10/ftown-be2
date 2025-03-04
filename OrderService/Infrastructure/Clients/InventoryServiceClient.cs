@@ -21,7 +21,7 @@ namespace Infrastructure.Clients
             _httpClient = httpClient;
         }
 
-        public async Task<ProductVariant?> GetProductVariantByIdAsync(int productVariantId)
+        public async Task<ProductVariantResponse?> GetProductVariantByIdAsync(int productVariantId)
         {
             try
             {
@@ -36,10 +36,11 @@ namespace Infrastructure.Clients
                 }
 
                 // Deserialize thành ResponseDTO<ProductVariant> và trả về Data
-                var result = JsonSerializer.Deserialize<ResponseDTO<ProductVariant>>(responseData, new JsonSerializerOptions
+                var result = JsonSerializer.Deserialize<ResponseDTO<ProductVariantResponse>>(responseData, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
+
 
                 return result?.Data;
             }
@@ -85,7 +86,7 @@ namespace Infrastructure.Clients
             try
             {
                 // Gọi endpoint GET api/inventory/stock?storeId={storeId}&variantId={variantId}
-                var response = await _httpClient.GetAsync($"api/inventory/stock?storeId={storeId}&variantId={variantId}");
+                var response = await _httpClient.GetAsync($"inventory/stock?storeId={storeId}&variantId={variantId}");
                 if (!response.IsSuccessStatusCode)
                 {
                     Console.WriteLine($"[ERROR] Không thể lấy tồn kho: {response.StatusCode}");
@@ -126,7 +127,7 @@ namespace Infrastructure.Clients
                         Quantity = od.Quantity
                     }).ToList()
                 };
-
+                Console.WriteLine($"[DEBUG] Payload gửi đi: {JsonSerializer.Serialize(stockUpdateRequest)}");
                 // Gửi request đến InventoryService
                 var response = await _httpClient.PostAsJsonAsync("stores/update-after-order", stockUpdateRequest);
 
