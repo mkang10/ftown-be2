@@ -51,7 +51,7 @@ namespace Infrastructure
                 description: $"Thanh toán đơn hàng {orderId}",
                 items: items,
                 cancelUrl: "http://localhost:7266/api/payment/cancel",
-                returnUrl: $"http://localhost:3000/order-confirmation?orderId={orderId}"
+                returnUrl: $"http://localhost:3000/profile/order"
             );
 
             var createPayment = await _payOS.createPaymentLink(paymentData);
