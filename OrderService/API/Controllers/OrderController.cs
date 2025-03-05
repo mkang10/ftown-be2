@@ -64,11 +64,14 @@ namespace API.Controllers
             return Ok(new ResponseDTO<List<OrderHistoryResponse>>(history, true, "Lịch sử đơn hàng được lấy thành công."));
         }
         [HttpGet]
-        public async Task<ActionResult<ResponseDTO<List<OrderResponse>>>> GetOrdersByStatus([FromQuery] string status)
+        public async Task<ActionResult<ResponseDTO<List<OrderResponse>>>> GetOrdersByStatus(
+                [FromQuery] string status,
+                [FromQuery] int? accountId = null) 
         {
-            var orders = await _getOrdersByStatusHandler.HandleAsync(status);
-            return Ok(new ResponseDTO<List<OrderResponse>>(orders, true, $"Danh sách đơn hàng với trạng thái {status} được lấy thành công."));
+            var orders = await _getOrdersByStatusHandler.HandleAsync(status, accountId);
+            return Ok(new ResponseDTO<List<OrderResponse>>(orders, true, $"Danh sách đơn hàng với trạng thái {status} {(accountId.HasValue ? $"và accountId {accountId}" : "")} được lấy thành công."));
         }
+
         [HttpGet("{orderId}/details")]
         public async Task<IActionResult> GetOrderDetails(int orderId)
         {
