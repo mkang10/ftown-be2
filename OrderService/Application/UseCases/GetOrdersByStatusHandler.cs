@@ -23,9 +23,9 @@ namespace Application.UseCases
             _inventoryServiceClient = inventoryServiceClient;
         }
 
-        public async Task<List<OrderResponse>> HandleAsync(string status)
+        public async Task<List<OrderResponse>> HandleAsync(string status, int? accountId)
         {
-            var orders = await _orderRepository.GetOrdersByStatusAsync(status);
+            var orders = await _orderRepository.GetOrdersByStatusAsync(status, accountId);
             var orderResponses = _mapper.Map<List<OrderResponse>>(orders);
 
             // Enrich từng order item với thông tin chi tiết từ ProductVariant thông qua InventoryServiceClient
@@ -39,6 +39,7 @@ namespace Application.UseCases
                         item.ProductName = variantDetails.ProductName;
                         item.Color = variantDetails.Color;
                         item.Size = variantDetails.Size;
+                        item.ImageUrl = variantDetails.ImagePath;
                     }
                 }
             }
@@ -46,6 +47,5 @@ namespace Application.UseCases
             return orderResponses;
         }
     }
-
 
 }
