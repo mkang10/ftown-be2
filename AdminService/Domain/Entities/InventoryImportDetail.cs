@@ -15,5 +15,7 @@ public partial class InventoryImportDetail
 
     public virtual InventoryImport Import { get; set; } = null!;
 
+    public virtual ICollection<InventoryImportStoreDetail> InventoryImportStoreDetails { get; set; } = new List<InventoryImportStoreDetail>();
+
     public virtual ProductVariant ProductVariant { get; set; } = null!;
 }

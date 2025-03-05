@@ -5,6 +5,7 @@ using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Nest;
 
 namespace API.AppStarts
 {
@@ -25,14 +26,20 @@ namespace API.AppStarts
 
             // use DI here
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            // Repository
+            services.AddSingleton<ElasticsearchService>();
+            services.AddSingleton<IRedisCacheService, RedisCacheService>();
+            services.AddSingleton<IElasticClient>(sp =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var settings = new ConnectionSettings(new Uri(configuration["Elasticsearch:Url"]))
+                    .BasicAuthentication(configuration["Elasticsearch:Username"], configuration["Elasticsearch:Password"]) // ✅ Đăng nhập tự động
+                    .DisableDirectStreaming();  // ✅ Bật log để debug nếu có lỗi
 
-            services.AddScoped<IProductRepository, ProductRepository>();
-            services.AddScoped<IStoreRepository, StoreRepository>();
-            services.AddScoped<IStoreStockRepository, StoreStockRepository>();
+                return new ElasticClient(settings);
+            });
 
+       
 
-            // Handler
 
             services.AddScoped<GetAllProductsHandler>();
             services.AddScoped<GetProductDetailHandler>();
@@ -43,6 +50,26 @@ namespace API.AppStarts
             services.AddScoped<UpdateStoreHandler>();
             services.AddScoped<DeleteStoreHandler>();
             services.AddScoped<GetStoreStockByVariantHandler>();
+            services.AddScoped<ProductSyncService>();
+            services.AddScoped<UpdateStockAfterOrderHandler>();
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowLocalhost",
+                    builder => builder.WithOrigins("http://localhost:3000")
+                                      .AllowAnyMethod()
+                                      .AllowAnyHeader());
+            });
+
+            // Repository
+
+            services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<IStoreRepository, StoreRepository>();
+            services.AddScoped<IStoreStockRepository, StoreStockRepository>();
+
+
+
+
 
 
 

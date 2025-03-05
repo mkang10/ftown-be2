@@ -1,7 +1,12 @@
-﻿using Application.DTO.Response;
+﻿using Application.DTO.Request;
+using Application.DTO.Response;
 using Application.UseCases;
+using Domain.Entities;
+using Domain.Interfaces;
+using Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Nest;
 
 namespace API.Controllers
 {
@@ -12,36 +17,89 @@ namespace API.Controllers
         private readonly GetAllProductsHandler _getAllProductsHandler;
         private readonly GetProductDetailHandler _getProductDetailHandler;
         private readonly GetProductVariantByIdHandler _getProductVariantByIdHandler;
-        public ProductController(GetAllProductsHandler getAllProductsHandler, GetProductDetailHandler getProductDetailHandler, GetProductVariantByIdHandler getProductVariantByIdHandler)
+        private readonly ElasticsearchService _elasticsearchService;
+        public ProductController(
+            GetAllProductsHandler getAllProductsHandler,
+            GetProductDetailHandler getProductDetailHandler,
+            GetProductVariantByIdHandler getProductVariantByIdHandler,
+       
+            ElasticsearchService elasticsearchService)
         {
             _getAllProductsHandler = getAllProductsHandler;
             _getProductDetailHandler = getProductDetailHandler;
             _getProductVariantByIdHandler = getProductVariantByIdHandler;
+            
+            _elasticsearchService = elasticsearchService;
         }
 
         [HttpGet("view-all")]
-        public async Task<ActionResult<List<ProductListResponse>>> GetAllProducts()
+        public async Task<ActionResult<ResponseDTO<List<ProductListResponse>>>> GetAllProducts([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var products = await _getAllProductsHandler.Handle();
-            return Ok(products);
+            var products = await _getAllProductsHandler.Handle(page, pageSize);
+
+            if (products == null || !products.Any())
+                return NotFound(new ResponseDTO<List<ProductListResponse>>(null, false, "Không có sản phẩm nào được tìm thấy."));
+
+            return Ok(new ResponseDTO<List<ProductListResponse>>(products, true, "Lấy danh sách sản phẩm thành công!"));
         }
 
         [HttpGet("{productId}")]
-        public async Task<ActionResult<ProductDetailResponse>> GetProductDetail(int productId)
+        public async Task<ActionResult<ResponseDTO<ProductDetailResponse>>> GetProductDetail(int productId)
         {
             var product = await _getProductDetailHandler.Handle(productId);
-            if (product == null) return NotFound();
-            return Ok(product);
+
+            if (product == null)
+                return NotFound(new ResponseDTO<ProductDetailResponse>(null, false, "Không tìm thấy sản phẩm!"));
+
+            return Ok(new ResponseDTO<ProductDetailResponse>(product, true, "Lấy chi tiết sản phẩm thành công!"));
         }
+
+
         [HttpGet("variant/{variantId}")]
-        public async Task<ActionResult<ProductVariantResponse>> GetProductVariantById(int variantId)
+        public async Task<ActionResult<ResponseDTO<ProductVariantResponse>>> GetProductVariantById(int variantId)
         {
             var variant = await _getProductVariantByIdHandler.Handle(variantId);
 
             if (variant == null)
-                return NotFound("Không tìm thấy biến thể sản phẩm.");
+                return NotFound(new ResponseDTO<ProductVariantResponse>(null, false, "Không tìm thấy biến thể sản phẩm."));
 
-            return Ok(variant);
+            return Ok(new ResponseDTO<ProductVariantResponse>(variant, true, "Lấy biến thể sản phẩm thành công!"));
         }
+        //[HttpPut("variant/update")]
+        //public async Task<ActionResult<ResponseDTO<bool>>> UpdateProductVariant([FromBody] ProductVariantRequest request)
+        //{
+        //    var productVariant = _mapper.Map<ProductVariant>(request);
+
+        //    var result = await _updateProductVariantHandler.Handle(productVariant);
+
+        //    if (!result)
+        //        return BadRequest(new ResponseDTO<bool>(false, false, "Cập nhật biến thể sản phẩm thất bại."));
+
+        //    return Ok(new ResponseDTO<bool>(true, true, "Cập nhật biến thể sản phẩm thành công!"));
+        //}
+
+        //[HttpGet("search")]
+        //public async Task<ActionResult<List<ProductListResponse>>> SearchProducts([FromQuery] string query)
+        //{
+        //    if (string.IsNullOrEmpty(query))
+        //        return BadRequest("Query không được để trống.");
+
+        //    string cacheKey = $"search:{query}";
+
+        //    // Kiểm tra cache trước khi tìm kiếm trong Elasticsearch
+        //    var cachedResults = await _redisCacheService.GetCacheAsync<List<ProductListResponse>>(cacheKey);
+        //    if (cachedResults != null)
+        //        return Ok(cachedResults);
+
+        //    // Nếu không có cache, tìm kiếm trong Elasticsearch
+        //    var results = await _elasticsearchService.SearchProductsAsync(query);
+
+        //    // Lưu kết quả vào Redis với TTL 5 phút
+        //    await _redisCacheService.SetCacheAsync(cacheKey, results, TimeSpan.FromMinutes(5));
+
+        //    return Ok(results);
+        //}
+
     }
 }
+

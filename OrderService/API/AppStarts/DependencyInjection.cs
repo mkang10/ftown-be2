@@ -48,16 +48,21 @@ namespace API.AppStarts
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddSingleton<IRedisCacheService, RedisCacheService>();
             //Repository
 
             services.AddScoped<IOrderRepository, OrderRepository>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IShippingAddressRepository, ShippingAddressRepository>();
+            services.AddScoped<IOrderHistoryRepository, OrderHistoryRepository>();
             //Handler
 
             services.AddScoped<CreateOrderHandler>();
             services.AddScoped<ProcessPaymentHandler>();
             services.AddScoped<AutoSelectStoreHandler>();
+            services.AddScoped<GetShippingAddressHandler>();
+            services.AddScoped<GetOrderHistoryHandler>();
+            services.AddScoped<GetOrdersByStatusHandler>();
 
             
 

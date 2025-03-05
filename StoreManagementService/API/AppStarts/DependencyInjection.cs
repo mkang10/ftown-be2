@@ -1,5 +1,7 @@
 ﻿
 
+using Application.UseCases;
+using Domain.Interfaces;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,7 +26,11 @@ namespace API.AppStarts
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 
-            //services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<IInventoryImportRepos, InventoryImportRepository>();
+            services.AddScoped<InventoryImportHandler>();
+            services.AddScoped<GetInventoryImportHandler>();
+
+
 
 
 

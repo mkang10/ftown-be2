@@ -9,18 +9,36 @@ namespace API.AppStarts
     {
         public AutoMapperConfig()
         {
-            // Mapping từ Product -> ProductListResponse (Danh sách sản phẩm)
             CreateMap<Product, ProductListResponse>()
-                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : "Uncategorized"))
-                .ForMember(dest => dest.MinPrice, opt => opt.MapFrom(src => src.ProductVariants.Any() ? src.ProductVariants.Min(v => v.Price) : 0))
-                .ForMember(dest => dest.MaxPrice, opt => opt.MapFrom(src => src.ProductVariants.Any() ? src.ProductVariants.Max(v => v.Price) : 0))
-                .ForMember(dest => dest.Colors, opt => opt.MapFrom(src => src.ProductVariants.Select(v => v.Color).Distinct().ToList()));
+                .ForMember(dest => dest.CategoryName,
+                           opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : "Uncategorized"))
+                .ForMember(dest => dest.Price,
+                   opt => opt.MapFrom(src => src.ProductVariants.Any()
+                       ? src.ProductVariants.First().Price
+                       : 0))
+                .ForMember(dest => dest.Colors,
+                           opt => opt.MapFrom(src => src.ProductVariants.Select(v => v.Color).Distinct().ToList()))
+                .ForMember(dest => dest.ImagePath,
+               opt => opt.MapFrom(src => src.ProductImages
+                                          .Where(pi => pi.IsMain)
+                                          .Select(pi => pi.ImagePath)
+                                          .FirstOrDefault()));
 
             // Mapping từ Product -> ProductDetailResponse (Chi tiết sản phẩm)
             CreateMap<Product, ProductDetailResponse>()
-                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : "Uncategorized"))
-                .ForMember(dest => dest.Variants, opt => opt.MapFrom(src => src.ProductVariants));
-
+                 .ForMember(dest => dest.CategoryName,
+                            opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : "Uncategorized"))
+                 .ForMember(dest => dest.Variants,
+                            opt => opt.MapFrom(src => src.ProductVariants))
+                 .ForMember(dest => dest.ImagePath, // Ảnh chính
+                            opt => opt.MapFrom(src => src.ProductImages
+                                                       .Where(i => i.IsMain)
+                                                       .Select(i => i.ImagePath)
+                                                       .FirstOrDefault()))
+                 .ForMember(dest => dest.ImagePaths, // Danh sách ảnh
+                            opt => opt.MapFrom(src => src.ProductImages
+                                                       .Select(i => i.ImagePath)
+                                                       .ToList()));
             // Mapping từ ProductVariant -> ProductVariantResponse
             CreateMap<ProductVariant, ProductVariantResponse>()
             .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name));
@@ -29,6 +47,7 @@ namespace API.AppStarts
             CreateMap<StoreRequest, Store>()
                 .ForMember(dest => dest.StoreId, opt => opt.Ignore()) // Ignore vì StoreId do DB sinh
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore());
+            CreateMap<ProductVariantRequest, ProductVariant>().ReverseMap();
         }
     }
 }

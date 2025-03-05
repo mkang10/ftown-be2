@@ -16,6 +16,7 @@ namespace API.Controllers
         private readonly UpdateStoreHandler _updateStoreHandler;
         private readonly DeleteStoreHandler _deleteStoreHandler;
         private readonly GetStoreStockByVariantHandler _stockHandler;
+        private readonly UpdateStockAfterOrderHandler _updateStockHandler;
 
         public StoreController(
             GetAllStoresHandler getAllStoresHandler,
@@ -23,7 +24,8 @@ namespace API.Controllers
             CreateStoreHandler createStoreHandler,
             UpdateStoreHandler updateStoreHandler,
             DeleteStoreHandler deleteStoreHandler,
-            GetStoreStockByVariantHandler stockHandler)
+            GetStoreStockByVariantHandler stockHandler,
+            UpdateStockAfterOrderHandler updateStockHandler)
         {
             _getAllStoresHandler = getAllStoresHandler;
             _getStoreByIdHandler = getStoreByIdHandler;
@@ -31,63 +33,91 @@ namespace API.Controllers
             _updateStoreHandler = updateStoreHandler;
             _deleteStoreHandler = deleteStoreHandler;
             _stockHandler = stockHandler;
+            _updateStockHandler = updateStockHandler;
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<StoreResponse>>> GetAllStores()
+        public async Task<ActionResult<ResponseDTO<List<StoreResponse>>>> GetAllStores()
         {
-            var result = await _getAllStoresHandler.Handle();
-            return Ok(result);
+            var stores = await _getAllStoresHandler.Handle();
+            var response = new ResponseDTO<List<StoreResponse>>(stores, true, "Lấy danh sách cửa hàng thành công");
+            return Ok(response);
         }
 
         [HttpGet("{storeId}")]
-        public async Task<ActionResult<StoreResponse>> GetStoreById(int storeId)
+        public async Task<ActionResult<ResponseDTO<StoreResponse>>> GetStoreById(int storeId)
         {
             var store = await _getStoreByIdHandler.Handle(storeId);
-            if (store == null) return NotFound();
-            return Ok(store);
+            if (store == null)
+                return NotFound(new ResponseDTO<StoreResponse>(null, false, "Không tìm thấy cửa hàng"));
+
+            var response = new ResponseDTO<StoreResponse>(store, true, "Lấy thông tin cửa hàng thành công");
+            return Ok(response);
         }
 
         [HttpPost]
-        public async Task<ActionResult<StoreResponse>> CreateStore([FromBody] StoreRequest request)
+        public async Task<ActionResult<ResponseDTO<StoreResponse>>> CreateStore([FromBody] StoreRequest request)
         {
             var createdStore = await _createStoreHandler.Handle(request);
-            return CreatedAtAction(nameof(GetStoreById), new { storeId = createdStore.StoreId }, createdStore);
+            var response = new ResponseDTO<StoreResponse>(createdStore, true, "Tạo cửa hàng thành công");
+            return CreatedAtAction(nameof(GetStoreById), new { storeId = createdStore.StoreId }, response);
         }
 
         [HttpPut("{storeId}")]
-        public async Task<ActionResult<StoreResponse>> UpdateStore(int storeId, [FromBody] StoreRequest request)
+        public async Task<ActionResult<ResponseDTO<StoreResponse>>> UpdateStore(int storeId, [FromBody] StoreRequest request)
         {
             var updatedStore = await _updateStoreHandler.Handle(storeId, request);
-            if (updatedStore == null) return NotFound();
-            return Ok(updatedStore);
+            if (updatedStore == null)
+                return NotFound(new ResponseDTO<StoreResponse>(null, false, "Cửa hàng không tồn tại"));
+
+            var response = new ResponseDTO<StoreResponse>(updatedStore, true, "Cập nhật cửa hàng thành công");
+            return Ok(response);
         }
 
         [HttpDelete("{storeId}")]
-        public async Task<IActionResult> DeleteStore(int storeId)
+        public async Task<ActionResult<ResponseDTO<bool>>> DeleteStore(int storeId)
         {
             var success = await _deleteStoreHandler.Handle(storeId);
-            if (!success) return NotFound();
-            return NoContent();
+            if (!success)
+                return NotFound(new ResponseDTO<bool>(false, false, "Xóa cửa hàng thất bại hoặc không tồn tại"));
+
+            var response = new ResponseDTO<bool>(true, true, "Xóa cửa hàng thành công");
+            return Ok(response);
         }
+
         /// <summary>
         /// Lấy tổng tồn kho của một variant trên toàn hệ thống.
         /// </summary>
         [HttpGet("variant/{variantId}/total-stock")]
-        public async Task<IActionResult> GetTotalStock(int variantId)
+        public async Task<ActionResult<ResponseDTO<int>>> GetTotalStock(int variantId)
         {
             int totalStock = await _stockHandler.HandleTotalStockAsync(variantId);
-            return Ok(new { VariantId = variantId, TotalStock = totalStock });
+            var response = new ResponseDTO<int>(totalStock, true, "Lấy tổng tồn kho thành công");
+            return Ok(response);
         }
 
         /// <summary>
         /// Lấy phân rã tồn kho của một variant theo từng cửa hàng.
         /// </summary>
         [HttpGet("variant/{variantId}/stock-breakdown")]
-        public async Task<IActionResult> GetStockBreakdown(int variantId)
+        public async Task<ActionResult<ResponseDTO<object>>> GetStockBreakdown(int variantId)
         {
+            // Giả sử breakdown là một object, có thể thay thế bằng kiểu cụ thể nếu có
             var breakdown = await _stockHandler.HandleStockBreakdownAsync(variantId);
-            return Ok(breakdown);
+            var response = new ResponseDTO<object>(breakdown, true, "Lấy phân rã tồn kho thành công");
+            return Ok(response);
+        }
+        [HttpPost("update-after-order")]
+        public async Task<ActionResult<bool>> UpdateStockAfterOrder([FromBody] StockUpdateRequest request)
+        {
+            bool success = await _updateStockHandler.HandleAsync(request);
+
+            if (!success)
+            {
+                return BadRequest(false);
+            }
+
+            return Ok(true);
         }
     }
 }

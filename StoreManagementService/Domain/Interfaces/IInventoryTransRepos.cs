@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.DTO.Response
+namespace Domain.Interfaces
 {
-    internal class ExResponse
+    internal class IInventoryTransRepos
     {
     }
-}
+} 

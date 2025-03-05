@@ -9,17 +9,20 @@ namespace Domain.Interfaces
 {
     public interface ICartRepository
     {
-        Task<List<CartItem>> GetCartAsync(int accountId);
-        Task<List<CartItem>> GetCartFromDatabase(int accountId);
-        Task UpdateCartAsync(int accountId, List<CartItem> cart);
+        // Lấy giỏ hàng từ Database cho account
+        Task<List<CartItem>> GetCartFromDatabaseAsync(int accountId);
 
+        // Thêm sản phẩm vào giỏ hàng (DB)
         Task AddToCartAsync(int accountId, CartItem cartItem);
+
+        // Xóa một sản phẩm khỏi giỏ hàng (DB)
         Task RemoveFromCartAsync(int accountId, int productVariantId);
-        Task ClearCartAsync(int accountId);
+
+        // Đồng bộ giỏ hàng (ví dụ: từ cache) sang Database
         Task SyncCartToDatabase(int accountId, List<CartItem> cartItems);
-        //Task ClearRedisCache();
+
+        // Xóa toàn bộ giỏ hàng trong Database
         Task ClearCartInDatabase(int accountId);
-
-
     }
+
 }

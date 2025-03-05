@@ -25,5 +25,7 @@ public partial class StaffDetail
 
     public virtual Account Account { get; set; } = null!;
 
+    public virtual ICollection<InventoryImportStoreDetail> InventoryImportStoreDetails { get; set; } = new List<InventoryImportStoreDetail>();
+
     public virtual Store Store { get; set; } = null!;
 }

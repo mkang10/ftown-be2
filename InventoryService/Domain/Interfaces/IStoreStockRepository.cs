@@ -12,5 +12,6 @@ namespace Domain.Interfaces
         Task<int> GetStockQuantityAsync(int storeId, int variantId);
         Task<int> GetTotalStockByVariantAsync(int variantId);
         Task<List<StoreStock>> GetStoreStocksByVariantAsync(int variantId);
+        Task<bool> UpdateStockAfterOrderAsync(int storeId, List<(int VariantId, int Quantity)> stockUpdates);
     }
 }

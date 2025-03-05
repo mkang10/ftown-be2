@@ -29,7 +29,8 @@ namespace API.AppStarts
             services.AddScoped<EditProfileHandler>();
             services.AddScoped<GetCustomerProfileHandler>();
             services.AddScoped<ICartRepository, CartRepository>();  
-            services.AddScoped<CartHandler>();
+            services.AddScoped<GetShoppingCartHandler>();
+            services.AddSingleton<IRedisCacheService, RedisCacheService>();
 
             //services.AddScoped<IOrderRepository, OrderRepository>();
 

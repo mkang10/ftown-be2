@@ -15,179 +15,132 @@ namespace Infrastructure
 {
     public class CartRepository : ICartRepository
     {
-        private readonly IDistributedCache _cache;
-        private readonly FtownContext _dbContext;
-        private readonly string CART_PREFIX = "cart:";
-        private readonly IConnectionMultiplexer _redis;
-        public CartRepository(IDistributedCache cache, FtownContext dbContext, IConnectionMultiplexer redis)
+        private readonly FtownContext _context;
+
+        public CartRepository(FtownContext context)
         {
-            _cache = cache;
-            _dbContext = dbContext;
-            _redis = redis;
+            _context = context;
         }
 
-        private string GetCartKey(int accountId) => $"{CART_PREFIX}{accountId}";
-        public async Task<List<CartItem>> GetCartFromDatabase(int accountId)
+        // Lấy giỏ hàng từ DB dựa trên AccountId
+        public async Task<List<CartItem>> GetCartFromDatabaseAsync(int accountId)
         {
-            var shoppingCart = await _dbContext.ShoppingCarts
+            return await _context.CartItems
+                .Where(c => c.Cart.AccountId == accountId)
+                .ToListAsync();
+        }
+
+        // Thêm sản phẩm vào giỏ hàng (DB)
+        public async Task AddToCartAsync(int accountId, CartItem cartItem)
+        {
+            // Tìm ShoppingCart của account (nếu chưa có, tạo mới)
+            var shoppingCart = await _context.ShoppingCarts
                 .Include(c => c.CartItems)
                 .FirstOrDefaultAsync(c => c.AccountId == accountId);
 
-            if (shoppingCart == null)
-            {
-                return new List<CartItem>(); // Trả về danh sách rỗng nếu giỏ hàng không tồn tại
-            }
-
-            return shoppingCart.CartItems.ToList();
-        }
-
-        public async Task<List<CartItem>> GetCartAsync(int accountId)
-        {
-            var cartData = await _cache.GetStringAsync(GetCartKey(accountId));
-            return cartData != null
-            ? System.Text.Json.JsonSerializer.Deserialize<List<CartItem>>(cartData, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            })
-            : new List<CartItem>();
-        }
-
-        public async Task SyncCartToDatabase(int accountId, List<CartItem> cartItems)
-        {
-            // Kiểm tra xem ShoppingCart đã tồn tại chưa
-            var shoppingCart = await _dbContext.ShoppingCarts
-                .FirstOrDefaultAsync(c => c.AccountId == accountId);
-
-            // Nếu ShoppingCart chưa tồn tại, tạo mới
             if (shoppingCart == null)
             {
                 shoppingCart = new ShoppingCart
                 {
                     AccountId = accountId,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTime.UtcNow,
+                    CartItems = new List<CartItem>()
                 };
-
-                _dbContext.ShoppingCarts.Add(shoppingCart);
-                await _dbContext.SaveChangesAsync(); // Lưu ngay để có CartId hợp lệ
+                _context.ShoppingCarts.Add(shoppingCart);
             }
 
-            // Xóa giỏ hàng cũ trong DB để tránh trùng lặp
-            var existingCartItems = _dbContext.CartItems
-                .Where(c => c.CartId == shoppingCart.CartId);
-            _dbContext.CartItems.RemoveRange(existingCartItems);
-            await _dbContext.SaveChangesAsync();
-
-            // Thêm giỏ hàng từ Redis vào Database
-            foreach (var item in cartItems)
-            {
-                _dbContext.CartItems.Add(new CartItem
-                {
-                    CartId = shoppingCart.CartId, // Sử dụng CartId hợp lệ
-                    ProductVariantId = item.ProductVariantId,
-                    Quantity = item.Quantity
-                });
-            }
-
-            await _dbContext.SaveChangesAsync();
-
-            // Xóa giỏ hàng trên Redis sau khi đồng bộ
-            await ClearCartAsync(accountId);
-        }
-        public async Task AddToCartAsync(int accountId, CartItem cartItem)
-        {
-            var cart = await GetCartAsync(accountId);
-            var existingItem = cart.Find(c => c.ProductVariantId == cartItem.ProductVariantId);
+            // Kiểm tra sản phẩm đã có trong giỏ hàng chưa
+            var existingItem = shoppingCart.CartItems
+                .FirstOrDefault(c => c.ProductVariantId == cartItem.ProductVariantId);
 
             if (existingItem != null)
             {
                 existingItem.Quantity += cartItem.Quantity;
+                _context.CartItems.Update(existingItem);
             }
             else
             {
-                cart.Add(cartItem);
+                // Gán CartId hợp lệ cho cartItem
+                cartItem.CartId = shoppingCart.CartId;
+                shoppingCart.CartItems.Add(cartItem);
             }
 
-            await UpdateCartAsync(accountId, cart);
+            await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateCartAsync(int accountId, List<CartItem> cart)
-        {
-            if (cart == null || !cart.Any())
-            {
-                // Nếu giỏ hàng trống, xóa key khỏi Redis để tránh dữ liệu dư thừa
-                await _cache.RemoveAsync(GetCartKey(accountId));
-                return;
-            }
-
-            var jsonSettings = new JsonSerializerSettings
-            {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-            };
-
-            var cartData = JsonConvert.SerializeObject(cart, jsonSettings);
-            await _cache.SetStringAsync(GetCartKey(accountId), cartData, new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1) // Giữ giỏ hàng trong Redis 1 giờ
-            });
-        }
-
+        // Xóa một sản phẩm khỏi giỏ hàng (DB)
         public async Task RemoveFromCartAsync(int accountId, int productVariantId)
         {
-            // 1️⃣ Lấy giỏ hàng từ Redis
-            var cart = await GetCartAsync(accountId);
-            if (cart == null || !cart.Any()) return;
+            var shoppingCart = await _context.ShoppingCarts
+                .Include(c => c.CartItems)
+                .FirstOrDefaultAsync(c => c.AccountId == accountId);
 
-            // 2️⃣ Tìm sản phẩm trong giỏ hàng
-            var cartItem = cart.FirstOrDefault(c => c.ProductVariantId == productVariantId);
+            if (shoppingCart == null) return;
 
-            if (cartItem != null)
+            var cartItem = shoppingCart.CartItems
+                .FirstOrDefault(c => c.ProductVariantId == productVariantId);
+
+            if (cartItem == null) return;
+
+            if (cartItem.Quantity > 1)
             {
-                if (cartItem.Quantity > 1)
-                {
-                    // 🔹 Nếu số lượng > 1, giảm số lượng
-                    cartItem.Quantity--;
-                }
-                else
-                {
-                    // 🔹 Nếu số lượng = 1, xóa khỏi giỏ hàng
-                    cart.Remove(cartItem);
-                }
-
-                if (cart.Any())
-                {
-                    // 3️⃣ Nếu còn sản phẩm, cập nhật lại giỏ hàng trên Redis
-                    await UpdateCartAsync(accountId, cart);
-                }
-                else
-                {
-                    // 4️⃣ Nếu giỏ hàng trống, xóa Redis và cập nhật database
-                    await _cache.RemoveAsync(GetCartKey(accountId));
-                    await ClearCartInDatabase(accountId);
-                }
+                cartItem.Quantity--;
+                _context.CartItems.Update(cartItem);
             }
+            else
+            {
+                _context.CartItems.Remove(cartItem);
+            }
+
+            await _context.SaveChangesAsync();
         }
 
-
-        public async Task ClearCartAsync(int accountId)
+        // Đồng bộ giỏ hàng từ cache sang DB
+        public async Task SyncCartToDatabase(int accountId, List<CartItem> cartItems)
         {
-            var cacheKey = GetCartKey(accountId);
-            await _cache.RemoveAsync(cacheKey);
+            // Tìm hoặc tạo ShoppingCart cho account
+            var shoppingCart = await _context.ShoppingCarts
+                .Include(c => c.CartItems)
+                .FirstOrDefaultAsync(c => c.AccountId == accountId);
+
+            if (shoppingCart == null)
+            {
+                shoppingCart = new ShoppingCart
+                {
+                    AccountId = accountId,
+                    CreatedDate = DateTime.UtcNow,
+                    CartItems = new List<CartItem>()
+                };
+                _context.ShoppingCarts.Add(shoppingCart);
+                await _context.SaveChangesAsync(); // Lưu để có CartId hợp lệ
+            }
+
+            // Xóa các mục cũ trong giỏ hàng DB để tránh trùng lặp
+            _context.CartItems.RemoveRange(shoppingCart.CartItems);
+            await _context.SaveChangesAsync();
+
+            // Thêm giỏ hàng mới từ cache
+            foreach (var item in cartItems)
+            {
+                item.CartId = shoppingCart.CartId;
+                _context.CartItems.Add(item);
+            }
+            await _context.SaveChangesAsync();
         }
 
+        // Xóa toàn bộ giỏ hàng trong DB
         public async Task ClearCartInDatabase(int accountId)
         {
-            var shoppingCart = await _dbContext.ShoppingCarts
+            var shoppingCart = await _context.ShoppingCarts
                 .Include(c => c.CartItems)
                 .FirstOrDefaultAsync(c => c.AccountId == accountId);
 
             if (shoppingCart != null)
             {
-                _dbContext.CartItems.RemoveRange(shoppingCart.CartItems);
-                _dbContext.ShoppingCarts.Remove(shoppingCart);
-                await _dbContext.SaveChangesAsync();
+                _context.CartItems.RemoveRange(shoppingCart.CartItems);
+                _context.ShoppingCarts.Remove(shoppingCart);
+                await _context.SaveChangesAsync();
             }
         }
-
     }
-
 }
