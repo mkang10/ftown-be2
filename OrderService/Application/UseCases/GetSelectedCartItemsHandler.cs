@@ -44,6 +44,7 @@ namespace Application.UseCases
                 {
                     ProductVariantId = cartItem.ProductVariantId,
                     ProductName = productVariant.ProductName,
+                    ImageUrl = productVariant.ImagePath,
                     Size =productVariant.Size,
                     Color = productVariant.Color,
                     Quantity = cartItem.Quantity, // ✅ Tự động lấy số lượng từ giỏ hàng
