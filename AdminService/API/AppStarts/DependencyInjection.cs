@@ -1,5 +1,7 @@
 ﻿
 
+using Application.UseCases;
+using Domain.Interfaces;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,6 +27,10 @@ namespace API.AppStarts
 
 
             //services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<IInventoryImportRepository, InventoryImportRepository>();
+            services.AddScoped<ApproveHandler>();
+            services.AddScoped<RejectHandler>();
+            services.AddScoped<GetAllPendingHandler>();
 
 
 

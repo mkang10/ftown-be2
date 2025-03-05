@@ -27,5 +27,22 @@ namespace Infrastructure.Repositories
             await _context.Accounts.AddAsync(acc);
             await _context.SaveChangesAsync();
         }
+
+        public async Task AddStaffAsync(StaffDetail staff)
+        {
+            await _context.StaffDetails.AddAsync(staff);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task AddShopmanagerAsync(ShopManagerDetail shopManager)
+        {
+            await _context.ShopManagerDetails.AddAsync(shopManager);
+            await _context.SaveChangesAsync();
+        }
+        public async Task AddCustomerAsync(CustomerDetail cus)
+        {
+            await _context.CustomerDetails.AddAsync(cus);
+            await _context.SaveChangesAsync();
+        }
     }
 }

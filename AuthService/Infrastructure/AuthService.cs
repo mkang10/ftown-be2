@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using Domain.DTO.Response;
 using Domain.DTO.Request;
+using System.Linq;
 
 namespace Infrastructure.Services
 {
@@ -72,16 +73,34 @@ namespace Infrastructure.Services
             if (existingUser != null)
                 return new TokenResponse { Token = null };
 
+            // Tạo tài khoản mới
             var account = new Account
             {
                 FullName = registerDTO.Username,
                 PasswordHash = HashPassword(registerDTO.Password),
                 Email = registerDTO.Email,
-                RoleId = registerDTO.RoleId
+                RoleId = 1,
+                // Các trường khác nếu có
             };
 
+            // Thêm tài khoản vào database
             await _accountRepos.AddUserAsync(account);
 
+           
+            var customerDetail = new CustomerDetail
+            {
+                AccountId = account.AccountId,
+                        LoyaltyPoints = 0,                       // Mặc định là 0 điểm
+                        MembershipLevel = "Basic",               // Mức thành viên mặc định
+                        DateOfBirth = null,
+                        Gender = null,
+                        CustomerType = null,
+                        PreferredPaymentMethod = null
+                    };
+                    await _accountRepos.AddCustomerAsync(customerDetail);
+                    
+
+            // Tạo JWT token cho tài khoản mới
             string token = GenerateJwtToken(account.FullName, "user", account.AccountId, account.Email);
 
             return new TokenResponse { Token = token };

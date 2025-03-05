@@ -17,7 +17,7 @@ public partial class InventoryImportHistory
 
     public string? Comments { get; set; }
 
-    public virtual Account? ChangedByNavigation { get; set; } = null!;
+    public virtual Account ChangedByNavigation { get; set; } = null!;
 
     public virtual InventoryImport Import { get; set; } = null!;
 }

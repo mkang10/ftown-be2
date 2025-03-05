@@ -14,5 +14,7 @@ namespace Domain.Interfaces
         Task<List<InventoryImport>> GetAllAsync(int createdby);
 
 
+
+
     }
 }

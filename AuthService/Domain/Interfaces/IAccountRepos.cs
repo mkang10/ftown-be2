@@ -7,5 +7,12 @@ namespace Application.Interfaces
     {
         Task<Account> GetUserByUsernameAsync(string username);
         Task AddUserAsync(Account user);
+
+        Task AddStaffAsync(StaffDetail staff);
+
+        Task AddShopmanagerAsync(ShopManagerDetail shopManager);
+
+        Task AddCustomerAsync(CustomerDetail cus);
+
     }
 }
