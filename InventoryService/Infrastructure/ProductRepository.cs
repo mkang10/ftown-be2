@@ -65,6 +65,27 @@ namespace Infrastructure
                 .Take(pageSize)
                 .ToListAsync();
         }
+
+        public async Task<List<ProductVariant>> GetProductVariantsByIdsAsync(List<int> variantIds)
+        {
+            return await _context.ProductVariants
+                .Include(pv => pv.Product) // Lấy thông tin Product cha
+                .Where(pv => variantIds.Contains(pv.VariantId))
+                .ToListAsync();
+        }
+
+        // 🔥 Cập nhật truy vấn lấy tồn kho từ StoreStock
+        public async Task<Dictionary<int, int>> GetProductVariantsStockAsync(List<int> variantIds)
+        {
+            return await _context.StoreStocks
+                .Where(ss => variantIds.Contains(ss.VariantId)) // Chỉ lấy các VariantId được yêu cầu
+                .GroupBy(ss => ss.VariantId) // Gom nhóm theo VariantId
+                .Select(g => new { VariantId = g.Key, StockQuantity = g.Sum(ss => ss.StockQuantity) }) // Tổng tồn kho
+                .ToDictionaryAsync(x => x.VariantId, x => x.StockQuantity);
+        }
+
+
+
         //public async Task AddProduct(Product product)
         //{
         //    _context.Products.Add(product);

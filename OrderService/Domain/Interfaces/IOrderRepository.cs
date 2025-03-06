@@ -17,5 +17,6 @@ namespace Domain.Interfaces
         Task SaveOrderDetailsAsync(List<OrderDetail> orderDetails);
         Task<List<Order>> GetOrdersByStatusAsync(string status, int? accountId);
         Task<Order?> GetOrderByIdAsync(long orderId);
+        Task<Order> GetOrderItemsWithOrderIdAsync(int orderId);
     }
 }
