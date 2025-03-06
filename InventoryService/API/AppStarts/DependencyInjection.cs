@@ -52,6 +52,7 @@ namespace API.AppStarts
             services.AddScoped<GetStoreStockByVariantHandler>();
             services.AddScoped<ProductSyncService>();
             services.AddScoped<UpdateStockAfterOrderHandler>();
+            services.AddScoped<GetAllProductVariantsByIdsHandler>();
 
             services.AddCors(options =>
             {

@@ -30,7 +30,7 @@ namespace API.AppStarts
             CreateMap<OrderHistory, OrderHistoryResponse>()
             .ForMember(dest => dest.ChangedByUser, opt => opt.MapFrom(src => src.ChangedByNavigation.Email)) // Lấy email của người thay đổi
             .ForMember(dest => dest.ChangedDate, opt => opt.MapFrom(src => src.ChangedDate ?? DateTime.UtcNow));
-            CreateMap<OrderDetail, OrderDetailResponse>();
+            
         }
     }
 }

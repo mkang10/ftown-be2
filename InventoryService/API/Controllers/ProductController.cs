@@ -17,18 +17,20 @@ namespace API.Controllers
         private readonly GetAllProductsHandler _getAllProductsHandler;
         private readonly GetProductDetailHandler _getProductDetailHandler;
         private readonly GetProductVariantByIdHandler _getProductVariantByIdHandler;
+        private readonly GetAllProductVariantsByIdsHandler _getAllProductVariantsByIdsHandler;
         private readonly ElasticsearchService _elasticsearchService;
         public ProductController(
             GetAllProductsHandler getAllProductsHandler,
             GetProductDetailHandler getProductDetailHandler,
             GetProductVariantByIdHandler getProductVariantByIdHandler,
+            GetAllProductVariantsByIdsHandler getAllProductVariantsByIdsHandler,
        
             ElasticsearchService elasticsearchService)
         {
             _getAllProductsHandler = getAllProductsHandler;
             _getProductDetailHandler = getProductDetailHandler;
             _getProductVariantByIdHandler = getProductVariantByIdHandler;
-            
+            _getAllProductVariantsByIdsHandler = getAllProductVariantsByIdsHandler;
             _elasticsearchService = elasticsearchService;
         }
 
@@ -65,6 +67,20 @@ namespace API.Controllers
 
             return Ok(new ResponseDTO<ProductVariantResponse>(variant, true, "Lấy biến thể sản phẩm thành công!"));
         }
+
+        [HttpPost("variants/details")]
+        public async Task<ActionResult<ResponseDTO<List<ProductVariantResponse>>>> GetAllProductVariantsByIdsAsync([FromBody] List<int> variantIds)
+        {
+            var variants = await _getAllProductVariantsByIdsHandler.Handle(variantIds);
+
+            if (variants == null || variants.Count == 0)
+                return NotFound(new ResponseDTO<List<ProductVariantResponse>>(null, false, "Không tìm thấy biến thể sản phẩm nào."));
+
+            return Ok(new ResponseDTO<List<ProductVariantResponse>>(variants, true, "Lấy danh sách biến thể sản phẩm thành công!"));
+        }
+
+
+
         //[HttpPut("variant/update")]
         //public async Task<ActionResult<ResponseDTO<bool>>> UpdateProductVariant([FromBody] ProductVariantRequest request)
         //{
