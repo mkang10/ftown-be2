@@ -1,6 +1,10 @@
 ﻿
 
+using Application.Interfaces;
+using Application.UseCases;
+using Domain.Interfaces;
 using Infrastructure;
+using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.AppStarts
@@ -25,7 +29,12 @@ namespace API.AppStarts
 
 
             //services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<ICommentRepository, CommentRepository>();
 
+            // ===========================================================
+            services.AddScoped<ICommentService, FeedbackHandler>();
+
+            services.AddScoped<IReplyFeedbackService, ReplyHandler>();
 
 
             // auto mapper

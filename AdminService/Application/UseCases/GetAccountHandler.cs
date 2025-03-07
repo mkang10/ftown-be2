@@ -18,16 +18,13 @@ namespace Application.UseCases
 {
     public class GetAccountHandler : IUserManagementService
     {
-        private readonly ElasticClient _client;
         private readonly IConnectionMultiplexer _redis;
         private readonly IUserManagementRepository _userManagementRepository;
         private const string CacheKey = "UserAccounts";
         private readonly IMapper _mapper;
 
-        public GetAccountHandler(ElasticClient client, IConnectionMultiplexer redis, 
-            IUserManagementRepository userManagementRepository, IMapper mapper)
+        public GetAccountHandler(IConnectionMultiplexer redis, IUserManagementRepository userManagementRepository, IMapper mapper)
         {
-            _client = client;
             _redis = redis;
             _userManagementRepository = userManagementRepository;
             _mapper = mapper;
@@ -167,7 +164,7 @@ namespace Application.UseCases
                     trips.TotalCount,
                     trips.CurrentPage,
                     trips.PageSize);
-                await db.StringSetAsync(cacheKey, JsonConvert.SerializeObject(paginationResult), TimeSpan.FromMinutes(5)); 
+                await db.StringSetAsync(cacheKey, JsonConvert.SerializeObject(paginationResult), TimeSpan.FromMinutes(300)); 
 
                 return paginationResult;
             }
@@ -199,7 +196,7 @@ namespace Application.UseCases
                 var paginationParameter = new PaginationParameter();
                 // call and wite new cache to redis
                 var updatedUsers = await _userManagementRepository.GetAllUser(paginationParameter);
-                await db.StringSetAsync("UserAccounts", JsonConvert.SerializeObject(updatedUsers), TimeSpan.FromMinutes(5));
+                await db.StringSetAsync("UserAccounts", JsonConvert.SerializeObject(updatedUsers), TimeSpan.FromMinutes(300));
 
                 return true;
             }
