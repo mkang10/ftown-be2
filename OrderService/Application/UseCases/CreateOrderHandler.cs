@@ -148,7 +148,7 @@ namespace Application.UseCases
                 newOrder.ShippingCost = shippingCost;
                 newOrder.ShippingAddressId = shippingAddress.AddressId;
                 // Thiết lập trạng thái ban đầu tùy theo phương thức thanh toán (sẽ cập nhật sau)
-                newOrder.Status = request.PaymentMethod == "PAYOS" ? "Pending Payment" : "Confirmed";
+                newOrder.Status = request.PaymentMethod == "PAYOS" ? "Pending Payment" : "Pending Confirmed";
                 newOrder.StoreId = storeId;
 
                 // Lưu Order (chưa commit)
@@ -202,6 +202,15 @@ namespace Application.UseCases
                 }
                 else if (request.PaymentMethod == "COD")
                 {
+                    var payment = new Payment
+                    {
+                        OrderId = newOrder.OrderId,
+                        PaymentMethod = request.PaymentMethod,
+                        PaymentStatus = "Pending",
+                        Amount = totalAmount + shippingCost,
+                        TransactionDate = DateTime.UtcNow
+                    };
+                    await _paymentRepository.SavePaymentAsync(payment);
                     // Lưu OrderDetails
                     await _orderRepository.SaveOrderDetailsAsync(orderDetails);
                     newOrder.OrderDetails = orderDetails;
@@ -223,7 +232,7 @@ namespace Application.UseCases
                     }
 
                     // Ghi lại lịch sử đơn hàng
-                    await AddOrderHistory(newOrder.OrderId, "Confirmed", request.AccountId, "Đơn hàng đã được xác nhận.");
+                    await AddOrderHistory(newOrder.OrderId, "Pending Confirmed", request.AccountId, "Đơn hàng đã được xác nhận.");
                     await _unitOfWork.CommitAsync();
 
                     var orderResponse = _mapper.Map<OrderResponse>(newOrder);

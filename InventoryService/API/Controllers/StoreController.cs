@@ -17,6 +17,7 @@ namespace API.Controllers
         private readonly DeleteStoreHandler _deleteStoreHandler;
         private readonly GetStoreStockByVariantHandler _stockHandler;
         private readonly UpdateStockAfterOrderHandler _updateStockHandler;
+        private readonly GetStockQuantityHandler _getStockQuantityHandler;
 
         public StoreController(
             GetAllStoresHandler getAllStoresHandler,
@@ -25,6 +26,7 @@ namespace API.Controllers
             UpdateStoreHandler updateStoreHandler,
             DeleteStoreHandler deleteStoreHandler,
             GetStoreStockByVariantHandler stockHandler,
+            GetStockQuantityHandler getStockQuantityHandler,
             UpdateStockAfterOrderHandler updateStockHandler)
         {
             _getAllStoresHandler = getAllStoresHandler;
@@ -33,6 +35,7 @@ namespace API.Controllers
             _updateStoreHandler = updateStoreHandler;
             _deleteStoreHandler = deleteStoreHandler;
             _stockHandler = stockHandler;
+            _getStockQuantityHandler = getStockQuantityHandler;
             _updateStockHandler = updateStockHandler;
         }
 
@@ -106,6 +109,22 @@ namespace API.Controllers
             var breakdown = await _stockHandler.HandleStockBreakdownAsync(variantId);
             var response = new ResponseDTO<object>(breakdown, true, "Lấy phân rã tồn kho thành công");
             return Ok(response);
+        }
+        [HttpGet("{storeId}/stock/{productVariantId}")]
+        public async Task<IActionResult> GetStockQuantity(int storeId, int productVariantId)
+        {
+            var result = await _getStockQuantityHandler.HandleAsync(storeId, productVariantId);
+
+            var response = new ResponseDTO<StockQuantityResponse>(
+                result,
+                result != null,
+                result != null ? "Lấy số lượng tồn kho thành công." : "Không tìm thấy dữ liệu tồn kho."
+            );
+
+            if (result == null)
+                return NotFound(response); // 404 Not Found nếu không có dữ liệu.
+
+            return Ok(response); // 200 OK nếu có dữ liệu.
         }
         [HttpPost("update-after-order")]
         public async Task<ActionResult<bool>> UpdateStockAfterOrder([FromBody] StockUpdateRequest request)

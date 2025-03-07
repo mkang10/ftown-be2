@@ -15,7 +15,8 @@ namespace Domain.Interfaces
         Task UpdateOrderAsync(Order order);  // ✅ Cập nhật trạng thái đơn hàng
         Task<Order?> GetOrderWithDetailsAsync(int orderId); // ✅ Lấy chi tiết đơn hàng kèm Payment
         Task SaveOrderDetailsAsync(List<OrderDetail> orderDetails);
-        Task<List<Order>> GetOrdersByStatusAsync(string status, int? accountId);
+        Task<List<Order>> GetOrdersByStatusAsync(string? status, int? accountId);
         Task<Order?> GetOrderByIdAsync(long orderId);
+        Task<Order> GetOrderItemsWithOrderIdAsync(int orderId);
     }
 }

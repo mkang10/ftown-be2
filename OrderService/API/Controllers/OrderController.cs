@@ -14,13 +14,17 @@ namespace API.Controllers
         private readonly GetOrderHistoryHandler _getOrderHistoryHandler;
         private readonly GetOrdersByStatusHandler _getOrdersByStatusHandler;
         private readonly GetOrderDetailHandler _getOrderDetailHandler;
-        public OrderController(CreateOrderHandler createOrderHandler, ILogger<OrderController> logger, GetOrderHistoryHandler getOrderHistoryHandler, GetOrdersByStatusHandler getOrdersByStatusHandler, GetOrderDetailHandler getOrderDetailHandler)
+        private readonly GetOrderItemsHandler _getOrderItemsHandler;
+        public OrderController(CreateOrderHandler createOrderHandler, ILogger<OrderController> logger, GetOrderHistoryHandler getOrderHistoryHandler, 
+                                GetOrdersByStatusHandler getOrdersByStatusHandler, GetOrderDetailHandler getOrderDetailHandler, 
+                                GetOrderItemsHandler getOrderItemsHandler)
         {
             _createOrderHandler = createOrderHandler;
             _logger = logger;
             _getOrderHistoryHandler = getOrderHistoryHandler;
             _getOrdersByStatusHandler = getOrdersByStatusHandler;
-            _getOrderDetailHandler = getOrderDetailHandler; 
+            _getOrderDetailHandler = getOrderDetailHandler;
+            _getOrderItemsHandler = getOrderItemsHandler;
         }
 
         /// <summary>
@@ -65,7 +69,7 @@ namespace API.Controllers
         }
         [HttpGet]
         public async Task<ActionResult<ResponseDTO<List<OrderResponse>>>> GetOrdersByStatus(
-                [FromQuery] string status,
+                [FromQuery] string? status,
                 [FromQuery] int? accountId = null) 
         {
             var orders = await _getOrdersByStatusHandler.HandleAsync(status, accountId);
@@ -82,6 +86,19 @@ namespace API.Controllers
             }
 
             return Ok(new ResponseDTO<OrderDetailResponseWrapper>(orderDetailResponse, true, "Lấy chi tiết đơn hàng thành công!"));
+        }
+
+        [HttpGet("{orderId}/items")]
+        public async Task<IActionResult> GetOrderItemsById(int orderId)
+        {
+            var result = await _getOrderItemsHandler.HandleAsync(orderId);
+
+            if (result == null || !result.Any())
+            {
+                return NotFound(new { message = "Không tìm thấy sản phẩm trong đơn hàng." });
+            }
+
+            return Ok(result);
         }
     }
 }

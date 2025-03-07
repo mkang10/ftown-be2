@@ -2,6 +2,7 @@
 using Application.DTO.Response;
 using Application.Interfaces;
 using Domain.Entities;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,10 +16,12 @@ namespace Infrastructure.Clients
     public class InventoryServiceClient : IInventoryServiceClient
     {
         private readonly HttpClient _httpClient;
-
-        public InventoryServiceClient(HttpClient httpClient)
+        private readonly ILogger<InventoryServiceClient> _logger;
+        public InventoryServiceClient(HttpClient httpClient, ILogger<InventoryServiceClient> logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
+
         }
 
         public async Task<ProductVariantResponse?> GetProductVariantByIdAsync(int productVariantId)
@@ -50,6 +53,63 @@ namespace Infrastructure.Clients
                 return null;
             }
         }
+        public async Task<Dictionary<int, ProductVariantResponse>> GetAllProductVariantsByIdsAsync(List<int> variantIds)
+        {
+            if (variantIds == null || !variantIds.Any())
+            {
+                return new Dictionary<int, ProductVariantResponse>();
+            }
+
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("products/variants/details", variantIds);
+                response.EnsureSuccessStatusCode();
+
+                // 🛠 Đọc dữ liệu đúng kiểu ResponseDTO<List<ProductVariantResponse>>
+                var responseDTO = await response.Content.ReadFromJsonAsync<ResponseDTO<List<ProductVariantResponse>>>();
+
+                // ✅ Lấy danh sách từ responseDTO.Data
+                return responseDTO?.Data?.ToDictionary(v => v.VariantId) ?? new Dictionary<int, ProductVariantResponse>();
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError($"Error fetching product variants: {ex.Message}");
+                return new Dictionary<int, ProductVariantResponse>();
+            }
+        }
+
+
+
+        public async Task<StoreResponse?> GetStoreByIdAsync(int storeId)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"stores/{storeId}");
+                var responseData = await response.Content.ReadAsStringAsync(); // 🛠 Log toàn bộ JSON response
+                Console.WriteLine($"[DEBUG] Store API Response: {responseData}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"[ERROR] Không thể lấy thông tin cửa hàng: {response.StatusCode}");
+                    return null;
+                }
+
+                // ✅ Nếu API trả về ResponseDTO<StoreResponse>, cần đọc từ `.Data`
+                var responseDTO = JsonSerializer.Deserialize<ResponseDTO<StoreResponse>>(responseData, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return responseDTO?.Data; // ✅ Lấy dữ liệu từ `Data`
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"[ERROR] Lỗi kết nối đến InventoryService: {ex.Message}");
+                return null;
+            }
+        }
+
+
 
         public async Task<List<Store>> GetAllStoresAsync()
         {
@@ -86,7 +146,7 @@ namespace Infrastructure.Clients
             try
             {
                 // Gọi endpoint GET api/inventory/stock?storeId={storeId}&variantId={variantId}
-                var response = await _httpClient.GetAsync($"inventory/stock?storeId={storeId}&variantId={variantId}");
+                var response = await _httpClient.GetAsync($"stores/{storeId}/stock/{variantId}");
                 if (!response.IsSuccessStatusCode)
                 {
                     Console.WriteLine($"[ERROR] Không thể lấy tồn kho: {response.StatusCode}");
@@ -97,12 +157,13 @@ namespace Infrastructure.Clients
                 Console.WriteLine($"[DEBUG] Stock API Response: {responseData}");
 
                 // Giả sử API trả về ResponseDTO<int> chứa số lượng tồn kho
-                var result = JsonSerializer.Deserialize<ResponseDTO<int>>(responseData, new JsonSerializerOptions
+                var result = JsonSerializer.Deserialize<ResponseDTO<StockQuantityResponse>>(responseData, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
 
-                return result?.Data ?? 0;
+
+                return result?.Data.StockQuantity ?? 0;
             }
             catch (HttpRequestException ex)
             {

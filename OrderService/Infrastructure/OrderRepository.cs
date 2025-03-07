@@ -30,8 +30,11 @@ namespace Infrastructure
         {
             return await _context.Orders
                 .Include(o => o.OrderDetails)
+                .Include(o => o.Payments) // Lấy phương thức thanh toán
+                .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
         }
+
         public async Task<Order?> GetOrderByIdAsync(long orderId)
         {
             return await _context.Orders.FirstOrDefaultAsync(o => o.OrderId== orderId);
@@ -63,14 +66,18 @@ namespace Infrastructure
             _context.OrderDetails.AddRange(orderDetails);
             await _context.SaveChangesAsync();
         }
-        public async Task<List<Order>> GetOrdersByStatusAsync(string status, int? accountId)
+        public async Task<List<Order>> GetOrdersByStatusAsync(string? status, int? accountId)
         {
             var query = _context.Orders
-                .Where(o => o.Status == status)
                 .Include(o => o.OrderDetails)
                 .Include(o => o.Payments)
                 .OrderByDescending(o => o.CreatedDate)
                 .AsQueryable();
+
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(o => o.Status == status);
+            }
 
             if (accountId.HasValue)
             {
@@ -78,6 +85,15 @@ namespace Infrastructure
             }
 
             return await query.ToListAsync();
+        }
+
+        public async Task<Order> GetOrderItemsWithOrderIdAsync(int orderId)
+        {
+            return await _context.Orders
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.ProductVariant)
+                .ThenInclude(pv => pv.Product)
+                .FirstOrDefaultAsync(o => o.OrderId == orderId);
         }
     }
 }
