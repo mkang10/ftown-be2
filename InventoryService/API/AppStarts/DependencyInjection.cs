@@ -1,5 +1,7 @@
 ﻿
 
+using Application.Interfaces;
+using Domain.Interfaces;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,6 +28,8 @@ namespace API.AppStarts
 
             //services.AddScoped<IOrderRepository, OrderRepository>();
 
+            services.AddScoped<IExcelRepo, ExcelRepository>();
+            services.AddScoped<IExcelService, ExcelHandler>();
 
 
             // auto mapper

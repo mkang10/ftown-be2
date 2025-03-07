@@ -1,4 +1,6 @@
-﻿using AutoMapper;
+﻿using Application.DTO.Request;
+using AutoMapper;
+using Domain.Entities;
 
 namespace API.AppStarts
 {
@@ -7,7 +9,8 @@ namespace API.AppStarts
         public AutoMapperConfig()
         {
             //CreateMap<Account, AccountDTO>();
-           
+            CreateMap<Product, ProductExcelRequestDTO>().ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.Category.Name));
+
         }
     }
 }
