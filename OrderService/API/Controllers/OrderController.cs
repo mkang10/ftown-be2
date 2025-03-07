@@ -69,7 +69,7 @@ namespace API.Controllers
         }
         [HttpGet]
         public async Task<ActionResult<ResponseDTO<List<OrderResponse>>>> GetOrdersByStatus(
-                [FromQuery] string status,
+                [FromQuery] string? status,
                 [FromQuery] int? accountId = null) 
         {
             var orders = await _getOrdersByStatusHandler.HandleAsync(status, accountId);
