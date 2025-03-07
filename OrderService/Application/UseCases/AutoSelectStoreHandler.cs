@@ -25,14 +25,14 @@ namespace Application.UseCases
 
             foreach (var store in allStores)
             {
-                double coverageRatio = await CalculateCoverageRatio(store, orderItems);
-                int totalStock = await CalculateTotalStock(store, orderItems);
+                var fulfillmentData = await CalculateFulfillmentData(store, orderItems);
 
                 storeCoverageList.Add(new StoreCoverage
                 {
                     StoreId = store.StoreId,
-                    CoverageRatio = coverageRatio,
-                    StockQuantity = totalStock
+                    FulfilledItemCount = fulfillmentData.FulfilledItemCount,
+                    CoverageRatio = fulfillmentData.CoverageRatio,
+                    StockQuantity = fulfillmentData.TotalStock
                 });
             }
 
@@ -40,64 +40,90 @@ namespace Application.UseCases
         }
 
         /// <summary>
-        /// Tính tỷ lệ số sản phẩm có đủ hàng tại cửa hàng này.
+        /// Tính toán dữ liệu khả năng đáp ứng đơn hàng của cửa hàng
         /// </summary>
-        private async Task<double> CalculateCoverageRatio(Store store, List<OrderItemRequest> orderItems)
+        private async Task<StoreFulfillmentData> CalculateFulfillmentData(Store store, List<OrderItemRequest> orderItems)
         {
+            int fulfilledItemCount = 0;
             int fulfillCount = 0;
+            int totalStock = 0;
+
             foreach (var item in orderItems)
             {
                 int availableQuantity = await _inventoryServiceClient.GetStockQuantityAsync(store.StoreId, item.ProductVariantId);
+                totalStock += availableQuantity;
+
                 if (availableQuantity >= item.Quantity)
                 {
                     fulfillCount++;
+                    fulfilledItemCount += item.Quantity; // Tổng số sản phẩm có thể giao
                 }
             }
-            return (double)fulfillCount / orderItems.Count;
-        }
 
-        /// <summary>
-        /// Tính tổng số lượng hàng tồn kho của tất cả sản phẩm khách đặt tại cửa hàng.
-        /// </summary>
-        private async Task<int> CalculateTotalStock(Store store, List<OrderItemRequest> orderItems)
-        {
-            int totalStock = 0;
-            foreach (var item in orderItems)
+            return new StoreFulfillmentData
             {
-                totalStock += await _inventoryServiceClient.GetStockQuantityAsync(store.StoreId, item.ProductVariantId);
-            }
-            return totalStock;
+                FulfilledItemCount = fulfilledItemCount,
+                CoverageRatio = (double)fulfillCount / orderItems.Count,
+                TotalStock = totalStock
+            };
         }
 
         /// <summary>
-        /// Chọn cửa hàng tốt nhất dựa trên số lượng hàng tồn kho.
+        /// Chọn cửa hàng tốt nhất dựa trên số lượng sản phẩm có thể giao.
         /// </summary>
         private int SelectBestStore(List<StoreCoverage> storeCoverageList)
         {
-            // Chọn store có coverage ≥ 70%
-            var bestCoverageStore = storeCoverageList
-                .Where(x => x.CoverageRatio >= 0.7)
-                .OrderByDescending(x => x.CoverageRatio)
+            // 1. Ưu tiên store có thể giao nhiều sản phẩm nhất
+            var bestFulfillmentStore = storeCoverageList
+                .OrderByDescending(x => x.FulfilledItemCount)
                 .FirstOrDefault();
 
-            if (bestCoverageStore != null)
-                return bestCoverageStore.StoreId;
+            if (bestFulfillmentStore != null)
+            {
+                var topStores = storeCoverageList
+                    .Where(x => x.FulfilledItemCount == bestFulfillmentStore.FulfilledItemCount)
+                    .ToList();
 
-            // Nếu không có store nào có đủ hàng ≥ 70%, chọn store có tổng số hàng tồn nhiều nhất
-            var maxStockStore = storeCoverageList.OrderByDescending(x => x.StockQuantity).FirstOrDefault();
-            if (maxStockStore != null)
-                return maxStockStore.StoreId;
+                // 2. Nếu có nhiều store có cùng số sản phẩm giao được, chọn store có Coverage Ratio cao nhất
+                var bestCoverageStore = topStores
+                    .OrderByDescending(x => x.CoverageRatio)
+                    .FirstOrDefault();
 
-            // Nếu vẫn không có store nào, chọn random
+                if (bestCoverageStore != null)
+                {
+                    var topCoverageStores = topStores
+                        .Where(x => x.CoverageRatio == bestCoverageStore.CoverageRatio)
+                        .ToList();
+
+                    // 3. Nếu vẫn có nhiều store, chọn store có tổng hàng tồn kho nhiều nhất
+                    var maxStockStore = topCoverageStores
+                        .OrderByDescending(x => x.StockQuantity)
+                        .FirstOrDefault();
+
+                    if (maxStockStore != null)
+                        return maxStockStore.StoreId;
+                }
+            }
+
+            // 4. Nếu vẫn không có store nào nổi bật, chọn ngẫu nhiên
             return storeCoverageList.OrderBy(x => Guid.NewGuid()).First().StoreId;
         }
 
         private record StoreCoverage
         {
             public int StoreId { get; init; }
+            public int FulfilledItemCount { get; init; }
             public double CoverageRatio { get; init; }
             public int StockQuantity { get; init; }
         }
+
+        private record StoreFulfillmentData
+        {
+            public int FulfilledItemCount { get; init; }
+            public double CoverageRatio { get; init; }
+            public int TotalStock { get; init; }
+        }
     }
+
 
 }

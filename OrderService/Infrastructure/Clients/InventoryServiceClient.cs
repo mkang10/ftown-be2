@@ -146,7 +146,7 @@ namespace Infrastructure.Clients
             try
             {
                 // Gọi endpoint GET api/inventory/stock?storeId={storeId}&variantId={variantId}
-                var response = await _httpClient.GetAsync($"inventory/stock?storeId={storeId}&variantId={variantId}");
+                var response = await _httpClient.GetAsync($"stores/{storeId}/stock/{variantId}");
                 if (!response.IsSuccessStatusCode)
                 {
                     Console.WriteLine($"[ERROR] Không thể lấy tồn kho: {response.StatusCode}");
@@ -157,12 +157,13 @@ namespace Infrastructure.Clients
                 Console.WriteLine($"[DEBUG] Stock API Response: {responseData}");
 
                 // Giả sử API trả về ResponseDTO<int> chứa số lượng tồn kho
-                var result = JsonSerializer.Deserialize<ResponseDTO<int>>(responseData, new JsonSerializerOptions
+                var result = JsonSerializer.Deserialize<ResponseDTO<StockQuantityResponse>>(responseData, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
 
-                return result?.Data ?? 0;
+
+                return result?.Data.StockQuantity ?? 0;
             }
             catch (HttpRequestException ex)
             {

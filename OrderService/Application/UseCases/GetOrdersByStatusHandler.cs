@@ -23,7 +23,7 @@ namespace Application.UseCases
             _inventoryServiceClient = inventoryServiceClient;
         }
 
-        public async Task<List<OrderResponse>> HandleAsync(string status, int? accountId)
+        public async Task<List<OrderResponse>> HandleAsync(string? status, int? accountId)
         {
             var orders = await _orderRepository.GetOrdersByStatusAsync(status, accountId);
             var orderResponses = _mapper.Map<List<OrderResponse>>(orders);
