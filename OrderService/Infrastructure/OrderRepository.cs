@@ -86,7 +86,25 @@ namespace Infrastructure
 
             return await query.ToListAsync();
         }
+        public async Task<List<Order>> GetReturnableOrdersAsync(int accountId)
+        {
+            var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
 
+            var orders = await _context.Orders
+                .Include(o => o.OrderDetails)
+                .Include(o => o.Payments)
+                .Where(o => o.AccountId == accountId &&
+                            o.Status == "completed" &&
+                            _context.OrderHistories
+                                .Where(oh => oh.OrderId == o.OrderId && oh.OrderStatus == "completed")
+                                .OrderByDescending(oh => oh.ChangedDate)
+                                .Select(oh => oh.ChangedDate)
+                                .FirstOrDefault() >= sevenDaysAgo)
+                .OrderByDescending(o => o.CreatedDate)
+                .ToListAsync();
+
+            return orders;
+        }
         public async Task<Order> GetOrderItemsWithOrderIdAsync(int orderId)
         {
             return await _context.Orders

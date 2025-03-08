@@ -127,16 +127,16 @@ namespace API.Controllers
             return Ok(response); // 200 OK nếu có dữ liệu.
         }
         [HttpPost("update-after-order")]
-        public async Task<ActionResult<bool>> UpdateStockAfterOrder([FromBody] StockUpdateRequest request)
+        public async Task<ActionResult<StockUpdateResponse>> UpdateStockAfterOrder([FromBody] StockUpdateRequest request)
         {
-            bool success = await _updateStockHandler.HandleAsync(request);
+            var response = await _updateStockHandler.HandleAsync(request);
 
-            if (!success)
+            if (!response.Success)
             {
-                return BadRequest(false);
+                return BadRequest(response);
             }
 
-            return Ok(true);
+            return Ok(response);
         }
     }
 }

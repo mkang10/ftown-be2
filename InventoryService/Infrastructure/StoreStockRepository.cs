@@ -43,29 +43,44 @@ namespace Infrastructure
         }
         public async Task<bool> UpdateStockAfterOrderAsync(int storeId, List<(int VariantId, int Quantity)> stockUpdates)
         {
+            var variantIds = stockUpdates.Select(s => s.VariantId).ToList();
+
+            // Lấy toàn bộ tồn kho của các sản phẩm liên quan
+            var storeStocks = await _context.StoreStocks
+                .Where(s => variantIds.Contains(s.VariantId))
+                .ToListAsync();
+
             foreach (var update in stockUpdates)
             {
-                // Tìm bản ghi tồn kho dựa trên storeId và VariantId
-                var storeStock = await _context.StoreStocks
-                    .FirstOrDefaultAsync(s => s.StoreId == storeId && s.VariantId == update.VariantId);
+                // Kiểm tra tồn kho tại cửa hàng khách chọn
+                var storeStock = storeStocks.FirstOrDefault(s => s.StoreId == storeId && s.VariantId == update.VariantId);
 
-                if (storeStock == null)
+                if (storeStock != null && storeStock.StockQuantity >= update.Quantity)
                 {
-                    // Nếu không tìm thấy bản ghi, trả về false
-                    return false;
+                    // Nếu đủ hàng, giảm số lượng tại cửa hàng khách chọn
+                    storeStock.StockQuantity -= update.Quantity;
                 }
-
-                if (storeStock.StockQuantity < update.Quantity)
+                else
                 {
-                    // Nếu số lượng tồn kho không đủ để trừ
-                    return false;
-                }
+                    // Tìm cửa hàng có variant này nhiều nhất
+                    var alternateStoreStock = storeStocks
+                        .Where(s => s.VariantId == update.VariantId && s.StockQuantity >= update.Quantity)
+                        .OrderByDescending(s => s.StockQuantity) // Chọn cửa hàng có nhiều hàng nhất
+                        .FirstOrDefault();
 
-                // Giảm tồn kho theo số lượng đặt
-                storeStock.StockQuantity -= update.Quantity;
-                _context.StoreStocks.Update(storeStock);
+                    if (alternateStoreStock == null)
+                    {
+                        // Nếu không tìm được cửa hàng nào có hàng, rollback transaction
+                        return false;
+                    }
+
+                    // Trừ số lượng tại cửa hàng thay thế
+                    alternateStoreStock.StockQuantity -= update.Quantity;
+                }
             }
 
+            // Cập nhật dữ liệu chỉ một lần
+            _context.StoreStocks.UpdateRange(storeStocks);
             await _context.SaveChangesAsync();
             return true;
         }
