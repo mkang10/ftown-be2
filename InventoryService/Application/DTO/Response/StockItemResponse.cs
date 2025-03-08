@@ -10,5 +10,13 @@ namespace Application.DTO.Response
     {
         public int VariantId { get; set; }
         public int Quantity { get; set; }
+        public int StoreId { get; set; }
+
+        public StockItemResponse(int variantId, int quantity, int storeId)
+        {
+            VariantId = variantId;
+            Quantity = quantity;
+            StoreId = storeId;
+        }
     }
 }

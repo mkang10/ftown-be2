@@ -18,5 +18,6 @@ namespace Domain.Interfaces
         Task<List<Order>> GetOrdersByStatusAsync(string? status, int? accountId);
         Task<Order?> GetOrderByIdAsync(long orderId);
         Task<Order> GetOrderItemsWithOrderIdAsync(int orderId);
+        Task<List<Order>> GetReturnableOrdersAsync(int accountId);
     }
 }
