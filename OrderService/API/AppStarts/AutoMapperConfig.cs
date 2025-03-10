@@ -30,7 +30,12 @@ namespace API.AppStarts
             CreateMap<OrderHistory, OrderHistoryResponse>()
             .ForMember(dest => dest.ChangedByUser, opt => opt.MapFrom(src => src.ChangedByNavigation.Email)) // Lấy email của người thay đổi
             .ForMember(dest => dest.ChangedDate, opt => opt.MapFrom(src => src.ChangedDate ?? DateTime.UtcNow));
-            
+
+            CreateMap<OrderItemResponse, ReturnItemResponse>()
+            .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.PriceAtPurchase)); // Map giá lúc mua
+            //.ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.PriceAtPurchase * src.Quantity)) // Tổng giá tiền
+            //.ForMember(dest => dest.ReturnReason, opt => opt.Ignore()) // Không có sẵn trong OrderItemResponse
+            //.ForMember(dest => dest.ReturnOption, opt => opt.Ignore()); // Không có sẵn trong OrderItemResponse
         }
     }
 }

@@ -1,4 +1,6 @@
 using API.AppStarts;
+using Application.Interfaces;
+using CloudinaryDotNet;
 using Infrastructure;
 using StackExchange.Redis;
 
@@ -6,10 +8,34 @@ var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 // Add services to the container.
-builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
+var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>();
+
+// Ki?m tra n?u c?u hình Cloudinary b? thi?u ho?c không h?p l?
+if (cloudinarySettings == null ||
+    string.IsNullOrEmpty(cloudinarySettings.CloudName) ||
+    string.IsNullOrEmpty(cloudinarySettings.ApiKey) ||
+    string.IsNullOrEmpty(cloudinarySettings.ApiSecret))
+{
+    throw new ArgumentException("CloudinarySettings không ???c c?u hình ?úng trong appsettings.json");
+}
+
+// ??ng ký CloudinarySettings vào DI container
+builder.Services.Configure<CloudinarySettings>(
+    builder.Configuration.GetSection("CloudinarySettings")
+);
+
+// ??ng ký Cloudinary v?i tài kho?n ???c kh?i t?o t? c?u hình
+var cloudinaryAccount = new Account(
+    cloudinarySettings.CloudName,
+    cloudinarySettings.ApiKey,
+    cloudinarySettings.ApiSecret
+);
+var cloudinary = new Cloudinary(cloudinaryAccount);
+
+builder.Services.AddSingleton(cloudinary);
 
 // ??ng ký CloudinaryService
-builder.Services.AddSingleton<CloudinaryService>();
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
 var redisConfig = builder.Configuration.GetSection("Redis");
 string redisConnectionString = $"{redisConfig["Host"]}:{redisConfig["Port"]},password={redisConfig["Password"]}";

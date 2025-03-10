@@ -1,6 +1,8 @@
-﻿using CloudinaryDotNet;
+﻿using Application.Interfaces;
+using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Domain.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using System;
@@ -9,47 +11,87 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace Infrastructure
 {
-    public class CloudinaryService
+    public class CloudinaryService : ICloudinaryService
     {
         private readonly Cloudinary _cloudinary;
 
-        public CloudinaryService(IConfiguration configuration)
+        public CloudinaryService(IOptions<CloudinarySettings> cloudinarySettings)
         {
-            var account = new CloudinaryDotNet.Account(
-                configuration["Cloudinary:CloudName"],
-                configuration["Cloudinary:ApiKey"],
-                configuration["Cloudinary:ApiSecret"]
-            );
+            var settings = cloudinarySettings.Value;
+            if (string.IsNullOrEmpty(settings.CloudName) ||
+                string.IsNullOrEmpty(settings.ApiKey) ||
+                string.IsNullOrEmpty(settings.ApiSecret))
+            {
+                throw new ArgumentException("Cloudinary configuration is missing or invalid.");
+            }
 
+            var account = new CloudinaryDotNet.Account(settings.CloudName, settings.ApiKey, settings.ApiSecret);
             _cloudinary = new Cloudinary(account);
         }
 
-        public async Task<string> UploadImageAsync(Stream imageStream, string fileName)
+        public async Task<string> UploadMediaAsync(IFormFile file)
         {
-            var uploadParams = new ImageUploadParams
-            {
-                File = new FileDescription(fileName, imageStream),
-                Folder = "uploads",
-                Transformation = new Transformation().Width(500).Height(500).Crop("limit")
-            };
+            if (file == null || file.Length == 0) return string.Empty;
 
-            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-            return uploadResult.SecureUrl.ToString();
+            using var stream = file.OpenReadStream();
+            var fileExtension = Path.GetExtension(file.FileName).ToLower();
+
+            UploadResult uploadResult;
+
+            if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png" || fileExtension == ".gif")
+            {
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(file.FileName, stream),
+                    Folder = "return_order_media"
+                };
+                uploadResult = await _cloudinary.UploadAsync(uploadParams);
+            }
+            else if (fileExtension == ".mp4" || fileExtension == ".mov" || fileExtension == ".avi")
+            {
+                var uploadParams = new VideoUploadParams
+                {
+                    File = new FileDescription(file.FileName, stream),
+                    Folder = "return_order_media"
+                };
+                uploadResult = await _cloudinary.UploadAsync(uploadParams);
+            }
+            else
+            {
+                var uploadParams = new RawUploadParams
+                {
+                    File = new FileDescription(file.FileName, stream),
+                    Folder = "return_order_media"
+                };
+                uploadResult = await _cloudinary.UploadAsync(uploadParams);
+            }
+
+            return uploadResult.SecureUrl?.ToString() ?? string.Empty;
         }
 
-        public async Task<bool> DeleteImageAsync(string publicId)
+        public async Task<bool> DeleteMediaAsync(string publicId, string resourceType = "image")
         {
-            var deleteParams = new DeletionParams(publicId);
+            if (!Enum.TryParse(resourceType, true, out ResourceType cloudinaryResourceType))
+            {
+                cloudinaryResourceType = ResourceType.Image;
+            }
+
+            var deleteParams = new DeletionParams(publicId)
+            {
+                ResourceType = cloudinaryResourceType
+            };
+
             var result = await _cloudinary.DestroyAsync(deleteParams);
             return result.Result == "ok";
         }
     }
     public class CloudinarySettings
     {
-        public string CloudName { get; set; }
-        public string ApiKey { get; set; }
-        public string ApiSecret { get; set; }
+        public string CloudName { get; set; } = string.Empty;
+        public string ApiKey { get; set; } = string.Empty;
+        public string ApiSecret { get; set; } = string.Empty;
     }
 }
