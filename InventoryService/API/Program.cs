@@ -19,20 +19,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-//using (var scope = app.Services.CreateScope())
-//{
-//    var productSyncService = scope.ServiceProvider.GetRequiredService<ProductSyncService>();
-
-//    try
-//    {
-//        await productSyncService.SyncProductsToElasticsearch();
-//        Console.WriteLine("? D? li?u ?ã ???c ??ng b? lên Elasticsearch thành công!");
-//    }
-//    catch (Exception ex)
-//    {
-//        Console.WriteLine($"? L?i khi ??ng b? d? li?u lên Elasticsearch: {ex.Message}");
-//    }
-//}
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

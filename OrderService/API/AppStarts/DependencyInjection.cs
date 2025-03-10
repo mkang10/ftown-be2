@@ -49,12 +49,14 @@ namespace API.AppStarts
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddSingleton<IRedisCacheService, RedisCacheService>();
+            
             //Repository
 
             services.AddScoped<IOrderRepository, OrderRepository>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IShippingAddressRepository, ShippingAddressRepository>();
             services.AddScoped<IOrderHistoryRepository, OrderHistoryRepository>();
+            services.AddScoped<IReturnOrderRepository, ReturnOrderRepository>();
             //Handler
 
             services.AddScoped<CreateOrderHandler>();
@@ -69,7 +71,10 @@ namespace API.AppStarts
             services.AddScoped<GetOrderDetailHandler>();
             services.AddScoped<UpdateOrderStatusHandler>();
             services.AddScoped<GetOrderItemsHandler>();
-
+            services.AddScoped<GetReturnableOrdersHandler>();
+            services.AddScoped<GetOrderItemsForReturnHandler>();
+            services.AddScoped<ProcessReturnCheckoutHandler>(); 
+            services.AddScoped<SubmitReturnRequestHandler>();
             
 
 

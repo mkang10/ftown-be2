@@ -33,6 +33,8 @@ public partial class ProductVariant
 
     public virtual Product Product { get; set; } = null!;
 
+    public virtual ICollection<ReturnOrderItem> ReturnOrderItems { get; set; } = new List<ReturnOrderItem>();
+
     public virtual ICollection<StoreStock> StoreStocks { get; set; } = new List<StoreStock>();
 
     public virtual ICollection<WishListItem> WishListItems { get; set; } = new List<WishListItem>();

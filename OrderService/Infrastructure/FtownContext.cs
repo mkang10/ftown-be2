@@ -67,7 +67,11 @@ public partial class FtownContext : DbContext
 
     public virtual DbSet<ReplyFeedback> ReplyFeedbacks { get; set; }
 
-    public virtual DbSet<ReturnRequest> ReturnRequests { get; set; }
+    public virtual DbSet<ReturnOrder> ReturnOrders { get; set; }
+
+    public virtual DbSet<ReturnOrderItem> ReturnOrderItems { get; set; }
+
+    public virtual DbSet<ReturnOrderMedium> ReturnOrderMedia { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
 
@@ -707,27 +711,59 @@ public partial class FtownContext : DbContext
                 .HasConstraintName("FK__ReplyFeed__Feedb__5AB9788F");
         });
 
-        modelBuilder.Entity<ReturnRequest>(entity =>
+        modelBuilder.Entity<ReturnOrder>(entity =>
         {
-            entity.HasKey(e => e.ReturnRequestId).HasName("PK__ReturnRe__0CCD25B9F39975C5");
+            entity.HasKey(e => e.ReturnOrderId).HasName("PK__ReturnOr__4DBF5543FB70199C");
 
-            entity.ToTable("ReturnRequest");
+            entity.ToTable("ReturnOrder");
 
-            entity.Property(e => e.ReturnRequestId).HasColumnName("ReturnRequestID");
-            entity.Property(e => e.CreatedDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.OrderId).HasColumnName("OrderID");
-            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.Property(e => e.BankAccountName).HasMaxLength(255);
+            entity.Property(e => e.BankAccountNumber).HasMaxLength(50);
+            entity.Property(e => e.BankName).HasMaxLength(255);
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Email).HasMaxLength(256);
+            entity.Property(e => e.RefundMethod)
+                .HasMaxLength(50)
+                .HasDefaultValue("Bank Transfer");
+            entity.Property(e => e.ReturnOption).HasMaxLength(50);
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("Pending");
-            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+            entity.Property(e => e.TotalRefundAmount).HasColumnType("decimal(18, 2)");
 
-            entity.HasOne(d => d.Order).WithMany(p => p.ReturnRequests)
+            entity.HasOne(d => d.Order).WithMany(p => p.ReturnOrders)
                 .HasForeignKey(d => d.OrderId)
+                .HasConstraintName("FK_ReturnOrder_Order");
+        });
+
+        modelBuilder.Entity<ReturnOrderItem>(entity =>
+        {
+            entity.HasKey(e => e.ReturnOrderItemId).HasName("PK__ReturnOr__5F70CE667526F1AC");
+
+            entity.ToTable("ReturnOrderItem");
+
+            entity.Property(e => e.RefundPrice).HasColumnType("decimal(18, 2)");
+
+            entity.HasOne(d => d.ProductVariant).WithMany(p => p.ReturnOrderItems)
+                .HasForeignKey(d => d.ProductVariantId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ReturnReq__Order__5BAD9CC8");
+                .HasConstraintName("FK_ReturnOrderItem_ProductVariant");
+
+            entity.HasOne(d => d.ReturnOrder).WithMany(p => p.ReturnOrderItems)
+                .HasForeignKey(d => d.ReturnOrderId)
+                .HasConstraintName("FK_ReturnOrderItem_ReturnOrder");
+        });
+
+        modelBuilder.Entity<ReturnOrderMedium>(entity =>
+        {
+            entity.HasKey(e => e.ReturnOrderMediaId).HasName("PK__ReturnOr__8123C995BC23FAFC");
+
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.MediaUrl).HasMaxLength(2048);
+
+            entity.HasOne(d => d.ReturnOrder).WithMany(p => p.ReturnOrderMedia)
+                .HasForeignKey(d => d.ReturnOrderId)
+                .HasConstraintName("FK_ReturnOrderMedia_ReturnOrder");
         });
 
         modelBuilder.Entity<Role>(entity =>

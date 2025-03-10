@@ -15,9 +15,10 @@ namespace API.Controllers
         private readonly GetOrdersByStatusHandler _getOrdersByStatusHandler;
         private readonly GetOrderDetailHandler _getOrderDetailHandler;
         private readonly GetOrderItemsHandler _getOrderItemsHandler;
+        private readonly GetReturnableOrdersHandler _getReturnableOrdersHandler;
         public OrderController(CreateOrderHandler createOrderHandler, ILogger<OrderController> logger, GetOrderHistoryHandler getOrderHistoryHandler, 
                                 GetOrdersByStatusHandler getOrdersByStatusHandler, GetOrderDetailHandler getOrderDetailHandler, 
-                                GetOrderItemsHandler getOrderItemsHandler)
+                                GetOrderItemsHandler getOrderItemsHandler, GetReturnableOrdersHandler getReturnableOrdersHandler)
         {
             _createOrderHandler = createOrderHandler;
             _logger = logger;
@@ -25,6 +26,7 @@ namespace API.Controllers
             _getOrdersByStatusHandler = getOrdersByStatusHandler;
             _getOrderDetailHandler = getOrderDetailHandler;
             _getOrderItemsHandler = getOrderItemsHandler;
+            _getReturnableOrdersHandler = getReturnableOrdersHandler;
         }
 
         /// <summary>
@@ -74,6 +76,13 @@ namespace API.Controllers
         {
             var orders = await _getOrdersByStatusHandler.HandleAsync(status, accountId);
             return Ok(new ResponseDTO<List<OrderResponse>>(orders, true, $"Danh sách đơn hàng với trạng thái {status} {(accountId.HasValue ? $"và accountId {accountId}" : "")} được lấy thành công."));
+        }
+        [HttpGet("returnable")]
+        public async Task<ActionResult<ResponseDTO<List<OrderResponse>>>> GetReturnableOrders(
+    [FromQuery] int accountId)
+        {
+            var orders = await _getReturnableOrdersHandler.HandleAsync(accountId);
+            return Ok(new ResponseDTO<List<OrderResponse>>(orders, true, "Danh sách đơn hàng có thể hoàn trả được lấy thành công."));
         }
 
         [HttpGet("{orderId}/details")]
