@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure;
+namespace Domain.Entities;
 
 public partial class FtownContext : DbContext
 {

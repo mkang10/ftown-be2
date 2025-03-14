@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace Domain.Entities;
 
-public partial class PaymentHistory
+public partial class StoreImportHistory
 {
-    public int PaymentHistoryId { get; set; }
+    public int StoreImportHistoryId { get; set; }
 
-    public int PaymentId { get; set; }
+    public int ImportId { get; set; }
 
-    public string PaymentStatus { get; set; } = null!;
+    public string Status { get; set; } = null!;
 
     public int ChangedBy { get; set; }
 
@@ -19,5 +19,5 @@ public partial class PaymentHistory
 
     public virtual Account ChangedByNavigation { get; set; } = null!;
 
-    public virtual Payment Payment { get; set; } = null!;
+    public virtual StoreImport Import { get; set; } = null!;
 }
