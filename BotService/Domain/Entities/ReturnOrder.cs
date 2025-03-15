@@ -1,0 +1,45 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace Domain.Entities;
+
+public partial class ReturnOrder
+{
+    public int ReturnOrderId { get; set; }
+
+    public int OrderId { get; set; }
+
+    public int AccountId { get; set; }
+
+    public string Email { get; set; } = null!;
+
+    public decimal TotalRefundAmount { get; set; }
+
+    public string ReturnReason { get; set; } = null!;
+
+    public string ReturnOption { get; set; } = null!;
+
+    public string ReturnDescription { get; set; } = null!;
+
+    public string Status { get; set; } = null!;
+
+    public DateTime CreatedDate { get; set; }
+
+    public DateTime? UpdatedDate { get; set; }
+
+    public string? BankName { get; set; }
+
+    public string? BankAccountNumber { get; set; }
+
+    public string? BankAccountName { get; set; }
+
+    public string RefundMethod { get; set; } = null!;
+
+    public virtual Order Order { get; set; } = null!;
+
+    public virtual ICollection<ReturnOrderHistory> ReturnOrderHistories { get; set; } = new List<ReturnOrderHistory>();
+
+    public virtual ICollection<ReturnOrderItem> ReturnOrderItems { get; set; } = new List<ReturnOrderItem>();
+
+    public virtual ICollection<ReturnOrderMedium> ReturnOrderMedia { get; set; } = new List<ReturnOrderMedium>();
+}

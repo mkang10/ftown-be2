@@ -1,10 +1,28 @@
 using API.AppStarts;
+using StackExchange.Redis;
+
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 // Add services to the container.
+var redisConfig = builder.Configuration.GetSection("Redis");
+var redisConnection = $"{redisConfig["Host"]}:{redisConfig["Port"]},password={redisConfig["Password"]}";
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConnection;
+    options.InstanceName = redisConfig["InstanceName"];
+});
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var redisConfig = builder.Configuration.GetSection("Redis");
+    var redisConnection = $"{redisConfig["Host"]}:{redisConfig["Port"]},password={redisConfig["Password"]}";
+
+    var configuration = ConfigurationOptions.Parse(redisConnection, true);
+    return ConnectionMultiplexer.Connect(configuration);
+});
 // Add depen
 builder.Services.InstallService(builder.Configuration);
 builder.Services.AddControllers();
