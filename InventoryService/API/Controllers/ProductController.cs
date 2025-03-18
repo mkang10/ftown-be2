@@ -18,19 +18,21 @@ namespace API.Controllers
         private readonly GetProductDetailHandler _getProductDetailHandler;
         private readonly GetProductVariantByIdHandler _getProductVariantByIdHandler;
         private readonly GetAllProductVariantsByIdsHandler _getAllProductVariantsByIdsHandler;
+        private readonly GetProductVariantByDetailsHandler _getProductVariantByDetailsHandler;
         private readonly ElasticsearchService _elasticsearchService;
         public ProductController(
             GetAllProductsHandler getAllProductsHandler,
             GetProductDetailHandler getProductDetailHandler,
             GetProductVariantByIdHandler getProductVariantByIdHandler,
             GetAllProductVariantsByIdsHandler getAllProductVariantsByIdsHandler,
-       
+            GetProductVariantByDetailsHandler getAllProductVariantByDetailsHandler,
             ElasticsearchService elasticsearchService)
         {
             _getAllProductsHandler = getAllProductsHandler;
             _getProductDetailHandler = getProductDetailHandler;
             _getProductVariantByIdHandler = getProductVariantByIdHandler;
             _getAllProductVariantsByIdsHandler = getAllProductVariantsByIdsHandler;
+            _getProductVariantByDetailsHandler = getAllProductVariantByDetailsHandler;
             _elasticsearchService = elasticsearchService;
         }
 
@@ -44,6 +46,7 @@ namespace API.Controllers
 
             return Ok(new ResponseDTO<List<ProductListResponse>>(products, true, "Lấy danh sách sản phẩm thành công!"));
         }
+
 
         [HttpGet("{productId}")]
         public async Task<ActionResult<ResponseDTO<ProductDetailResponse>>> GetProductDetail(int productId)
@@ -79,6 +82,16 @@ namespace API.Controllers
             return Ok(new ResponseDTO<List<ProductVariantResponse>>(variants, true, "Lấy danh sách biến thể sản phẩm thành công!"));
         }
 
+        [HttpGet("variant/details")]
+        public async Task<ActionResult<ResponseDTO<ProductVariantResponse>>> GetProductVariantByDetails([FromQuery] GetProductVariantByDetailsRequest request)
+        {
+            var variant = await _getProductVariantByDetailsHandler.HandleAsync(request);
+
+            if (variant == null)
+                return NotFound(new ResponseDTO<ProductVariantResponse>(null, false, "Không tìm thấy biến thể sản phẩm."));
+
+            return Ok(new ResponseDTO<ProductVariantResponse>(variant, true, "Lấy biến thể sản phẩm thành công!"));
+        }
 
 
         //[HttpPut("variant/update")]

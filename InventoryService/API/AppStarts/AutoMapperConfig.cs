@@ -16,8 +16,7 @@ namespace API.AppStarts
                    opt => opt.MapFrom(src => src.ProductVariants.Any()
                        ? src.ProductVariants.First().Price
                        : 0))
-                .ForMember(dest => dest.Colors,
-                           opt => opt.MapFrom(src => src.ProductVariants.Select(v => v.Color).Distinct().ToList()))
+                
                 .ForMember(dest => dest.ImagePath,
                opt => opt.MapFrom(src => src.ProductImages
                                           .Where(pi => pi.IsMain)
@@ -39,13 +38,16 @@ namespace API.AppStarts
                             opt => opt.MapFrom(src => src.ProductImages
                                                        .Select(i => i.ImagePath)
                                                        .ToList()));
+                
             // Mapping từ ProductVariant -> ProductVariantResponse
             CreateMap<ProductVariant, ProductVariantResponse>()
-            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name));
-            CreateMap<Store, StoreResponse>();
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+            .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.Size != null ? src.Size.SizeName : null))
+            .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.Color != null ? src.Color.ColorCode : null)); 
+            CreateMap<Warehouse, WarehouseResponse>();
 
-            CreateMap<StoreRequest, Store>()
-                .ForMember(dest => dest.StoreId, opt => opt.Ignore()) // Ignore vì StoreId do DB sinh
+            CreateMap<WarehouseRequest, Warehouse>()
+                .ForMember(dest => dest.WarehouseId, opt => opt.Ignore()) 
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore());
             CreateMap<ProductVariantRequest, ProductVariant>().ReverseMap();
         }

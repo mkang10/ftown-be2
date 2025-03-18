@@ -9,7 +9,7 @@ public partial class Order
 
     public int AccountId { get; set; }
 
-    public int? StoreId { get; set; }
+    public int? WareHouseId { get; set; }
 
     public int? ShippingAddressId { get; set; }
 
@@ -20,8 +20,6 @@ public partial class Order
     public decimal? OrderTotal { get; set; }
 
     public decimal? ShippingCost { get; set; }
-
-    public decimal? Tax { get; set; }
 
     public string? DeliveryMethod { get; set; }
 
@@ -45,9 +43,9 @@ public partial class Order
 
     public virtual ICollection<DeliveryTracking> DeliveryTrackings { get; set; } = new List<DeliveryTracking>();
 
-    public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
+    public virtual ICollection<OrderAssignment> OrderAssignments { get; set; } = new List<OrderAssignment>();
 
-    public virtual ICollection<OrderHistory> OrderHistories { get; set; } = new List<OrderHistory>();
+    public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
@@ -55,5 +53,5 @@ public partial class Order
 
     public virtual ShippingAddress? ShippingAddress { get; set; }
 
-    public virtual Store? Store { get; set; }
+    public virtual Warehouse? WareHouse { get; set; }
 }

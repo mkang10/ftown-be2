@@ -9,15 +9,17 @@ public partial class AuditLog
 
     public string TableName { get; set; } = null!;
 
-    public int RecordId { get; set; }
+    public string RecordId { get; set; } = null!;
 
-    public string ChangeType { get; set; } = null!;
+    public string Operation { get; set; } = null!;
 
-    public int ChangedBy { get; set; }
+    public DateTime ChangeDate { get; set; }
+
+    public int? ChangedBy { get; set; }
 
     public string? ChangeData { get; set; }
 
-    public DateTime? ChangedDate { get; set; }
+    public string? Comment { get; set; }
 
-    public virtual Account ChangedByNavigation { get; set; } = null!;
+    public virtual Account? ChangedByNavigation { get; set; }
 }

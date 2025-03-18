@@ -29,8 +29,8 @@ namespace Application.UseCases
         public async Task<ReturnCheckoutResponse> Handle(ReturnCheckOutRequest request)
         {
             var returnCheckoutSessionId = Guid.NewGuid().ToString(); // ✅ Tạo Session ID
-
-            var cacheKey = $"ReturnOrderItems_{request.AccountId}_{request.OrderId}";
+            string instanceName = "OrderInstance:";
+            var cacheKey = $"{instanceName}ReturnOrderItems_{request.AccountId}_{request.OrderId}";
             var cachedData = await _cache.GetAsync(cacheKey);
             if (cachedData == null)
             {

@@ -38,22 +38,19 @@ namespace API.AppStarts
                 return new ElasticClient(settings);
             });
 
-       
-
+            //Handler    
 
             services.AddScoped<GetAllProductsHandler>();
             services.AddScoped<GetProductDetailHandler>();
             services.AddScoped<GetProductVariantByIdHandler>();
-            services.AddScoped<GetAllStoresHandler>();
-            services.AddScoped<GetStoreByIdHandler>();
-            services.AddScoped<CreateStoreHandler>();
-            services.AddScoped<UpdateStoreHandler>();
-            services.AddScoped<DeleteStoreHandler>();
-            services.AddScoped<GetStoreStockByVariantHandler>();
+            services.AddScoped<GetWarehouseByIdHandler>();
+            services.AddScoped<GetWareHouseStockByVariantHandler>();
             services.AddScoped<ProductSyncService>();
             services.AddScoped<UpdateStockAfterOrderHandler>();
             services.AddScoped<GetAllProductVariantsByIdsHandler>();
             services.AddScoped<GetStockQuantityHandler>();
+            services.AddScoped<GetProductVariantByDetailsHandler>();
+            services.AddScoped<RedisHandler>();
 
             services.AddCors(options =>
             {
@@ -66,13 +63,10 @@ namespace API.AppStarts
             // Repository
 
             services.AddScoped<IProductRepository, ProductRepository>();
-            services.AddScoped<IStoreRepository, StoreRepository>();
-            services.AddScoped<IStoreStockRepository, StoreStockRepository>();
-
-
-
-
-
+            services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+            services.AddScoped<IWareHousesStockRepository, WareHousesStockRepository>();
+            services.AddScoped<IRedisRepository, RedisRepository>();
+            services.AddScoped<IPromotionRepository, PromotionRepository>();
 
 
             // auto mapper

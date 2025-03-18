@@ -12,7 +12,9 @@ namespace Application.DTO.Response
         public string Name { get; set; }
         public string? ImagePath { get; set; }
         public decimal Price { get; set; } // Giá của sản phẩm
+        public decimal DiscountedPrice { get; set; } // Giá sau khi áp dụng khuyến mãi
         public string? CategoryName { get; set; }
-        public List<string>? Colors { get; set; } // Danh sách màu sắc có sẵn
+        public string? PromotionTitle { get; set; } // Tên khuyến mãi nếu có
+
     }
 }

@@ -36,6 +36,18 @@ namespace Application.UseCases
             var returnCheckoutData = JsonConvert.DeserializeObject<ReturnCheckoutData>(json);
             if (returnCheckoutData == null || !returnCheckoutData.Items.Any()) return null;
 
+            // ✅ 1️⃣ Tải hình ảnh/video lên Cloudinary và lưu danh sách URL
+            var mediaUrls = new List<string>();
+            foreach (var file in request.MediaFiles)
+            {
+                var mediaUrl = await _cloudinaryService.UploadMediaAsync(file);
+                if (!string.IsNullOrEmpty(mediaUrl))
+                {
+                    mediaUrls.Add(mediaUrl);
+                }
+            }
+
+            // ✅ 2️⃣ Tạo đối tượng `ReturnOrder`
             var returnOrder = new ReturnOrder
             {
                 OrderId = returnCheckoutData.OrderId,
@@ -47,9 +59,11 @@ namespace Application.UseCases
                 RefundMethod = request.RefundMethod,
                 ReturnDescription = request.ReturnDescription,
                 Status = "Pending",
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = DateTime.UtcNow,
+                ReturnImages = mediaUrls.Any() ? JsonConvert.SerializeObject(mediaUrls) : null // ✅ Lưu URL ảnh/video vào JSON
             };
 
+            // ✅ 3️⃣ Nếu chọn phương thức hoàn tiền qua ngân hàng, lưu thông tin ngân hàng
             var refundMethodLower = request.RefundMethod.Trim().ToLower();
             if (refundMethodLower == "ngân hàng")
             {
@@ -58,10 +72,10 @@ namespace Application.UseCases
                 returnOrder.BankAccountName = request.BankAccountName;
             }
 
-            // ✅ Lưu đơn đổi trả vào DB
+            // ✅ 4️⃣ Lưu đơn đổi trả vào DB
             await _returnOrderRepository.CreateReturnOrderAsync(returnOrder);
 
-            // ✅ Lưu danh sách sản phẩm đổi trả vào bảng ReturnOrderItem
+            // ✅ 5️⃣ Lưu danh sách sản phẩm đổi trả vào `ReturnOrderItem`
             var returnOrderItems = returnCheckoutData.Items.Select(item => new ReturnOrderItem
             {
                 ReturnOrderId = returnOrder.ReturnOrderId,
@@ -71,27 +85,8 @@ namespace Application.UseCases
             }).ToList();
 
             await _returnOrderRepository.AddReturnOrderItemsAsync(returnOrderItems);
-            // ✅ Tải hình ảnh/video lên Cloudinary & lưu vào DB
-            var mediaEntities = new List<ReturnOrderMedium>();
-            foreach (var file in request.MediaFiles)
-            {
-                var mediaUrl = await _cloudinaryService.UploadMediaAsync(file);
-                if (!string.IsNullOrEmpty(mediaUrl))
-                {
-                    mediaEntities.Add(new ReturnOrderMedium
-                    {
-                        ReturnOrderId = returnOrder.ReturnOrderId,
-                        MediaUrl = mediaUrl,
-                        CreatedDate = DateTime.UtcNow
-                    });
-                }
-            }
 
-            if (mediaEntities.Any())
-            {
-                await _returnOrderRepository.AddReturnOrderMediaAsync(mediaEntities);
-            }
-
+            // ✅ 6️⃣ Xóa dữ liệu cache sau khi hoàn tất
             await _cache.RemoveAsync(cacheKey);
 
             return new SubmitReturnResponse
@@ -100,6 +95,7 @@ namespace Application.UseCases
                 Status = "Pending",
             };
         }
+
     }
 
 

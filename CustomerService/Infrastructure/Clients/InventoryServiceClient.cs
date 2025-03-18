@@ -1,5 +1,6 @@
 ﻿using Application.DTO.Response;
 using Application.Interfaces;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,10 +13,11 @@ namespace Infrastructure.Clients
     public class InventoryServiceClient : IInventoryServiceClient
     {
         private readonly HttpClient _httpClient;
-
-        public InventoryServiceClient(HttpClient httpClient)
+        private readonly ILogger<InventoryServiceClient> _logger;
+        public InventoryServiceClient(HttpClient httpClient, ILogger<InventoryServiceClient> logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
         }
 
 
@@ -76,5 +78,43 @@ namespace Infrastructure.Clients
             var result = await response.Content.ReadFromJsonAsync<ResponseDTO<ProductVariantResponse>>();
             return result?.Data;
         }
+        public async Task<ProductVariantResponse?> GetProductVariantByDetails(int productId, string size, string color)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"products/variant/details?productId={productId}&size={Uri.EscapeDataString(size)}&color={Uri.EscapeDataString(color)}");
+
+                // ❌ Kiểm tra nếu response không thành công
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning($"InventoryService trả về mã lỗi {response.StatusCode} khi tìm biến thể sản phẩm.");
+                    return null;
+                }
+
+                // ✅ Đọc JSON từ response
+                var result = await response.Content.ReadFromJsonAsync<ResponseDTO<ProductVariantResponse>>();
+
+                // ❌ Kiểm tra dữ liệu null hoặc API báo lỗi
+                if (result == null || !result.Status)
+                {
+                    _logger.LogWarning($"InventoryService phản hồi lỗi: {result?.Message ?? "Không có dữ liệu"}");
+                    return null;
+                }
+
+                return result.Data;
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _logger.LogError($"Lỗi HTTP khi gọi InventoryService: {httpEx.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Lỗi không xác định khi gọi InventoryService: {ex.Message}");
+                return null;
+            }
+        }
+
+
     }
 }

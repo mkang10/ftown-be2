@@ -95,15 +95,24 @@ namespace Infrastructure
                 .Include(o => o.Payments)
                 .Where(o => o.AccountId == accountId &&
                             o.Status == "completed" &&
-                            _context.OrderHistories
-                                .Where(oh => oh.OrderId == o.OrderId && oh.OrderStatus == "completed")
-                                .OrderByDescending(oh => oh.ChangedDate)
-                                .Select(oh => oh.ChangedDate)
-                                .FirstOrDefault() >= sevenDaysAgo)
+                            _context.AuditLogs.Any(al =>
+                                al.TableName == "Orders" &&
+                                al.Operation == "completed" &&
+                                al.RecordId == o.OrderId.ToString() &&
+                                al.ChangeDate >= sevenDaysAgo))
                 .OrderByDescending(o => o.CreatedDate)
                 .ToListAsync();
 
             return orders;
+        }
+        public async Task UpdateOrderStatusAsync(int orderId, string newStatus)
+        {
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order == null) return;
+
+            order.Status = newStatus;
+            _context.Orders.Update(order);
+            await _context.SaveChangesAsync();
         }
         public async Task<Order> GetOrderItemsWithOrderIdAsync(int orderId)
         {

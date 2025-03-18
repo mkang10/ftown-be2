@@ -37,7 +37,8 @@ namespace Application.UseCases
 
         public async Task<List<OrderItemResponse>> Handle(int orderId, int accountId)
         {
-            var cacheKey = $"ReturnOrderItems_{accountId}_{orderId}";
+            string instanceName = "OrderInstance:";
+            var cacheKey = $"{instanceName}ReturnOrderItems_{accountId}_{orderId}";
 
             // Kiểm tra nếu đã có trong Redis
             var cachedData = await _cache.GetAsync(cacheKey);

@@ -9,7 +9,7 @@ namespace Application.DTO.Request
 {
     public class StockUpdateRequest
     {
-        public int StoreId { get; set; }
+        public int WarehouseId { get; set; }
         public List<StockItemResponse> Items { get; set; } = new();
     }
 }

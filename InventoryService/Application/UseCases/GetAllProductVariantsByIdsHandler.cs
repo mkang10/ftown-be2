@@ -36,7 +36,8 @@ namespace Application.UseCases
             // 🟢 Kiểm tra cache trước
             foreach (var variantId in variantIds)
             {
-                string cacheKey = $"variant:{variantId}";
+                string instanceName = "ProductInstance";
+                string cacheKey = $"{instanceName}:variant:{variantId}";
                 var cachedVariant = await _cacheService.GetCacheAsync<ProductVariantResponse>(cacheKey);
                 if (cachedVariant != null)
                 {

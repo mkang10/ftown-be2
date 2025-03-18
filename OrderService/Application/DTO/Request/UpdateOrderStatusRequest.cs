@@ -8,7 +8,8 @@ namespace Application.DTO.Request
 {
     public class UpdateOrderStatusRequest
     {
-        public long OrderId { get; set; }
-        public string PaymentStatus { get; set; } = string.Empty;
+        public string NewStatus { get; set; } = null!;
+        public int ChangedBy { get; set; }
+        public string? Comment { get; set; }
     }
 }

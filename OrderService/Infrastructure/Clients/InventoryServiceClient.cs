@@ -80,67 +80,6 @@ namespace Infrastructure.Clients
 
 
 
-        public async Task<StoreResponse?> GetStoreByIdAsync(int storeId)
-        {
-            try
-            {
-                var response = await _httpClient.GetAsync($"stores/{storeId}");
-                var responseData = await response.Content.ReadAsStringAsync(); // 🛠 Log toàn bộ JSON response
-                Console.WriteLine($"[DEBUG] Store API Response: {responseData}");
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    Console.WriteLine($"[ERROR] Không thể lấy thông tin cửa hàng: {response.StatusCode}");
-                    return null;
-                }
-
-                // ✅ Nếu API trả về ResponseDTO<StoreResponse>, cần đọc từ `.Data`
-                var responseDTO = JsonSerializer.Deserialize<ResponseDTO<StoreResponse>>(responseData, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                return responseDTO?.Data; // ✅ Lấy dữ liệu từ `Data`
-            }
-            catch (HttpRequestException ex)
-            {
-                Console.WriteLine($"[ERROR] Lỗi kết nối đến InventoryService: {ex.Message}");
-                return null;
-            }
-        }
-
-
-
-        public async Task<List<Store>> GetAllStoresAsync()
-        {
-            try
-            {
-                // Gọi endpoint GET api/stores, giả sử API trả về JSON của ResponseDTO<List<Store>>
-                var response = await _httpClient.GetAsync("stores");
-                if (!response.IsSuccessStatusCode)
-                {
-                    Console.WriteLine($"[ERROR] Không thể lấy danh sách cửa hàng: {response.StatusCode}");
-                    return new List<Store>();
-                }
-
-                var responseData = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"[DEBUG] Stores API Response: {responseData}");
-
-                // Deserialize thành ResponseDTO<List<Store>> và trả về Data
-                var result = JsonSerializer.Deserialize<ResponseDTO<List<Store>>>(responseData, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                return result?.Data ?? new List<Store>();
-            }
-            catch (HttpRequestException ex)
-            {
-                Console.WriteLine($"[ERROR] Lỗi kết nối đến InventoryService: {ex.Message}");
-                return new List<Store>();
-            }
-        }
-
         public async Task<int> GetStockQuantityAsync(int storeId, int variantId)
         {
             try
@@ -174,23 +113,27 @@ namespace Infrastructure.Clients
         /// <summary>
         /// Gửi yêu cầu giảm tồn kho sau khi đơn hàng được tạo thành công.
         /// </summary>
-        public async Task<bool> UpdateStockAfterOrderAsync(int storeId, List<OrderDetail> orderDetails)
+        public async Task<bool> UpdateStockAfterOrderAsync(int warehouseId, List<OrderDetail> orderDetails)
         {
             try
             {
                 // Chuyển đổi danh sách OrderDetail thành StockUpdateRequest
                 var stockUpdateRequest = new StockUpdateRequest
                 {
-                    StoreId = storeId,
+                    WarehouseId = warehouseId,
                     Items = orderDetails.Select(od => new StockItemResponse
                     {
                         VariantId = od.ProductVariantId,
                         Quantity = od.Quantity
                     }).ToList()
                 };
+
                 Console.WriteLine($"[DEBUG] Payload gửi đi: {JsonSerializer.Serialize(stockUpdateRequest)}");
+
                 // Gửi request đến InventoryService
-                var response = await _httpClient.PostAsJsonAsync("stores/update-after-order", stockUpdateRequest);
+                var response = await _httpClient.PostAsJsonAsync("warehouses/update-after-order", stockUpdateRequest);
+                var responseJson = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"[DEBUG] API Response: {responseJson}");
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -198,7 +141,19 @@ namespace Infrastructure.Clients
                     return false;
                 }
 
-                return await response.Content.ReadFromJsonAsync<bool>();
+                // 🛠 Đọc JSON đúng kiểu `ResponseDTO`
+                var result = await response.Content.ReadFromJsonAsync<ResponseDTO>();
+
+                if (result != null && result.Status)
+                {
+                    Console.WriteLine($"[INFO] {result.Message}");
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine($"[ERROR] Cập nhật tồn kho thất bại: {result?.Message}");
+                    return false;
+                }
             }
             catch (Exception ex)
             {
@@ -206,5 +161,7 @@ namespace Infrastructure.Clients
                 return false;
             }
         }
+
+
     }
 }
