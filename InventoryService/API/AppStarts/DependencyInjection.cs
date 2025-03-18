@@ -1,5 +1,6 @@
 ﻿
 
+using Application.Interfaces;
 using Application.UseCases;
 using Domain.Entities;
 using Domain.Interfaces;
@@ -23,7 +24,8 @@ namespace API.AppStarts
             {
                 options.UseSqlServer(configuration.GetConnectionString("DBDefault"));
             });
-
+            services.AddScoped<IExcelRepo, ExcelRepository>();
+            services.AddScoped<IExcelService, ExcelHandler>();
             // use DI here
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<ElasticsearchService>();

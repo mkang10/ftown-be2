@@ -9,6 +9,11 @@ namespace API.AppStarts
     {
         public AutoMapperConfig()
         {
+            //Exxcel
+            CreateMap<Product, ProductExcelRequestDTO>().ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.Category.Name));
+            CreateMap<Product, CreateProductDTORequest>().ReverseMap();
+
+
             CreateMap<Product, ProductListResponse>()
                 .ForMember(dest => dest.CategoryName,
                            opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : "Uncategorized"))

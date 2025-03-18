@@ -1,7 +1,6 @@
 ﻿
 
 using Application.UseCases;
-using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;

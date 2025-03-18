@@ -2,7 +2,6 @@
 
 using Application.Interfaces;
 using Application.UseCases;
-using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure;
 using Infrastructure.Clients;
