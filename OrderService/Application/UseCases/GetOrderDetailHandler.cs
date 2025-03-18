@@ -49,17 +49,16 @@ namespace Application.UseCases
 
             // Gửi một request duy nhất để lấy thông tin tất cả product variants
             Dictionary<int, ProductVariantResponse> variantDetailsDict = new();
-            StoreResponse storeDetails = null;
 
             try
             {
                 variantDetailsDict = await _inventoryServiceClient.GetAllProductVariantsByIdsAsync(variantIds);
 
-                if (order.StoreId.HasValue)
-                {
-                    storeDetails = await _inventoryServiceClient.GetStoreByIdAsync(order.StoreId.Value);
-                    //_logger.LogInformation($"Fetched store details: {JsonSerializer.Serialize(storeDetails)}");
-                }
+                //if (order.StoreId.HasValue)
+                //{
+                //    storeDetails = await _inventoryServiceClient.GetStoreByIdAsync(order.StoreId.Value);
+                //    //_logger.LogInformation($"Fetched store details: {JsonSerializer.Serialize(storeDetails)}");
+                //}
             }
             catch (Exception ex)
             {
@@ -105,7 +104,6 @@ namespace Application.UseCases
                 Province = order.Province,
                 Country = order.Country,
                 PaymentMethod = paymentMethod,
-                Store = storeDetails,
                 OrderTotal = order.OrderTotal ?? 0,
                 ShippingCost = order.ShippingCost ?? 0,
                 OrderItems = orderitemsResponses

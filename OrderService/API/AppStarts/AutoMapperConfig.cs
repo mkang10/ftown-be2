@@ -27,9 +27,6 @@ namespace API.AppStarts
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.RecipientPhone));
 
-            CreateMap<OrderHistory, OrderHistoryResponse>()
-            .ForMember(dest => dest.ChangedByUser, opt => opt.MapFrom(src => src.ChangedByNavigation.Email)) // Lấy email của người thay đổi
-            .ForMember(dest => dest.ChangedDate, opt => opt.MapFrom(src => src.ChangedDate ?? DateTime.UtcNow));
 
             CreateMap<OrderItemResponse, ReturnItemResponse>()
             .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.PriceAtPurchase)); // Map giá lúc mua

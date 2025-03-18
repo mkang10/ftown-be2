@@ -12,7 +12,7 @@ namespace Application.DTO.Request
         public string CheckOutSessionId { get; set; } = null!;
         public int? ShippingAddressId { get; set; }
         public string PaymentMethod { get; set; } = null!;
-        public int? StoreId { get; set; }
+        public int? WarehouseId { get; set; }
         //public List<int> SelectedProductVariantIds { get; set; } = new();
     }
 }

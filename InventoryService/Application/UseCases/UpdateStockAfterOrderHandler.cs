@@ -11,10 +11,10 @@ namespace Application.UseCases
 {
     public class UpdateStockAfterOrderHandler
     {
-        private readonly IStoreStockRepository _storeStockRepository;
-        public UpdateStockAfterOrderHandler(IStoreStockRepository storeStockRepository)
+        private readonly IWareHousesStockRepository _wareHousesStockRepository;
+        public UpdateStockAfterOrderHandler(IWareHousesStockRepository wareHousesStockRepository)
         {
-            _storeStockRepository = storeStockRepository;
+            _wareHousesStockRepository = wareHousesStockRepository;
         }
         public async Task<StockUpdateResponse> HandleAsync(StockUpdateRequest request)
         {
@@ -24,7 +24,7 @@ namespace Application.UseCases
                                       .ToList();
 
             // Gọi repository để cập nhật tồn kho trong DB
-            bool success = await _storeStockRepository.UpdateStockAfterOrderAsync(request.StoreId, stockUpdates);
+            bool success = await _wareHousesStockRepository.UpdateStockAfterOrderAsync(request.WarehouseId, stockUpdates);
 
             // Trả về response
             return new StockUpdateResponse

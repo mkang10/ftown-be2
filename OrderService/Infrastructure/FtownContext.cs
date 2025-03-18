@@ -26,39 +26,45 @@ public partial class FtownContext : DbContext
 
     public virtual DbSet<Category> Categories { get; set; }
 
+    public virtual DbSet<CheckDetail> CheckDetails { get; set; }
+
+    public virtual DbSet<CheckSession> CheckSessions { get; set; }
+
+    public virtual DbSet<Color> Colors { get; set; }
+
+    public virtual DbSet<Conversation> Conversations { get; set; }
+
+    public virtual DbSet<ConversationParticipant> ConversationParticipants { get; set; }
+
     public virtual DbSet<CustomerDetail> CustomerDetails { get; set; }
 
     public virtual DbSet<DeliveryTracking> DeliveryTrackings { get; set; }
 
-    public virtual DbSet<Document> Documents { get; set; }
+    public virtual DbSet<Dispatch> Dispatches { get; set; }
+
+    public virtual DbSet<DispatchDetail> DispatchDetails { get; set; }
 
     public virtual DbSet<Feedback> Feedbacks { get; set; }
 
+    public virtual DbSet<Import> Imports { get; set; }
+
+    public virtual DbSet<ImportDetail> ImportDetails { get; set; }
+
+    public virtual DbSet<ImportStoreDetail> ImportStoreDetails { get; set; }
+
     public virtual DbSet<Interest> Interests { get; set; }
 
-    public virtual DbSet<InventoryImport> InventoryImports { get; set; }
-
-    public virtual DbSet<InventoryImportDetail> InventoryImportDetails { get; set; }
-
-    public virtual DbSet<InventoryImportHistory> InventoryImportHistories { get; set; }
-
-    public virtual DbSet<InventoryTransaction> InventoryTransactions { get; set; }
-
-    public virtual DbSet<InventoryTransactionDetail> InventoryTransactionDetails { get; set; }
-
-    public virtual DbSet<InventoryTransactionHistory> InventoryTransactionHistories { get; set; }
+    public virtual DbSet<Message> Messages { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
     public virtual DbSet<Order> Orders { get; set; }
 
+    public virtual DbSet<OrderAssignment> OrderAssignments { get; set; }
+
     public virtual DbSet<OrderDetail> OrderDetails { get; set; }
 
-    public virtual DbSet<OrderHistory> OrderHistories { get; set; }
-
     public virtual DbSet<Payment> Payments { get; set; }
-
-    public virtual DbSet<PaymentHistory> PaymentHistories { get; set; }
 
     public virtual DbSet<Product> Products { get; set; }
 
@@ -72,8 +78,6 @@ public partial class FtownContext : DbContext
 
     public virtual DbSet<ReturnOrderItem> ReturnOrderItems { get; set; }
 
-    public virtual DbSet<ReturnOrderMedium> ReturnOrderMedia { get; set; }
-
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<Sale> Sales { get; set; }
@@ -84,15 +88,21 @@ public partial class FtownContext : DbContext
 
     public virtual DbSet<ShoppingCart> ShoppingCarts { get; set; }
 
+    public virtual DbSet<Size> Sizes { get; set; }
+
     public virtual DbSet<StaffDetail> StaffDetails { get; set; }
 
-    public virtual DbSet<Store> Stores { get; set; }
+    public virtual DbSet<StoreExportStoreDetail> StoreExportStoreDetails { get; set; }
 
-    public virtual DbSet<StoreStock> StoreStocks { get; set; }
+    public virtual DbSet<Transfer> Transfers { get; set; }
 
-    public virtual DbSet<WishList> WishLists { get; set; }
+    public virtual DbSet<TransferDetail> TransferDetails { get; set; }
 
-    public virtual DbSet<WishListItem> WishListItems { get; set; }
+    public virtual DbSet<WareHouseStockAudit> WareHouseStockAudits { get; set; }
+
+    public virtual DbSet<WareHousesStock> WareHousesStocks { get; set; }
+
+    public virtual DbSet<Warehouse> Warehouses { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -102,13 +112,13 @@ public partial class FtownContext : DbContext
     {
         modelBuilder.Entity<Account>(entity =>
         {
-            entity.HasKey(e => e.AccountId).HasName("PK__Account__349DA58656D1B412");
+            entity.HasKey(e => e.AccountId).HasName("PK__Account__349DA58670B68E29");
 
             entity.ToTable("Account");
 
             entity.HasIndex(e => e.Email, "IX_Account_Email");
 
-            entity.HasIndex(e => e.Email, "UQ__Account__A9D105343FD464C5").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Account__A9D1053433E59FD2").IsUnique();
 
             entity.Property(e => e.AccountId).HasColumnName("AccountID");
             entity.Property(e => e.Address).HasMaxLength(255);
@@ -126,12 +136,12 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Role).WithMany(p => p.Accounts)
                 .HasForeignKey(d => d.RoleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Account__RoleID__367C1819");
+                .HasConstraintName("FK__Account__RoleID__5224328E");
         });
 
         modelBuilder.Entity<AccountInterest>(entity =>
         {
-            entity.HasKey(e => e.AccountInterestId).HasName("PK__AccountI__E2B286B11AC0502E");
+            entity.HasKey(e => e.AccountInterestId).HasName("PK__AccountI__E2B286B1AC4AAF2C");
 
             entity.Property(e => e.AccountInterestId).HasColumnName("AccountInterestID");
             entity.Property(e => e.AccountId).HasColumnName("AccountID");
@@ -144,37 +154,39 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.AccountInterests)
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__AccountIn__Accou__37703C52");
+                .HasConstraintName("FK__AccountIn__Accou__531856C7");
 
             entity.HasOne(d => d.Interest).WithMany(p => p.AccountInterests)
                 .HasForeignKey(d => d.InterestId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__AccountIn__Inter__3864608B");
+                .HasConstraintName("FK__AccountIn__Inter__540C7B00");
         });
 
         modelBuilder.Entity<AuditLog>(entity =>
         {
-            entity.HasKey(e => e.AuditLogId).HasName("PK__AuditLog__EB5F6CDD3FB38FA7");
+            entity.HasKey(e => e.AuditLogId).HasName("PK__AuditLog__EB5F6CDD850E8406");
 
             entity.ToTable("AuditLog");
 
             entity.Property(e => e.AuditLogId).HasColumnName("AuditLogID");
-            entity.Property(e => e.ChangeType).HasMaxLength(50);
-            entity.Property(e => e.ChangedDate)
+            entity.Property(e => e.ChangeDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.RecordId).HasColumnName("RecordID");
-            entity.Property(e => e.TableName).HasMaxLength(255);
+            entity.Property(e => e.Comment).HasMaxLength(100);
+            entity.Property(e => e.Operation).HasMaxLength(50);
+            entity.Property(e => e.RecordId)
+                .HasMaxLength(100)
+                .HasColumnName("RecordID");
+            entity.Property(e => e.TableName).HasMaxLength(100);
 
             entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.AuditLogs)
                 .HasForeignKey(d => d.ChangedBy)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__AuditLog__Change__395884C4");
+                .HasConstraintName("FK_AuditLog_Account");
         });
 
         modelBuilder.Entity<CartItem>(entity =>
         {
-            entity.HasKey(e => e.CartItemId).HasName("PK__CartItem__488B0B2AA8B139D1");
+            entity.HasKey(e => e.CartItemId).HasName("PK__CartItem__488B0B2A84DC35D9");
 
             entity.Property(e => e.CartItemId).HasColumnName("CartItemID");
             entity.Property(e => e.CartId).HasColumnName("CartID");
@@ -183,17 +195,17 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Cart).WithMany(p => p.CartItems)
                 .HasForeignKey(d => d.CartId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__CartItems__CartI__3A4CA8FD");
+                .HasConstraintName("FK__CartItems__CartI__55F4C372");
 
             entity.HasOne(d => d.ProductVariant).WithMany(p => p.CartItems)
                 .HasForeignKey(d => d.ProductVariantId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__CartItems__Produ__3B40CD36");
+                .HasConstraintName("FK__CartItems__Produ__56E8E7AB");
         });
 
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.CategoryId).HasName("PK__Category__19093A2BF9362E21");
+            entity.HasKey(e => e.CategoryId).HasName("PK__Category__19093A2BBE17F59B");
 
             entity.ToTable("Category");
 
@@ -207,9 +219,107 @@ public partial class FtownContext : DbContext
             entity.Property(e => e.ParentCategoryId).HasColumnName("ParentCategoryID");
         });
 
+        modelBuilder.Entity<CheckDetail>(entity =>
+        {
+            entity.HasKey(e => e.CheckDetailId).HasName("PK__CheckDet__C0611DEA4F258F90");
+
+            entity.ToTable("CheckDetail");
+
+            entity.Property(e => e.CheckDetailId).HasColumnName("CheckDetailID");
+            entity.Property(e => e.CheckSessionId).HasColumnName("CheckSessionID");
+            entity.Property(e => e.Comments).HasMaxLength(500);
+            entity.Property(e => e.Difference).HasComputedColumnSql("([CountedQuantity]-[ExpectedQuantity])", false);
+            entity.Property(e => e.ShopManagerId).HasColumnName("ShopManagerID");
+            entity.Property(e => e.StaffId).HasColumnName("StaffID");
+            entity.Property(e => e.WarehouseId).HasColumnName("WarehouseID");
+
+            entity.HasOne(d => d.CheckSession).WithMany(p => p.CheckDetails)
+                .HasForeignKey(d => d.CheckSessionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_StoreCheckDetail_StoreCheckSession");
+
+            entity.HasOne(d => d.ShopManager).WithMany(p => p.CheckDetails)
+                .HasForeignKey(d => d.ShopManagerId)
+                .HasConstraintName("FK_StoreCheckDetail_ShopManagerDetail");
+
+            entity.HasOne(d => d.Staff).WithMany(p => p.CheckDetails)
+                .HasForeignKey(d => d.StaffId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_StoreCheckDetail_StaffDetail");
+
+            entity.HasOne(d => d.Warehouse).WithMany(p => p.CheckDetails)
+                .HasForeignKey(d => d.WarehouseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_StoreCheckDetail_Warehouses");
+        });
+
+        modelBuilder.Entity<CheckSession>(entity =>
+        {
+            entity.HasKey(e => e.CheckSessionId).HasName("PK__CheckSes__DA8D1152B297359D");
+
+            entity.ToTable("CheckSession");
+
+            entity.Property(e => e.CheckSessionId).HasColumnName("CheckSessionID");
+            entity.Property(e => e.OwnerId).HasColumnName("OwnerID");
+            entity.Property(e => e.Remarks).HasMaxLength(500);
+            entity.Property(e => e.SessionDate).HasColumnType("datetime");
+            entity.Property(e => e.Status).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<Color>(entity =>
+        {
+            entity.HasKey(e => e.ColorId).HasName("PK__Color__8DA7676DDC8070ED");
+
+            entity.ToTable("Color");
+
+            entity.Property(e => e.ColorId).HasColumnName("ColorID");
+            entity.Property(e => e.ColorCode).HasMaxLength(50);
+            entity.Property(e => e.ColorName).HasMaxLength(50);
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<Conversation>(entity =>
+        {
+            entity.HasKey(e => e.ConversationId).HasName("PK__Conversa__C050D8972ADF11C1");
+
+            entity.ToTable("Conversation");
+
+            entity.Property(e => e.ConversationId).HasColumnName("ConversationID");
+            entity.Property(e => e.ConversationName).HasMaxLength(255);
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.LastUpdated)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<ConversationParticipant>(entity =>
+        {
+            entity.HasKey(e => new { e.ConversationId, e.AccountId }).HasName("PK__Conversa__B31902CFB6A17279");
+
+            entity.Property(e => e.ConversationId).HasColumnName("ConversationID");
+            entity.Property(e => e.AccountId).HasColumnName("AccountID");
+            entity.Property(e => e.JoinedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Account).WithMany(p => p.ConversationParticipants)
+                .HasForeignKey(d => d.AccountId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ConversationParticipants_Account");
+
+            entity.HasOne(d => d.Conversation).WithMany(p => p.ConversationParticipants)
+                .HasForeignKey(d => d.ConversationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ConversationParticipants_Conversation");
+        });
+
         modelBuilder.Entity<CustomerDetail>(entity =>
         {
-            entity.HasKey(e => e.CustomerDetailId).HasName("PK__Customer__D04B36FE842E3CD1");
+            entity.HasKey(e => e.CustomerDetailId).HasName("PK__Customer__D04B36FEE8360716");
 
             entity.ToTable("CustomerDetail");
 
@@ -226,12 +336,12 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.CustomerDetails)
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__CustomerD__Accou__3C34F16F");
+                .HasConstraintName("FK__CustomerD__Accou__5D95E53A");
         });
 
         modelBuilder.Entity<DeliveryTracking>(entity =>
         {
-            entity.HasKey(e => e.TrackingId).HasName("PK__Delivery__3C19EDD1A18A07C0");
+            entity.HasKey(e => e.TrackingId).HasName("PK__Delivery__3C19EDD17985CFF2");
 
             entity.ToTable("DeliveryTracking");
 
@@ -249,35 +359,41 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Order).WithMany(p => p.DeliveryTrackings)
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__DeliveryT__Order__3D2915A8");
+                .HasConstraintName("FK__DeliveryT__Order__5E8A0973");
         });
 
-        modelBuilder.Entity<Document>(entity =>
+        modelBuilder.Entity<Dispatch>(entity =>
         {
-            entity.HasKey(e => e.DocumentId).HasName("PK__Document__1ABEEF6F693D5604");
+            entity.HasKey(e => e.DispatchId).HasName("PK__Dispatch__434DBD750A98B074");
 
-            entity.ToTable("Document");
+            entity.ToTable("Dispatch");
 
-            entity.Property(e => e.DocumentId).HasColumnName("DocumentID");
-            entity.Property(e => e.TransactionId).HasColumnName("TransactionID");
-            entity.Property(e => e.UploadedDate)
+            entity.Property(e => e.DispatchId).HasColumnName("DispatchID");
+            entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.ReferenceNumber).HasMaxLength(100);
+            entity.Property(e => e.Remarks).HasMaxLength(500);
+            entity.Property(e => e.Status).HasMaxLength(50);
+        });
 
-            entity.HasOne(d => d.Transaction).WithMany(p => p.Documents)
-                .HasForeignKey(d => d.TransactionId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Document__Transa__3E1D39E1");
+        modelBuilder.Entity<DispatchDetail>(entity =>
+        {
+            entity.HasKey(e => e.DispatchDetailId).HasName("PK__Dispatch__8B84B600A692BF1A");
 
-            entity.HasOne(d => d.UploadedByNavigation).WithMany(p => p.Documents)
-                .HasForeignKey(d => d.UploadedBy)
+            entity.Property(e => e.DispatchDetailId).HasColumnName("DispatchDetailID");
+            entity.Property(e => e.DispatchId).HasColumnName("DispatchID");
+            entity.Property(e => e.ProductVariantOfflineId).HasColumnName("ProductVariantOfflineID");
+
+            entity.HasOne(d => d.Dispatch).WithMany(p => p.DispatchDetails)
+                .HasForeignKey(d => d.DispatchId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Document__Upload__3F115E1A");
+                .HasConstraintName("FK_StoreDispatchDetails_StoreDispatch");
         });
 
         modelBuilder.Entity<Feedback>(entity =>
         {
-            entity.HasKey(e => e.FeedbackId).HasName("PK__Feedback__6A4BEDF6EDA9EAB1");
+            entity.HasKey(e => e.FeedbackId).HasName("PK__Feedback__6A4BEDF67A481618");
 
             entity.ToTable("Feedback");
 
@@ -292,170 +408,112 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.Feedbacks)
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Feedback__Accoun__40058253");
+                .HasConstraintName("FK__Feedback__Accoun__607251E5");
 
             entity.HasOne(d => d.Product).WithMany(p => p.Feedbacks)
                 .HasForeignKey(d => d.ProductId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Feedback__Produc__40F9A68C");
+                .HasConstraintName("FK__Feedback__Produc__6166761E");
+        });
+
+        modelBuilder.Entity<Import>(entity =>
+        {
+            entity.HasKey(e => e.ImportId).HasName("PK__Import__8697678A4F41F01B");
+
+            entity.ToTable("Import");
+
+            entity.Property(e => e.ImportId).HasColumnName("ImportID");
+            entity.Property(e => e.ApprovedDate).HasColumnType("datetime");
+            entity.Property(e => e.CompletedDate).HasColumnType("datetime");
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.OriginalImportId).HasColumnName("OriginalImportID");
+            entity.Property(e => e.ReferenceNumber).HasMaxLength(100);
+            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.TotalCost).HasColumnType("decimal(10, 2)");
+        });
+
+        modelBuilder.Entity<ImportDetail>(entity =>
+        {
+            entity.HasKey(e => e.ImportDetailId).HasName("PK__ImportDe__CDFBBA517AF0945B");
+
+            entity.Property(e => e.ImportDetailId).HasColumnName("ImportDetailID");
+            entity.Property(e => e.ImportId).HasColumnName("ImportID");
+            entity.Property(e => e.ProductVariantOfflineId).HasColumnName("ProductVariantOfflineID");
+
+            entity.HasOne(d => d.Import).WithMany(p => p.ImportDetails)
+                .HasForeignKey(d => d.ImportId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_StoreImportDetails_StoreImport");
+        });
+
+        modelBuilder.Entity<ImportStoreDetail>(entity =>
+        {
+            entity.HasKey(e => e.StoreImportStoreId).HasName("PK_StoreImportStoreDetail");
+
+            entity.ToTable("ImportStoreDetail");
+
+            entity.Property(e => e.StoreImportStoreId)
+                .ValueGeneratedNever()
+                .HasColumnName("StoreImportStoreID");
+            entity.Property(e => e.Comments).HasMaxLength(500);
+            entity.Property(e => e.ImportDetailId).HasColumnName("ImportDetailID");
+            entity.Property(e => e.StaffDetailId).HasColumnName("StaffDetailID");
+            entity.Property(e => e.Status)
+                .HasMaxLength(10)
+                .IsFixedLength();
+            entity.Property(e => e.WareHouseId).HasColumnName("WareHouseID");
+
+            entity.HasOne(d => d.ImportDetail).WithMany(p => p.ImportStoreDetails)
+                .HasForeignKey(d => d.ImportDetailId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_StoreImportStoreDetail_StoreImportDetails");
+
+            entity.HasOne(d => d.WareHouse).WithMany(p => p.ImportStoreDetails)
+                .HasForeignKey(d => d.WareHouseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_StoreImportStoreDetail_Warehouses");
         });
 
         modelBuilder.Entity<Interest>(entity =>
         {
-            entity.HasKey(e => e.InterestId).HasName("PK__Interest__20832C07B7FAD777");
+            entity.HasKey(e => e.InterestId).HasName("PK__Interest__20832C07BDED2A44");
 
             entity.Property(e => e.InterestId).HasColumnName("InterestID");
             entity.Property(e => e.Name).HasMaxLength(255);
         });
 
-        modelBuilder.Entity<InventoryImport>(entity =>
+        modelBuilder.Entity<Message>(entity =>
         {
-            entity.HasKey(e => e.ImportId).HasName("PK__Inventor__8697678A7EFD5E46");
+            entity.HasKey(e => e.MessageId).HasName("PK__Message__C87C037C16B8511B");
 
-            entity.ToTable("InventoryImport");
+            entity.ToTable("Message");
 
-            entity.Property(e => e.ImportId).HasColumnName("ImportID");
-            entity.Property(e => e.CreatedDate)
+            entity.Property(e => e.MessageId).HasColumnName("MessageID");
+            entity.Property(e => e.ConversationId).HasColumnName("ConversationID");
+            entity.Property(e => e.ParentMessageId).HasColumnName("ParentMessageID");
+            entity.Property(e => e.SenderId).HasColumnName("SenderID");
+            entity.Property(e => e.SentDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.ReferenceNumber).HasMaxLength(100);
-            entity.Property(e => e.Status)
-                .HasMaxLength(50)
-                .HasDefaultValue("Pending");
-            entity.Property(e => e.StoreId).HasColumnName("StoreID");
-            entity.Property(e => e.TotalCost).HasColumnType("decimal(10, 2)");
 
-            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.InventoryImports)
-                .HasForeignKey(d => d.CreatedBy)
+            entity.HasOne(d => d.Conversation).WithMany(p => p.Messages)
+                .HasForeignKey(d => d.ConversationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Inventory__Creat__41EDCAC5");
+                .HasConstraintName("FK_Message_Conversation");
 
-            entity.HasOne(d => d.Store).WithMany(p => p.InventoryImports)
-                .HasForeignKey(d => d.StoreId)
+            entity.HasOne(d => d.ParentMessage).WithMany(p => p.InverseParentMessage)
+                .HasForeignKey(d => d.ParentMessageId)
+                .HasConstraintName("FK_Message_Parent");
+
+            entity.HasOne(d => d.Sender).WithMany(p => p.Messages)
+                .HasForeignKey(d => d.SenderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Inventory__Store__42E1EEFE");
-        });
-
-        modelBuilder.Entity<InventoryImportDetail>(entity =>
-        {
-            entity.HasKey(e => e.ImportDetailId).HasName("PK__Inventor__CDFBBA51F8971641");
-
-            entity.Property(e => e.ImportDetailId).HasColumnName("ImportDetailID");
-            entity.Property(e => e.ImportId).HasColumnName("ImportID");
-            entity.Property(e => e.ProductVariantId).HasColumnName("ProductVariantID");
-
-            entity.HasOne(d => d.Import).WithMany(p => p.InventoryImportDetails)
-                .HasForeignKey(d => d.ImportId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Inventory__Impor__43D61337");
-
-            entity.HasOne(d => d.ProductVariant).WithMany(p => p.InventoryImportDetails)
-                .HasForeignKey(d => d.ProductVariantId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Inventory__Produ__44CA3770");
-        });
-
-        modelBuilder.Entity<InventoryImportHistory>(entity =>
-        {
-            entity.HasKey(e => e.InventoryImportHistoryId).HasName("PK__Inventor__D3F00254B1BD0013");
-
-            entity.ToTable("InventoryImportHistory");
-
-            entity.Property(e => e.InventoryImportHistoryId).HasColumnName("InventoryImportHistoryID");
-            entity.Property(e => e.ChangedDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.Comments).HasMaxLength(500);
-            entity.Property(e => e.ImportId).HasColumnName("ImportID");
-            entity.Property(e => e.Status).HasMaxLength(50);
-
-            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.InventoryImportHistories)
-                .HasForeignKey(d => d.ChangedBy)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Inventory__Chang__45BE5BA9");
-
-            entity.HasOne(d => d.Import).WithMany(p => p.InventoryImportHistories)
-                .HasForeignKey(d => d.ImportId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Inventory__Impor__46B27FE2");
-        });
-
-        modelBuilder.Entity<InventoryTransaction>(entity =>
-        {
-            entity.HasKey(e => e.TransactionId).HasName("PK__Inventor__55433A4BB1D44054");
-
-            entity.ToTable("InventoryTransaction");
-
-            entity.Property(e => e.TransactionId).HasColumnName("TransactionID");
-            entity.Property(e => e.CreatedDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.ReferenceNumber).HasMaxLength(100);
-            entity.Property(e => e.Status)
-                .HasMaxLength(50)
-                .HasDefaultValue("Pending");
-            entity.Property(e => e.StoreId).HasColumnName("StoreID");
-            entity.Property(e => e.TransactionCost).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.TransactionType).HasMaxLength(50);
-
-            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.InventoryTransactions)
-                .HasForeignKey(d => d.CreatedBy)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Inventory__Creat__47A6A41B");
-
-            entity.HasOne(d => d.Store).WithMany(p => p.InventoryTransactions)
-                .HasForeignKey(d => d.StoreId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Inventory__Store__489AC854");
-        });
-
-        modelBuilder.Entity<InventoryTransactionDetail>(entity =>
-        {
-            entity.HasKey(e => e.TransactionDetailId).HasName("PK__Inventor__F2B27FE68F3F0DEF");
-
-            entity.Property(e => e.TransactionDetailId).HasColumnName("TransactionDetailID");
-            entity.Property(e => e.ProductVariantId).HasColumnName("ProductVariantID");
-            entity.Property(e => e.TransactionId).HasColumnName("TransactionID");
-
-            entity.HasOne(d => d.ProductVariant).WithMany(p => p.InventoryTransactionDetails)
-                .HasForeignKey(d => d.ProductVariantId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Inventory__Produ__498EEC8D");
-
-            entity.HasOne(d => d.Transaction).WithMany(p => p.InventoryTransactionDetails)
-                .HasForeignKey(d => d.TransactionId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Inventory__Trans__4A8310C6");
-        });
-
-        modelBuilder.Entity<InventoryTransactionHistory>(entity =>
-        {
-            entity.HasKey(e => e.InventoryTransactionHistoryId).HasName("PK__Inventor__BD7D4BFEBE947CF4");
-
-            entity.ToTable("InventoryTransactionHistory");
-
-            entity.Property(e => e.InventoryTransactionHistoryId).HasColumnName("InventoryTransactionHistoryID");
-            entity.Property(e => e.ChangedDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.Comments).HasMaxLength(500);
-            entity.Property(e => e.Status).HasMaxLength(50);
-            entity.Property(e => e.TransactionId).HasColumnName("TransactionID");
-
-            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.InventoryTransactionHistories)
-                .HasForeignKey(d => d.ChangedBy)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Inventory__Chang__4B7734FF");
-
-            entity.HasOne(d => d.Transaction).WithMany(p => p.InventoryTransactionHistories)
-                .HasForeignKey(d => d.TransactionId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Inventory__Trans__4C6B5938");
+                .HasConstraintName("FK_Message_Sender");
         });
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E32539C0C03");
+            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E32F7FEDB37");
 
             entity.ToTable("Notification");
 
@@ -470,12 +528,12 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.Notifications)
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Notificat__Accou__4D5F7D71");
+                .HasConstraintName("FK__Notificat__Accou__681373AD");
         });
 
         modelBuilder.Entity<Order>(entity =>
         {
-            entity.HasKey(e => e.OrderId).HasName("PK__Order__C3905BAFB0A3A82B");
+            entity.HasKey(e => e.OrderId).HasName("PK__Order__C3905BAFE85C1DAE");
 
             entity.ToTable("Order");
 
@@ -501,26 +559,46 @@ public partial class FtownContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("Pending");
-            entity.Property(e => e.StoreId).HasColumnName("StoreID");
-            entity.Property(e => e.Tax).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.WareHouseId).HasColumnName("WareHouseID");
 
             entity.HasOne(d => d.Account).WithMany(p => p.Orders)
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Order__AccountID__4E53A1AA");
+                .HasConstraintName("FK__Order__AccountID__690797E6");
 
             entity.HasOne(d => d.ShippingAddress).WithMany(p => p.Orders)
                 .HasForeignKey(d => d.ShippingAddressId)
-                .HasConstraintName("FK__Order__ShippingA__4F47C5E3");
+                .HasConstraintName("FK__Order__ShippingA__69FBBC1F");
 
-            entity.HasOne(d => d.Store).WithMany(p => p.Orders)
-                .HasForeignKey(d => d.StoreId)
-                .HasConstraintName("FK__Order__StoreID__503BEA1C");
+            entity.HasOne(d => d.WareHouse).WithMany(p => p.Orders)
+                .HasForeignKey(d => d.WareHouseId)
+                .HasConstraintName("FK_Order_Warehouses");
+        });
+
+        modelBuilder.Entity<OrderAssignment>(entity =>
+        {
+            entity.HasKey(e => e.AssignmentId).HasName("PK__OrderAss__32499E570275C220");
+
+            entity.ToTable("OrderAssignment");
+
+            entity.Property(e => e.AssignmentId).HasColumnName("AssignmentID");
+            entity.Property(e => e.AssignmentDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Comments).HasMaxLength(500);
+            entity.Property(e => e.OrderId).HasColumnName("OrderID");
+            entity.Property(e => e.ShopManagerId).HasColumnName("ShopManagerID");
+            entity.Property(e => e.StaffId).HasColumnName("StaffID");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.OrderAssignments)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_OrderAssignment_Order");
         });
 
         modelBuilder.Entity<OrderDetail>(entity =>
         {
-            entity.HasKey(e => e.OrderDetailId).HasName("PK__OrderDet__D3B9D30CB9116A3A");
+            entity.HasKey(e => e.OrderDetailId).HasName("PK__OrderDet__D3B9D30C7B4459E3");
 
             entity.Property(e => e.OrderDetailId).HasColumnName("OrderDetailID");
             entity.Property(e => e.DiscountApplied)
@@ -533,42 +611,17 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Order).WithMany(p => p.OrderDetails)
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__OrderDeta__Order__51300E55");
+                .HasConstraintName("FK__OrderDeta__Order__6CD828CA");
 
             entity.HasOne(d => d.ProductVariant).WithMany(p => p.OrderDetails)
                 .HasForeignKey(d => d.ProductVariantId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__OrderDeta__Produ__5224328E");
-        });
-
-        modelBuilder.Entity<OrderHistory>(entity =>
-        {
-            entity.HasKey(e => e.OrderHistoryId).HasName("PK__OrderHis__718E6CB312A20E17");
-
-            entity.ToTable("OrderHistory");
-
-            entity.Property(e => e.OrderHistoryId).HasColumnName("OrderHistoryID");
-            entity.Property(e => e.ChangedDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.Comments).HasMaxLength(500);
-            entity.Property(e => e.OrderId).HasColumnName("OrderID");
-            entity.Property(e => e.OrderStatus).HasMaxLength(50);
-
-            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.OrderHistories)
-                .HasForeignKey(d => d.ChangedBy)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__OrderHist__Chang__531856C7");
-
-            entity.HasOne(d => d.Order).WithMany(p => p.OrderHistories)
-                .HasForeignKey(d => d.OrderId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__OrderHist__Order__540C7B00");
+                .HasConstraintName("FK__OrderDeta__Produ__6DCC4D03");
         });
 
         modelBuilder.Entity<Payment>(entity =>
         {
-            entity.HasKey(e => e.PaymentId).HasName("PK__Payment__9B556A58216039C0");
+            entity.HasKey(e => e.PaymentId).HasName("PK__Payment__9B556A58D2D66852");
 
             entity.ToTable("Payment");
 
@@ -592,37 +645,12 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Order).WithMany(p => p.Payments)
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Payment__OrderID__55009F39");
-        });
-
-        modelBuilder.Entity<PaymentHistory>(entity =>
-        {
-            entity.HasKey(e => e.PaymentHistoryId).HasName("PK__PaymentH__F3B933919EE71C1C");
-
-            entity.ToTable("PaymentHistory");
-
-            entity.Property(e => e.PaymentHistoryId).HasColumnName("PaymentHistoryID");
-            entity.Property(e => e.ChangedDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.Comments).HasMaxLength(500);
-            entity.Property(e => e.PaymentId).HasColumnName("PaymentID");
-            entity.Property(e => e.PaymentStatus).HasMaxLength(50);
-
-            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.PaymentHistories)
-                .HasForeignKey(d => d.ChangedBy)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__PaymentHi__Chang__55F4C372");
-
-            entity.HasOne(d => d.Payment).WithMany(p => p.PaymentHistories)
-                .HasForeignKey(d => d.PaymentId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__PaymentHi__Payme__56E8E7AB");
+                .HasConstraintName("FK__Payment__OrderID__6EC0713C");
         });
 
         modelBuilder.Entity<Product>(entity =>
         {
-            entity.HasKey(e => e.ProductId).HasName("PK__Product__B40CC6ED3E86AB15");
+            entity.HasKey(e => e.ProductId).HasName("PK__Product__B40CC6ED4847CE3D");
 
             entity.ToTable("Product");
 
@@ -639,12 +667,12 @@ public partial class FtownContext : DbContext
 
             entity.HasOne(d => d.Category).WithMany(p => p.Products)
                 .HasForeignKey(d => d.CategoryId)
-                .HasConstraintName("FK__Product__Categor__57DD0BE4");
+                .HasConstraintName("FK__Product__Categor__6FB49575");
         });
 
         modelBuilder.Entity<ProductImage>(entity =>
         {
-            entity.HasKey(e => e.ProductImageId).HasName("PK__ProductI__07B2B1B8E48E40EB");
+            entity.HasKey(e => e.ProductImageId).HasName("PK__ProductI__07B2B1B8FD736BDE");
 
             entity.ToTable("ProductImage");
 
@@ -661,36 +689,44 @@ public partial class FtownContext : DbContext
 
         modelBuilder.Entity<ProductVariant>(entity =>
         {
-            entity.HasKey(e => e.VariantId).HasName("PK__ProductV__0EA233E4A526334A");
+            entity.HasKey(e => e.VariantId).HasName("PK__ProductV__0EA233E4887E9E48");
 
             entity.ToTable("ProductVariant");
 
             entity.HasIndex(e => e.ProductId, "IX_ProductVariant_ProductID");
 
-            entity.HasIndex(e => e.Barcode, "UQ__ProductV__177800D31D6936E9").IsUnique();
+            entity.HasIndex(e => e.Barcode, "UQ__ProductV__177800D3C855F80B").IsUnique();
 
-            entity.HasIndex(e => e.Sku, "UQ__ProductV__CA1ECF0DC3AD0D68").IsUnique();
+            entity.HasIndex(e => e.Sku, "UQ__ProductV__CA1ECF0D8D8497F6").IsUnique();
 
             entity.Property(e => e.VariantId).HasColumnName("VariantID");
             entity.Property(e => e.Barcode).HasMaxLength(100);
-            entity.Property(e => e.Color).HasMaxLength(50);
+            entity.Property(e => e.ColorId).HasColumnName("ColorID");
             entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.ProductId).HasColumnName("ProductID");
-            entity.Property(e => e.Size).HasMaxLength(50);
+            entity.Property(e => e.SizeId).HasColumnName("SizeID");
             entity.Property(e => e.Sku)
                 .HasMaxLength(100)
                 .HasColumnName("SKU");
             entity.Property(e => e.Weight).HasColumnType("decimal(10, 2)");
 
+            entity.HasOne(d => d.Color).WithMany(p => p.ProductVariants)
+                .HasForeignKey(d => d.ColorId)
+                .HasConstraintName("FK_ProductVariant_Color");
+
             entity.HasOne(d => d.Product).WithMany(p => p.ProductVariants)
                 .HasForeignKey(d => d.ProductId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ProductVa__Produ__58D1301D");
+                .HasConstraintName("FK__ProductVa__Produ__73852659");
+
+            entity.HasOne(d => d.Size).WithMany(p => p.ProductVariants)
+                .HasForeignKey(d => d.SizeId)
+                .HasConstraintName("FK_ProductVariant_Size");
         });
 
         modelBuilder.Entity<ReplyFeedback>(entity =>
         {
-            entity.HasKey(e => e.ReplyId).HasName("PK__ReplyFee__C25E4629128CF6C4");
+            entity.HasKey(e => e.ReplyId).HasName("PK__ReplyFee__C25E4629C50F4579");
 
             entity.ToTable("ReplyFeedback");
 
@@ -704,17 +740,17 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.ReplyFeedbacks)
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ReplyFeed__Accou__59C55456");
+                .HasConstraintName("FK__ReplyFeed__Accou__74794A92");
 
             entity.HasOne(d => d.Feedback).WithMany(p => p.ReplyFeedbacks)
                 .HasForeignKey(d => d.FeedbackId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ReplyFeed__Feedb__5AB9788F");
+                .HasConstraintName("FK__ReplyFeed__Feedb__756D6ECB");
         });
 
         modelBuilder.Entity<ReturnOrder>(entity =>
         {
-            entity.HasKey(e => e.ReturnOrderId).HasName("PK__ReturnOr__4DBF5543FB70199C");
+            entity.HasKey(e => e.ReturnOrderId).HasName("PK__ReturnOr__4DBF5543C34274BA");
 
             entity.ToTable("ReturnOrder");
 
@@ -739,7 +775,7 @@ public partial class FtownContext : DbContext
 
         modelBuilder.Entity<ReturnOrderItem>(entity =>
         {
-            entity.HasKey(e => e.ReturnOrderItemId).HasName("PK__ReturnOr__5F70CE667526F1AC");
+            entity.HasKey(e => e.ReturnOrderItemId).HasName("PK__ReturnOr__5F70CE665C8E62E0");
 
             entity.ToTable("ReturnOrderItem");
 
@@ -755,25 +791,13 @@ public partial class FtownContext : DbContext
                 .HasConstraintName("FK_ReturnOrderItem_ReturnOrder");
         });
 
-        modelBuilder.Entity<ReturnOrderMedium>(entity =>
-        {
-            entity.HasKey(e => e.ReturnOrderMediaId).HasName("PK__ReturnOr__8123C995BC23FAFC");
-
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(sysutcdatetime())");
-            entity.Property(e => e.MediaUrl).HasMaxLength(2048);
-
-            entity.HasOne(d => d.ReturnOrder).WithMany(p => p.ReturnOrderMedia)
-                .HasForeignKey(d => d.ReturnOrderId)
-                .HasConstraintName("FK_ReturnOrderMedia_ReturnOrder");
-        });
-
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Role__8AFACE3A06F871D0");
+            entity.HasKey(e => e.RoleId).HasName("PK__Role__8AFACE3AD1B385E3");
 
             entity.ToTable("Role");
 
-            entity.HasIndex(e => e.RoleName, "UQ__Role__8A2B616098F3F121").IsUnique();
+            entity.HasIndex(e => e.RoleName, "UQ__Role__8A2B616037B19DAF").IsUnique();
 
             entity.Property(e => e.RoleId).HasColumnName("RoleID");
             entity.Property(e => e.Description).HasMaxLength(255);
@@ -782,7 +806,7 @@ public partial class FtownContext : DbContext
 
         modelBuilder.Entity<Sale>(entity =>
         {
-            entity.HasKey(e => e.SaleId).HasName("PK__Sale__1EE3C41FA2658730");
+            entity.HasKey(e => e.SaleId).HasName("PK__Sale__1EE3C41FE224C42C");
 
             entity.ToTable("Sale");
 
@@ -797,7 +821,7 @@ public partial class FtownContext : DbContext
 
         modelBuilder.Entity<ShippingAddress>(entity =>
         {
-            entity.HasKey(e => e.AddressId).HasName("PK__Shipping__091C2A1BFC9E445F");
+            entity.HasKey(e => e.AddressId).HasName("PK__Shipping__091C2A1BAEE317A9");
 
             entity.ToTable("ShippingAddress");
 
@@ -824,16 +848,16 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.ShippingAddresses)
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ShippingA__Accou__5CA1C101");
+                .HasConstraintName("FK__ShippingA__Accou__7A3223E8");
         });
 
         modelBuilder.Entity<ShopManagerDetail>(entity =>
         {
-            entity.HasKey(e => e.ShopManagerDetailId).HasName("PK__ShopMana__0E2E2C80316EC411");
+            entity.HasKey(e => e.ShopManagerDetailId).HasName("PK__ShopMana__0E2E2C80FCFBD8FF");
 
             entity.ToTable("ShopManagerDetail");
 
-            entity.HasIndex(e => e.StoreId, "UQ__ShopMana__3B82F0E02E73CB54").IsUnique();
+            entity.HasIndex(e => e.StoreId, "UQ__ShopMana__3B82F0E017FC1656").IsUnique();
 
             entity.Property(e => e.ShopManagerDetailId).HasColumnName("ShopManagerDetailID");
             entity.Property(e => e.AccountId).HasColumnName("AccountID");
@@ -847,17 +871,12 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.ShopManagerDetails)
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ShopManag__Accou__5D95E53A");
-
-            entity.HasOne(d => d.Store).WithOne(p => p.ShopManagerDetail)
-                .HasForeignKey<ShopManagerDetail>(d => d.StoreId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ShopManag__Store__5E8A0973");
+                .HasConstraintName("FK__ShopManag__Accou__7B264821");
         });
 
         modelBuilder.Entity<ShoppingCart>(entity =>
         {
-            entity.HasKey(e => e.CartId).HasName("PK__Shopping__51BCD797C587E79B");
+            entity.HasKey(e => e.CartId).HasName("PK__Shopping__51BCD797E02E8E58");
 
             entity.ToTable("ShoppingCart");
 
@@ -870,12 +889,26 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.ShoppingCarts)
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ShoppingC__Accou__5F7E2DAC");
+                .HasConstraintName("FK__ShoppingC__Accou__7C1A6C5A");
+        });
+
+        modelBuilder.Entity<Size>(entity =>
+        {
+            entity.HasKey(e => e.SizeId).HasName("PK__Size__83BD095ADAF0E92F");
+
+            entity.ToTable("Size");
+
+            entity.Property(e => e.SizeId).HasColumnName("SizeID");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.SizeDescription).HasMaxLength(255);
+            entity.Property(e => e.SizeName).HasMaxLength(50);
         });
 
         modelBuilder.Entity<StaffDetail>(entity =>
         {
-            entity.HasKey(e => e.StaffDetailId).HasName("PK__StaffDet__56818E83DDFD0575");
+            entity.HasKey(e => e.StaffDetailId).HasName("PK__StaffDet__56818E83BE159CF9");
 
             entity.ToTable("StaffDetail");
 
@@ -894,92 +927,127 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.StaffDetails)
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__StaffDeta__Accou__607251E5");
-
-            entity.HasOne(d => d.Store).WithMany(p => p.StaffDetails)
-                .HasForeignKey(d => d.StoreId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__StaffDeta__Store__6166761E");
+                .HasConstraintName("FK__StaffDeta__Accou__7D0E9093");
         });
 
-        modelBuilder.Entity<Store>(entity =>
+        modelBuilder.Entity<StoreExportStoreDetail>(entity =>
         {
-            entity.HasKey(e => e.StoreId).HasName("PK__Store__3B82F0E195CFEAC9");
+            entity.HasKey(e => e.DispatchStoreDetailId).HasName("PK_StoreExportStoreDetail_1");
 
-            entity.ToTable("Store");
+            entity.ToTable("StoreExportStoreDetail");
 
-            entity.Property(e => e.StoreId).HasColumnName("StoreID");
-            entity.Property(e => e.CreatedDate)
+            entity.Property(e => e.DispatchStoreDetailId)
+                .ValueGeneratedNever()
+                .HasColumnName("DispatchStoreDetailID");
+            entity.Property(e => e.Comments).HasMaxLength(500);
+            entity.Property(e => e.StaffDetailId).HasColumnName("StaffDetailID");
+            entity.Property(e => e.Status)
+                .HasMaxLength(10)
+                .IsFixedLength();
+            entity.Property(e => e.WarehouseId).HasColumnName("WarehouseID");
+
+            entity.HasOne(d => d.DispatchDetailNavigation).WithMany(p => p.StoreExportStoreDetails)
+                .HasForeignKey(d => d.DispatchDetail)
+                .HasConstraintName("FK_StoreExportStoreDetail_StoreDispatchDetails");
+
+            entity.HasOne(d => d.Warehouse).WithMany(p => p.StoreExportStoreDetails)
+                .HasForeignKey(d => d.WarehouseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_StoreExportStoreDetail_Warehouses");
+        });
+
+        modelBuilder.Entity<Transfer>(entity =>
+        {
+            entity.HasKey(e => e.TransferOrderId).HasName("PK__Transfer__4AEC45EEA24E9FC7");
+
+            entity.ToTable("Transfer");
+
+            entity.Property(e => e.TransferOrderId).HasColumnName("TransferOrderID");
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.DispatchId).HasColumnName("DispatchID");
+            entity.Property(e => e.ImportId).HasColumnName("ImportID");
+            entity.Property(e => e.OriginalTransferOrderId).HasColumnName("OriginalTransferOrderID");
+            entity.Property(e => e.Remarks).HasMaxLength(500);
+            entity.Property(e => e.Status).HasMaxLength(50);
+
+            entity.HasOne(d => d.Dispatch).WithMany(p => p.Transfers)
+                .HasForeignKey(d => d.DispatchId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TransferOrder_StoreDispatch");
+
+            entity.HasOne(d => d.Import).WithMany(p => p.Transfers)
+                .HasForeignKey(d => d.ImportId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TransferOrder_StoreImport");
+        });
+
+        modelBuilder.Entity<TransferDetail>(entity =>
+        {
+            entity.HasKey(e => e.TransferOrderDetailId).HasName("PK__Transfer__5BFCAC67AB8913C8");
+
+            entity.Property(e => e.TransferOrderDetailId).HasColumnName("TransferOrderDetailID");
+            entity.Property(e => e.ProductVariantOfflineId).HasColumnName("ProductVariantOfflineID");
+            entity.Property(e => e.SourceStoreId).HasColumnName("SourceStoreID");
+            entity.Property(e => e.TransferOrderId).HasColumnName("TransferOrderID");
+
+            entity.HasOne(d => d.TransferOrder).WithMany(p => p.TransferDetails)
+                .HasForeignKey(d => d.TransferOrderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TransferOrderDetails_TransferOrder");
+        });
+
+        modelBuilder.Entity<WareHouseStockAudit>(entity =>
+        {
+            entity.HasKey(e => e.AuditId).HasName("PK__WareHous__A17F23B87ABBEC7E");
+
+            entity.ToTable("WareHouseStockAudit");
+
+            entity.Property(e => e.AuditId).HasColumnName("AuditID");
+            entity.Property(e => e.Action).HasMaxLength(100);
+            entity.Property(e => e.ActionDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.Location).HasMaxLength(255);
-            entity.Property(e => e.ManagerId).HasColumnName("ManagerID");
-            entity.Property(e => e.OperatingHours).HasMaxLength(100);
-            entity.Property(e => e.StoreDescription).HasMaxLength(500);
-            entity.Property(e => e.StoreEmail).HasMaxLength(255);
-            entity.Property(e => e.StoreName).HasMaxLength(255);
-            entity.Property(e => e.StorePhone).HasMaxLength(50);
+            entity.Property(e => e.WareHouseStockId).HasColumnName("WareHouseStockID");
 
-            entity.HasOne(d => d.Manager).WithMany(p => p.Stores)
-                .HasForeignKey(d => d.ManagerId)
-                .HasConstraintName("FK__Store__ManagerID__625A9A57");
+            entity.HasOne(d => d.WareHouseStock).WithMany(p => p.WareHouseStockAudits)
+                .HasForeignKey(d => d.WareHouseStockId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_WareHouseStockAudit_WareHousesStock");
         });
 
-        modelBuilder.Entity<StoreStock>(entity =>
+        modelBuilder.Entity<WareHousesStock>(entity =>
         {
-            entity.HasKey(e => new { e.StoreId, e.VariantId });
+            entity.HasKey(e => e.WareHouseStockId).HasName("PK__WareHous__ABE1832B7D69FFE1");
 
-            entity.ToTable("StoreStock");
+            entity.ToTable("WareHousesStock");
 
-            entity.HasOne(d => d.Store).WithMany(p => p.StoreStocks)
-                .HasForeignKey(d => d.StoreId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_StoreStock_Store");
+            entity.Property(e => e.WareHouseStockId).HasColumnName("WareHouseStockID");
+            entity.Property(e => e.VariantId).HasColumnName("VariantID");
+            entity.Property(e => e.WarehouseId).HasColumnName("WarehouseID");
 
-            entity.HasOne(d => d.Variant).WithMany(p => p.StoreStocks)
+            entity.HasOne(d => d.Variant).WithMany(p => p.WareHousesStocks)
                 .HasForeignKey(d => d.VariantId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_StoreStock_ProductVariant");
+                .HasConstraintName("FK_WareHousesStock_ProductVariant");
+
+            entity.HasOne(d => d.Warehouse).WithMany(p => p.WareHousesStocks)
+                .HasForeignKey(d => d.WarehouseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_WareHousesStock_Warehouses");
         });
 
-        modelBuilder.Entity<WishList>(entity =>
+        modelBuilder.Entity<Warehouse>(entity =>
         {
-            entity.HasKey(e => e.WishListId).HasName("PK__WishList__E41F87A7E47B1CAE");
+            entity.HasKey(e => e.WarehouseId).HasName("PK__Warehous__2608AFD9FDA6F7F6");
 
-            entity.ToTable("WishList");
-
-            entity.Property(e => e.WishListId).HasColumnName("WishListID");
-            entity.Property(e => e.AccountId).HasColumnName("AccountID");
-            entity.Property(e => e.CreatedDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-
-            entity.HasOne(d => d.Account).WithMany(p => p.WishLists)
-                .HasForeignKey(d => d.AccountId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__WishList__Accoun__634EBE90");
-        });
-
-        modelBuilder.Entity<WishListItem>(entity =>
-        {
-            entity.HasKey(e => e.WishListItemId).HasName("PK__WishList__DAC20829A11F0179");
-
-            entity.Property(e => e.WishListItemId).HasColumnName("WishListItemID");
-            entity.Property(e => e.AddedDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.ProductVariantId).HasColumnName("ProductVariantID");
-            entity.Property(e => e.WishListId).HasColumnName("WishListID");
-
-            entity.HasOne(d => d.ProductVariant).WithMany(p => p.WishListItems)
-                .HasForeignKey(d => d.ProductVariantId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__WishListI__Produ__6442E2C9");
-
-            entity.HasOne(d => d.WishList).WithMany(p => p.WishListItems)
-                .HasForeignKey(d => d.WishListId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__WishListI__WishL__65370702");
+            entity.Property(e => e.WarehouseId).HasColumnName("WarehouseID");
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.Location).HasMaxLength(255);
+            entity.Property(e => e.Phone).HasMaxLength(50);
+            entity.Property(e => e.WarehouseDescription).HasMaxLength(500);
+            entity.Property(e => e.WarehouseName).HasMaxLength(255);
+            entity.Property(e => e.WarehouseType).HasMaxLength(50);
         });
 
         OnModelCreatingPartial(modelBuilder);

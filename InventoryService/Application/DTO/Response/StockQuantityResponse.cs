@@ -8,7 +8,7 @@ namespace Application.DTO.Response
 {
     public class StockQuantityResponse
     {
-        public int StoreId { get; set; }
+        public int WarehouseId { get; set; }
         public int ProductVariantId { get; set; }
         public int StockQuantity { get; set; }
     }

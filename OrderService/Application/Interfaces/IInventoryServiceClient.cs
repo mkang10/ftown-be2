@@ -11,10 +11,8 @@ namespace Application.Interfaces
     public interface IInventoryServiceClient
     {
         Task<ProductVariantResponse?> GetProductVariantByIdAsync(int productVariantId);
-        Task<List<Store>> GetAllStoresAsync();
         Task<int> GetStockQuantityAsync(int storeId, int variantId);
-        Task<bool> UpdateStockAfterOrderAsync(int storeId, List<OrderDetail> orderDetails);
+        Task<bool> UpdateStockAfterOrderAsync(int warehouseId, List<OrderDetail> orderDetails);
         Task<Dictionary<int, ProductVariantResponse?>> GetAllProductVariantsByIdsAsync(List<int> variantIds);
-        Task<StoreResponse?> GetStoreByIdAsync(int storeId);
     }
 }

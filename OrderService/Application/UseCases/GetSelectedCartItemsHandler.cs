@@ -21,39 +21,42 @@ namespace Application.UseCases
 
         public async Task<List<OrderItemRequest>?> Handle(int accountId, List<int> selectedProductVariantIds)
         {
-            // ✅ 1. Lấy toàn bộ giỏ hàng từ CustomerService
+            // ✅ 1. Lấy toàn bộ giỏ hàng từ Redis thông qua CustomerServiceClient
             var cartItems = await _customerServiceClient.GetCartAsync(accountId);
             if (cartItems == null || !cartItems.Any())
-                return null; // Nếu giỏ hàng rỗng, trả về null
+                return null;
 
             var orderItems = new List<OrderItemRequest>();
 
-            // ✅ 2. Lọc ra các sản phẩm được chọn từ giỏ hàng
+            // ✅ 2. Lọc các sản phẩm được chọn từ giỏ hàng
             foreach (var productVariantId in selectedProductVariantIds)
             {
                 var cartItem = cartItems.FirstOrDefault(c => c.ProductVariantId == productVariantId);
                 if (cartItem == null)
-                    return null; // Nếu sản phẩm không có trong giỏ hàng, trả về null
+                    return null;
 
-                // ✅ 3. Lấy thông tin chi tiết sản phẩm từ InventoryService
-                var productVariant = await _inventoryServiceClient.GetProductVariantByIdAsync(cartItem.ProductVariantId);
-                if (productVariant == null)
-                    return null; // Nếu không tìm thấy sản phẩm trong kho
+                // ✅ 3. Lấy thông tin `variant` từ InventoryServiceClient (là ProductVariantResponse)
+                var productVariantResponse = await _inventoryServiceClient.GetProductVariantByIdAsync(cartItem.ProductVariantId);
+                if (productVariantResponse == null)
+                    return null;
 
+                // ✅ 4. Thêm vào danh sách order item
                 orderItems.Add(new OrderItemRequest
                 {
-                    ProductVariantId = cartItem.ProductVariantId,
-                    ProductName = productVariant.ProductName,
-                    ImageUrl = productVariant.ImagePath,
-                    Size =productVariant.Size,
-                    Color = productVariant.Color,
+                    ProductVariantId = productVariantResponse.VariantId,
+                    ProductName = productVariantResponse.ProductName,
+                    ImageUrl = productVariantResponse.ImagePath,
+                    Size = productVariantResponse.Size,
+                    Color = productVariantResponse.Color,
                     Quantity = cartItem.Quantity, // ✅ Tự động lấy số lượng từ giỏ hàng
-                    Price = productVariant.Price
-
+                    Price = productVariantResponse.Price, // ✅ Giá gốc từ ProductVariantResponse
+                    DiscountedPrice = productVariantResponse.DiscountedPrice, // ✅ Giá sau giảm giá từ ProductVariantResponse
+                    PromotionTitle = productVariantResponse.PromotionTitle // ✅ Tên khuyến mãi từ ProductVariantResponse
                 });
             }
 
             return orderItems;
         }
+
     }
 }

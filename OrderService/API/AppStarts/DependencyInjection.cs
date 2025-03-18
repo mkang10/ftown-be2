@@ -54,15 +54,14 @@ namespace API.AppStarts
             services.AddScoped<IOrderRepository, OrderRepository>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IShippingAddressRepository, ShippingAddressRepository>();
-            services.AddScoped<IOrderHistoryRepository, OrderHistoryRepository>();
             services.AddScoped<IReturnOrderRepository, ReturnOrderRepository>();
+            services.AddScoped<IRedisRepository, RedisRepository>();
+            services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             //Handler
 
             services.AddScoped<CreateOrderHandler>();
             services.AddScoped<ProcessPaymentHandler>();
-            services.AddScoped<AutoSelectStoreHandler>();
             services.AddScoped<GetShippingAddressHandler>();
-            services.AddScoped<GetOrderHistoryHandler>();
             services.AddScoped<GetOrdersByStatusHandler>();
             services.AddScoped<GetSelectedCartItemsHandler>();
             services.AddScoped<CheckOutHandler>();
@@ -74,6 +73,9 @@ namespace API.AppStarts
             services.AddScoped<GetOrderItemsForReturnHandler>();
             services.AddScoped<ProcessReturnCheckoutHandler>(); 
             services.AddScoped<SubmitReturnRequestHandler>();
+            services.AddScoped<RedisHandler>();
+            services.AddScoped<AuditLogHandler>();
+            
             
 
 

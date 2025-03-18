@@ -8,7 +8,11 @@ var configuration = builder.Configuration;
 // Add services to the container
 var redisConfig = builder.Configuration.GetSection("Redis");
 string redisConnectionString = $"{redisConfig["Host"]}:{redisConfig["Port"]},password={redisConfig["Password"]}";
-
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConnectionString;
+    options.InstanceName = redisConfig["InstanceName"];
+});
 // dang ký Redis ConnectionMultiplexer vào DI Container
 builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
 // Add depen

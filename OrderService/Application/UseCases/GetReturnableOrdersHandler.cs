@@ -2,6 +2,7 @@
 using Application.Interfaces;
 using AutoMapper;
 using Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,40 +16,37 @@ namespace Application.UseCases
         private readonly IOrderRepository _orderRepository;
         private readonly IMapper _mapper;
         private readonly IInventoryServiceClient _inventoryServiceClient;
-
-        public GetReturnableOrdersHandler(IOrderRepository orderRepository, IMapper mapper, IInventoryServiceClient inventoryServiceClient)
+        private readonly IAuditLogRepository _auditLogRepository;
+        public GetReturnableOrdersHandler(IOrderRepository orderRepository, IMapper mapper, IInventoryServiceClient inventoryServiceClient, IAuditLogRepository auditLogRepository)
         {
             _orderRepository = orderRepository;
             _mapper = mapper;
             _inventoryServiceClient = inventoryServiceClient;
+            _auditLogRepository = auditLogRepository;
         }
 
         public async Task<List<OrderResponse>> HandleAsync(int accountId)
         {
+            // 📌 1️⃣ Lấy danh sách đơn hàng có thể đổi trả
             var orders = await _orderRepository.GetReturnableOrdersAsync(accountId);
+            if (!orders.Any()) return new List<OrderResponse>();
+
             var orderResponses = _mapper.Map<List<OrderResponse>>(orders);
 
-            foreach (var orderResponse in orderResponses)
+            // 📌 2️⃣ Lấy tất cả `ProductVariantId` một lần để tối ưu API call
+            var productVariantIds = orders
+                .SelectMany(o => o.OrderDetails.Select(i => i.ProductVariantId))
+                .Distinct()
+                .ToList();
+
+            var variantDetailsMap = await _inventoryServiceClient.GetAllProductVariantsByIdsAsync(productVariantIds);
+
+            // 📌 3️⃣ Cập nhật thông tin vào `OrderResponse`
+            await Parallel.ForEachAsync(orderResponses, async (orderResponse, _) =>
             {
-                var order = orders.FirstOrDefault(o => o.OrderId == orderResponse.OrderId);
-
-                if (order != null)
-                {
-                    // Lấy ngày giao hàng từ OrderHistory (ngày cuối cùng chuyển sang "delivered")
-                    var deliveredDate = order.OrderHistories
-                        .Where(oh => oh.OrderStatus == "completed")
-                        .OrderByDescending(oh => oh.ChangedDate)
-                        .Select(oh => oh.ChangedDate)
-                        .FirstOrDefault();
-
-                    orderResponse.DeliveredDate = deliveredDate;
-                }
-
-                // Lấy thông tin chi tiết sản phẩm từ InventoryServiceClient
                 foreach (var item in orderResponse.Items)
                 {
-                    var variantDetails = await _inventoryServiceClient.GetProductVariantByIdAsync(item.ProductVariantId);
-                    if (variantDetails != null)
+                    if (variantDetailsMap.TryGetValue(item.ProductVariantId, out var variantDetails))
                     {
                         item.ProductName = variantDetails.ProductName;
                         item.Color = variantDetails.Color;
@@ -56,10 +54,11 @@ namespace Application.UseCases
                         item.ImageUrl = variantDetails.ImagePath;
                     }
                 }
-            }
+            });
 
             return orderResponses;
         }
+
     }
 
 }

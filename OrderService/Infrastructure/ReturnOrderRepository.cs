@@ -24,18 +24,18 @@ namespace Infrastructure
             await _context.SaveChangesAsync();
         }
 
-        public async Task AddReturnOrderMediaAsync(List<ReturnOrderMedium> mediaList)
-        {
-            _context.ReturnOrderMedia.AddRange(mediaList);
-            await _context.SaveChangesAsync();
-        }
+        //public async Task AddReturnOrderMediaAsync(List<ReturnOrderMedium> mediaList)
+        //{
+        //    _context.ReturnOrderMedia.AddRange(mediaList);
+        //    await _context.SaveChangesAsync();
+        //}
 
-        public async Task<ReturnOrder?> GetReturnOrderByIdAsync(int returnOrderId)
-        {
-            return await _context.ReturnOrders
-                .Include(r => r.ReturnOrderMedia)
-                .FirstOrDefaultAsync(r => r.ReturnOrderId == returnOrderId);
-        }
+        //public async Task<ReturnOrder?> GetReturnOrderByIdAsync(int returnOrderId)
+        //{
+        //    return await _context.ReturnOrders
+        //        .Include(r => r.ReturnOrderMedia)
+        //        .FirstOrDefaultAsync(r => r.ReturnOrderId == returnOrderId);
+        //}
 
         public async Task<List<ReturnOrder>> GetReturnOrdersByAccountIdAsync(int accountId)
         {
