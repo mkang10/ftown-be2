@@ -49,7 +49,7 @@ namespace Application.UseCases
         {
             var checkOutSessionId = Guid.NewGuid().ToString(); // Tạo Session ID
 
-            // 1. Lấy địa chỉ giao hàng mặc định và tất cả địa chỉ của account 
+            // Lấy địa chỉ giao hàng mặc định và tất cả địa chỉ của account 
 
             var shippingAddresses = await _shippingAddressRepository.GetShippingAddressesByAccountIdAsync(request.AccountId);
             if (shippingAddresses == null || !shippingAddresses.Any())
@@ -58,21 +58,18 @@ namespace Application.UseCases
             var defaultAddress = await _shippingAddressRepository.GetDefaultShippingAddressAsync(request.AccountId);
             if (defaultAddress == null) return null;
 
-            // 2. Lấy danh sách sản phẩm đã chọn từ giỏ hàng sử dụng GetSelectedCartItemsHandler
+            // Lấy danh sách sản phẩm đã chọn từ giỏ hàng sử dụng GetSelectedCartItemsHandler
             var orderItems = await _getSelectedCartItemsHandler.Handle(request.AccountId, request.SelectedProductVariantIds);
             if (orderItems == null || !orderItems.Any()) return null;
 
-            // 3. Tính tổng tiền sản phẩm
-            var totalAmount = orderItems.Sum(item => item.Price * item.Quantity);
+            // Tính tổng tiền sản phẩm
+            var totalAmount = orderItems.Sum(item => item.DiscountedPrice * item.Quantity);
             if (totalAmount <= 0) return null;
 
-            // 4. Tính phí vận chuyển dựa vào địa chỉ mặc định
+            // Tính phí vận chuyển dựa vào địa chỉ mặc định
             decimal shippingCost = _shippingCostHandler.CalculateShippingCost(defaultAddress.City, defaultAddress.District);
 
-            // 5. Lấy danh sách cửa hàng từ InventoryServiceClient để người dùng chọn
-            var availableStores = await _inventoryServiceClient.GetAllStoresAsync();
-
-            // 6. Danh sách phương thức thanh toán
+            // Danh sách phương thức thanh toán
             var availablePaymentMethods = new List<string> { "COD", "PAYOS" };
 
             // Lưu dữ liệu vào Redis (hết hạn sau 15 phút)
@@ -94,7 +91,6 @@ namespace Application.UseCases
                 CheckOutSessionId = checkOutSessionId,
                 OrderTotal = totalAmount,
                 ShippingCost = shippingCost,
-                AvailableStores = availableStores, // Trả về danh sách cửa hàng để người dùng chọn
                 AvailablePaymentMethods = availablePaymentMethods,
                 ShippingAddress = defaultAddress,
                 ShippingAddresses = shippingAddresses,
@@ -106,8 +102,9 @@ namespace Application.UseCases
                     Color = item.Color,
                     Size = item.Size,
                     Quantity = item.Quantity,
-                    PriceAtPurchase = item.Price,
-                    DiscountApplied = 0 // Nếu có logic giảm giá, cập nhật tại đây
+                    Price = item.Price,
+                    PriceAtPurchase = item.DiscountedPrice,
+                    DiscountApplied = item.Price - item.DiscountedPrice // Nếu có logic giảm giá, cập nhật tại đây
                 }).ToList()
             };
         }

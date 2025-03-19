@@ -12,7 +12,7 @@ namespace Application.DTO.Response
         public string CheckOutSessionId { get; set; } = null!;
         public decimal OrderTotal { get; set; }
         public decimal ShippingCost { get; set; }
-        public List<Store> AvailableStores { get; set; } = new();
+    
         public List<string> AvailablePaymentMethods { get; set; } = new();
         public List<ShippingAddress> ShippingAddresses { get; set; }
         public ShippingAddress ShippingAddress { get; set; } = null!;

@@ -33,6 +33,9 @@ namespace Infrastructure
         {
             return await _context.Products
                 .Include(p => p.ProductVariants)
+                    .ThenInclude(v => v.Size)
+                .Include(p => p.ProductVariants)
+                    .ThenInclude(v => v.Color)
                 .Include(p => p.Category)
                 .Include(p => p.ProductImages) // 👈 Thêm Include để lấy danh sách ảnh
                 .FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -42,6 +45,8 @@ namespace Infrastructure
         {
             return await _context.ProductVariants
                 .Include(pv => pv.Product) // Lấy thông tin Product cha
+                .Include(pv => pv.Size)
+                .Include(pv => pv.Color)
                 .FirstOrDefaultAsync(pv => pv.VariantId == variantId);
         }
         public async Task UpdateProductVariant(ProductVariant productVariant)
@@ -51,7 +56,7 @@ namespace Infrastructure
         }
         public async Task<int> GetProductVariantStockAsync(int variantId)
         {
-            return await _context.StoreStocks
+            return await _context.WareHousesStocks
                 .Where(ss => ss.VariantId == variantId)
                 .SumAsync(ss => ss.StockQuantity);
         }
@@ -70,6 +75,8 @@ namespace Infrastructure
         {
             return await _context.ProductVariants
                 .Include(pv => pv.Product) // Lấy thông tin Product cha
+                .Include(pv => pv.Size)
+                .Include(pv => pv.Color)
                 .Where(pv => variantIds.Contains(pv.VariantId))
                 .ToListAsync();
         }
@@ -77,11 +84,22 @@ namespace Infrastructure
         // 🔥 Cập nhật truy vấn lấy tồn kho từ StoreStock
         public async Task<Dictionary<int, int>> GetProductVariantsStockAsync(List<int> variantIds)
         {
-            return await _context.StoreStocks
+            return await _context.WareHousesStocks
                 .Where(ss => variantIds.Contains(ss.VariantId)) // Chỉ lấy các VariantId được yêu cầu
                 .GroupBy(ss => ss.VariantId) // Gom nhóm theo VariantId
                 .Select(g => new { VariantId = g.Key, StockQuantity = g.Sum(ss => ss.StockQuantity) }) // Tổng tồn kho
                 .ToDictionaryAsync(x => x.VariantId, x => x.StockQuantity);
+        }
+
+        public async Task<ProductVariant?> GetProductVariantByDetailsAsync(int productId, string size, string color)
+        {
+            return await _context.ProductVariants
+                .Include(pv => pv.Size)
+                .Include(pv => pv.Color)
+                .Where(pv => pv.ProductId == productId &&
+                             pv.Size != null && pv.Size.SizeName.ToLower() == size.ToLower() &&
+                             pv.Color != null && pv.Color.ColorCode.ToLower() == color.ToLower())
+                .FirstOrDefaultAsync();
         }
 
 

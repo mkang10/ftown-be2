@@ -35,9 +35,9 @@ public partial class ReturnOrder
 
     public string RefundMethod { get; set; } = null!;
 
+    public string? ReturnImages { get; set; }
+
     public virtual Order Order { get; set; } = null!;
 
     public virtual ICollection<ReturnOrderItem> ReturnOrderItems { get; set; } = new List<ReturnOrderItem>();
-
-    public virtual ICollection<ReturnOrderMedium> ReturnOrderMedia { get; set; } = new List<ReturnOrderMedium>();
 }

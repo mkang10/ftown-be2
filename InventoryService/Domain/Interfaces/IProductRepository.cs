@@ -17,6 +17,6 @@ namespace Domain.Interfaces
         Task<List<Product>> GetPagedProductsWithVariantsAsync(int page, int pageSize);
         Task<List<ProductVariant>> GetProductVariantsByIdsAsync(List<int> variantIds);
         Task<Dictionary<int, int>> GetProductVariantsStockAsync(List<int> variantIds);
-
+        Task<ProductVariant?> GetProductVariantByDetailsAsync(int productId, string size, string color);
     }
 }

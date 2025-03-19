@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Application.UseCases
@@ -12,70 +13,48 @@ namespace Application.UseCases
     public class UpdateOrderStatusHandler
     {
         private readonly IOrderRepository _orderRepository;
-        private readonly IPaymentRepository _paymentRepository;
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly ILogger<UpdateOrderStatusHandler> _logger;
+        private readonly IAuditLogRepository _auditLogRepository;
 
-        public UpdateOrderStatusHandler(
-            IOrderRepository orderRepository,
-            IPaymentRepository paymentRepository,
-            IUnitOfWork unitOfWork,
-            ILogger<UpdateOrderStatusHandler> logger)
+        public UpdateOrderStatusHandler(IOrderRepository orderRepository, IAuditLogRepository auditLogRepository)
         {
             _orderRepository = orderRepository;
-            _paymentRepository = paymentRepository;
-            _unitOfWork = unitOfWork;
-            _logger = logger;
+            _auditLogRepository = auditLogRepository;
         }
 
-        public async Task<bool> Handle(UpdateOrderStatusRequest request)
+        public async Task<bool> HandleAsync(int orderId, string newStatus, int changedBy, string? comment)
         {
-            try
+            // 📌 1️⃣ Lấy thông tin đơn hàng
+            var order = await _orderRepository.GetOrderByIdAsync(orderId);
+            if (order == null)
             {
-                _logger.LogInformation($"Processing Order {request.OrderId} with PaymentStatus: {request.PaymentStatus}");
-
-                // Lấy đơn hàng từ repository
-                var order = await _orderRepository.GetOrderByIdAsync(request.OrderId);
-                if (order == null)
-                {
-                    _logger.LogWarning($"Order {request.OrderId} not found.");
-                    return false;
-                }
-
-                // Lấy thông tin thanh toán
-                var payment = await _paymentRepository.GetPaymentByOrderIdAsync(request.OrderId);
-                if (payment == null)
-                {
-                    _logger.LogWarning($"Payment record for Order {request.OrderId} not found.");
-                    return false;
-                }
-
-                // Cập nhật trạng thái thanh toán
-                payment.PaymentStatus = request.PaymentStatus;
-                await _paymentRepository.UpdatePaymentAsync(payment);
-
-                // Nếu thanh toán thành công, cập nhật trạng thái đơn hàng
-                if (request.PaymentStatus == "Success")
-                {
-                    order.Status = "Confirmed"; // Đơn hàng được xác nhận sau khi thanh toán
-                }
-                else if (request.PaymentStatus == "Failed")
-                {
-                    order.Status = "Payment Failed"; // Đơn hàng thất bại do lỗi thanh toán
-                }
-
-                await _orderRepository.UpdateOrderAsync(order);
-                await _unitOfWork.CommitAsync();
-
-                _logger.LogInformation($"Order {request.OrderId} updated successfully.");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                await _unitOfWork.RollbackAsync();
-                _logger.LogError(ex, $"Failed to update Order {request.OrderId} status.");
                 return false;
             }
+
+            // 📌 2️⃣ Cập nhật trạng thái đơn hàng
+            await _orderRepository.UpdateOrderStatusAsync(orderId, newStatus);
+
+            // 📌 3️⃣ Ghi log vào AuditLog
+            var previousStatus = order.Status; // Lấy trạng thái cũ
+
+            var changeData = JsonSerializer.Serialize(new
+            {
+                OldStatus = previousStatus,
+                NewStatus = newStatus
+            });
+
+            await _auditLogRepository.AddAuditLogAsync(
+                "Orders",
+                orderId.ToString(),
+                newStatus,
+                changedBy,
+                changeData, // ✅ Lưu dữ liệu thay đổi
+                comment
+            );
+
+
+
+            return true;
         }
     }
+
 }

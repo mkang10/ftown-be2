@@ -27,14 +27,13 @@ namespace Application.UseCases
         private readonly IPayOSService _payOSService;
         private readonly IConfiguration _configuration;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly AutoSelectStoreHandler _autoSelectStoreHandler;
         private readonly IShippingAddressRepository _shippingAddressRepository;
         private readonly GetShippingAddressHandler _getShippingAddressHandler;
         private readonly IMapper _mapper;
-        private readonly IOrderHistoryRepository _orderHistoryRepository;
         private readonly GetSelectedCartItemsHandler _getSelectedCartItemsHandler;
         private readonly ILogger<CreateOrderHandler> _logger;
         private readonly ShippingCostHandler _shippingCostHandler;
+        private readonly AuditLogHandler _auditLogHandler;
         public CreateOrderHandler(
             IDistributedCache cache,
             IOrderRepository orderRepository,
@@ -43,15 +42,14 @@ namespace Application.UseCases
             IPaymentRepository paymentRepository,
             IPayOSService payOSService,
             IConfiguration configuration,
-            AutoSelectStoreHandler autoSelectStoreHandler,
             IUnitOfWork unitOfWork,
             IShippingAddressRepository shippingAddressRepository,
             GetShippingAddressHandler getShippingAddressHandler,
             IMapper mapper,
-            IOrderHistoryRepository orderHistoryRepository,
             GetSelectedCartItemsHandler getSelectedCartItemsHandler,
             ShippingCostHandler shippingCostHandler,
-            ILogger<CreateOrderHandler> logger)
+            ILogger<CreateOrderHandler> logger,
+            AuditLogHandler auditLogHandler)
         {
             _cache = cache;
             _mapper = mapper;
@@ -61,14 +59,13 @@ namespace Application.UseCases
             _paymentRepository = paymentRepository;
             _payOSService = payOSService;
             _configuration = configuration;
-            _autoSelectStoreHandler = autoSelectStoreHandler;
             _unitOfWork = unitOfWork;
             _shippingAddressRepository = shippingAddressRepository;
             _getShippingAddressHandler = getShippingAddressHandler;
-            _orderHistoryRepository = orderHistoryRepository;
             _getSelectedCartItemsHandler = getSelectedCartItemsHandler;
             _shippingCostHandler = shippingCostHandler;
             _logger = logger;
+            _auditLogHandler = auditLogHandler;
         }
 
         public async Task<OrderResponse?> Handle(CreateOrderRequest request)
@@ -114,8 +111,7 @@ namespace Application.UseCases
                     shippingCost = checkoutData.ShippingCost;
                 }
 
-                // 3. Lấy lại danh sách sản phẩm đã chọn từ phiên checkout (để đảm bảo số lượng, giá cả chưa thay đổi)
-                // Có thể thực hiện kiểm tra lại tồn kho tại đây nếu cần.
+                // Lấy lại danh sách sản phẩm đã chọn từ phiên checkout (để đảm bảo số lượng, giá cả chưa thay đổi)
                 var orderItems = checkoutData.Items;
                 if (orderItems == null || !orderItems.Any())
                 {
@@ -123,39 +119,35 @@ namespace Application.UseCases
                     return null;
                 }
 
-                // 4. Lấy tổng tiền và phí vận chuyển đã tính từ phiên checkout
+                // Lấy tổng tiền và phí vận chuyển đã tính từ phiên checkout
                 var totalAmount = checkoutData.OrderTotal;
                 if (totalAmount <= 0)
                 {
                     await _unitOfWork.RollbackAsync();
                     return null;
                 }
+         
+                // Lấy WarehouseId từ appsettings.json, nếu không có thì dùng giá trị mặc định (1)
+                int warehouseId = int.TryParse(_configuration["Warehouse:OnlineWarehouseId"], out var wId) ? wId : 1;
 
-                // 5. Xác định cửa hàng (Store)
-                int storeId = request.StoreId ?? await _autoSelectStoreHandler.AutoSelectStoreAsync(
-                    orderItems, shippingAddress.City, shippingAddress.District);
-                if (storeId == 0)
-                {
-                    await _unitOfWork.RollbackAsync();
-                    return null;
-                }
 
-                // 6. Tạo Order và copy snapshot thông tin từ ShippingAddress
+                // Tạo Order và copy snapshot thông tin từ ShippingAddress
                 var newOrder = _mapper.Map<Order>(shippingAddress);
                 newOrder.AccountId = request.AccountId;
                 newOrder.CreatedDate = DateTime.UtcNow;
                 newOrder.OrderTotal = totalAmount;
                 newOrder.ShippingCost = shippingCost;
                 newOrder.ShippingAddressId = shippingAddress.AddressId;
+
                 // Thiết lập trạng thái ban đầu tùy theo phương thức thanh toán (sẽ cập nhật sau)
                 newOrder.Status = request.PaymentMethod == "PAYOS" ? "Pending Payment" : "Pending Confirmed";
-                newOrder.StoreId = storeId;
+                newOrder.WareHouseId = warehouseId;
 
                 // Lưu Order (chưa commit)
                 await _orderRepository.CreateOrderAsync(newOrder);
                 await _unitOfWork.SaveChangesAsync();
 
-                // 7. Tạo OrderDetails từ orderItems
+                // Tạo OrderDetails từ orderItems
                 var orderDetails = CreateOrderDetails(newOrder, orderItems);
 
                 // Xử lý theo PaymentMethod
@@ -211,12 +203,14 @@ namespace Application.UseCases
                         TransactionDate = DateTime.UtcNow
                     };
                     await _paymentRepository.SavePaymentAsync(payment);
+
                     // Lưu OrderDetails
                     await _orderRepository.SaveOrderDetailsAsync(orderDetails);
+
                     newOrder.OrderDetails = orderDetails;
 
                     // Cập nhật tồn kho ngay lập tức
-                    var updateStockSuccess = await _inventoryServiceClient.UpdateStockAfterOrderAsync(storeId, orderDetails);
+                    var updateStockSuccess = await _inventoryServiceClient.UpdateStockAfterOrderAsync(warehouseId, orderDetails);
                     if (!updateStockSuccess)
                     {
                         await _unitOfWork.RollbackAsync();
@@ -232,7 +226,12 @@ namespace Application.UseCases
                     }
 
                     // Ghi lại lịch sử đơn hàng
-                    await AddOrderHistory(newOrder.OrderId, "Pending Confirmed", request.AccountId, "Đơn hàng đã được xác nhận.");
+                    await _auditLogHandler.LogOrderStatusChangeAsync(
+                                newOrder.OrderId,
+                                "Pending Confirmed",
+                                request.AccountId,
+                                "Đơn hàng đã được xác nhận."
+                            );
                     await _unitOfWork.CommitAsync();
 
                     var orderResponse = _mapper.Map<OrderResponse>(newOrder);
@@ -259,8 +258,8 @@ namespace Application.UseCases
                 OrderId = newOrder.OrderId,
                 ProductVariantId = item.ProductVariantId,
                 Quantity = item.Quantity,
-                PriceAtPurchase = item.Price,
-                DiscountApplied = 0
+                PriceAtPurchase = item.DiscountedPrice,
+                DiscountApplied = item.Price-item.DiscountedPrice
             }).ToList();
         }
 
@@ -320,18 +319,6 @@ namespace Application.UseCases
 
             return order;
         }
-        private async Task AddOrderHistory(int orderId, string status, int changedBy, string? comments = null)
-        {
-            var orderHistory = new OrderHistory
-            {
-                OrderId = orderId,
-                OrderStatus = status,
-                ChangedBy = changedBy,
-                ChangedDate = DateTime.UtcNow,
-                Comments = comments
-            };
-
-            await _orderHistoryRepository.AddOrderHistoryAsync(orderHistory);
-        }
+        
     }
 }

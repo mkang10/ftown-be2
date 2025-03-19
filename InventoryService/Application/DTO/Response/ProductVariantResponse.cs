@@ -13,6 +13,8 @@ namespace Application.DTO.Response
         public string? Size { get; set; }
         public string? Color { get; set; }
         public decimal Price { get; set; }
+        public decimal DiscountedPrice { get; set; } // Giá sau khi áp dụng khuyến mãi
+        public string? PromotionTitle { get; set; } // Tên khuyến mãi nếu có
         public int? StockQuantity { get; set; }
         public string? ImagePath { get; set; }
         public string? Sku { get; set; }

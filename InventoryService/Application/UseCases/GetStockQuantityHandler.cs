@@ -10,20 +10,20 @@ namespace Application.UseCases
 {
     public class GetStockQuantityHandler
     {
-        private readonly IStoreStockRepository _storeStockRepository;
+        private readonly IWareHousesStockRepository _warehouseStockRepository;
 
-        public GetStockQuantityHandler(IStoreStockRepository storeStockRepository)
+        public GetStockQuantityHandler(IWareHousesStockRepository warehouseStockRepository)
         {
-            _storeStockRepository = storeStockRepository;
+            _warehouseStockRepository = warehouseStockRepository;
         }
 
-        public async Task<StockQuantityResponse> HandleAsync(int storeId, int productVariantId)
+        public async Task<StockQuantityResponse> HandleAsync(int warehouseId, int productVariantId)
         {
-            int stockQuantity = await _storeStockRepository.GetStockQuantityAsync(storeId, productVariantId);
+            int stockQuantity = await _warehouseStockRepository.GetStockQuantityAsync(warehouseId, productVariantId);
 
             return new StockQuantityResponse
             {
-                StoreId = storeId,
+                WarehouseId = warehouseId,
                 ProductVariantId = productVariantId,
                 StockQuantity = stockQuantity
             };

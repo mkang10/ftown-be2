@@ -24,8 +24,6 @@ namespace Application.DTO.Response
         // Phương thức thanh toán
         public string PaymentMethod { get; set; } = string.Empty;
 
-        public StoreResponse? Store { get; set; }
-
         // Tổng tiền đơn hàng (đã lưu sẵn trong DB)
         public decimal OrderTotal { get; set; }
         public decimal ShippingCost { get; set; }

@@ -10,8 +10,8 @@ namespace Domain.Interfaces
     public interface IReturnOrderRepository
     {
         Task CreateReturnOrderAsync(ReturnOrder returnOrder);
-        Task AddReturnOrderMediaAsync(List<ReturnOrderMedium> mediaList);
-        Task<ReturnOrder?> GetReturnOrderByIdAsync(int returnOrderId);
+        //Task AddReturnOrderMediaAsync(List<ReturnOrderMedium> mediaList);
+        //Task<ReturnOrder?> GetReturnOrderByIdAsync(int returnOrderId);
         Task<List<ReturnOrder>> GetReturnOrdersByAccountIdAsync(int accountId);
         Task UpdateReturnOrderStatusAsync(int returnOrderId, string status);
         Task AddReturnOrderItemsAsync(List<ReturnOrderItem> returnOrderItems);
