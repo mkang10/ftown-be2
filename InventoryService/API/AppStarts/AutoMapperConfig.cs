@@ -43,12 +43,17 @@ namespace API.AppStarts
                             opt => opt.MapFrom(src => src.ProductImages
                                                        .Select(i => i.ImagePath)
                                                        .ToList()));
-                
+
             // Mapping từ ProductVariant -> ProductVariantResponse
             CreateMap<ProductVariant, ProductVariantResponse>()
+            .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Product.ProductId))
             .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
             .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.Size != null ? src.Size.SizeName : null))
-            .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.Color != null ? src.Color.ColorCode : null)); 
+            .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.Color != null ? src.Color.ColorCode : null))
+            .ForMember(dest => dest.StockQuantity, opt => opt.MapFrom(src =>
+                src.WareHousesStocks
+                    .Where(ws => ws.WarehouseId == 2) // ✅ Lọc WarehouseId = 2
+                    .Sum(ws => ws.StockQuantity))); // ✅ Tính tổng số lượng;
             CreateMap<Warehouse, WarehouseResponse>();
 
             CreateMap<WarehouseRequest, Warehouse>()

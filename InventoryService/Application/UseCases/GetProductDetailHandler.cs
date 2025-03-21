@@ -1,5 +1,6 @@
 ﻿using Application.DTO.Response;
 using AutoMapper;
+using Domain.Entities;
 using Domain.Interfaces;
 using Newtonsoft.Json;
 using System;
@@ -16,13 +17,19 @@ namespace Application.UseCases
         private readonly IRedisCacheService _cacheService;
         private readonly IMapper _mapper;
         private readonly IPromotionRepository _promotionRepository;
+        private readonly IWareHousesStockRepository _wareHousesStockRepository;
 
-        public GetProductDetailHandler(IProductRepository productRepository, IRedisCacheService cacheService, IMapper mapper, IPromotionRepository promotionRepository)
+        public GetProductDetailHandler(IProductRepository productRepository,
+                                       IRedisCacheService cacheService, 
+                                       IMapper mapper,
+                                       IPromotionRepository promotionRepository,
+                                       IWareHousesStockRepository wareHousesStockRepository)
         {
             _productRepository = productRepository;
             _cacheService = cacheService;
             _mapper = mapper;
             _promotionRepository = promotionRepository;
+            _wareHousesStockRepository = wareHousesStockRepository;
         }
 
         public async Task<ProductDetailResponse?> Handle(int productId)
@@ -37,6 +44,7 @@ namespace Application.UseCases
 
             // ❌ Không có cache, truy vấn database
             var product = await _productRepository.GetProductByIdAsync(productId);
+
             if (product == null) return null;
 
             // 🔹 Lấy danh sách khuyến mãi áp dụng cho sản phẩm
@@ -53,7 +61,7 @@ namespace Application.UseCases
             foreach (var variant in productDetail.Variants)
             {
                 decimal discountedPrice = variant.Price; // Giá mặc định
-
+                
                 if (applicablePromotion != null)
                 {
                     if (applicablePromotion.DiscountType == "PERCENTAGE")

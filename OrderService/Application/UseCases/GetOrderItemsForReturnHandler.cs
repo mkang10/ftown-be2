@@ -56,7 +56,6 @@ namespace Application.UseCases
             }
 
             var orderItemResponses = _mapper.Map<List<OrderItemResponse>>(order.OrderDetails);
-
             // Lấy danh sách ProductVariantId duy nhất
             var variantIds = orderItemResponses.Select(d => d.ProductVariantId).Distinct().ToList();
             Dictionary<int, ProductVariantResponse> variantDetailsDict = new();
@@ -78,6 +77,8 @@ namespace Application.UseCases
             {
                 if (variantDetailsDict.TryGetValue(detail.ProductVariantId, out var variantDetails))
                 {
+
+                    detail.ProductId = variantDetails.ProductId;
                     detail.ProductName = variantDetails.ProductName;
                     detail.Color = variantDetails.Color;
                     detail.Size = variantDetails.Size;

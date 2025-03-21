@@ -13,6 +13,7 @@ namespace API.AppStarts
             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.OrderDetails));
 
             CreateMap<OrderDetail, OrderItemResponse>()
+                .ForMember(dest => dest.OrderDetailId, opt => opt.MapFrom(src => src.OrderDetailId))
                 .ForMember(dest => dest.ProductVariantId, opt => opt.MapFrom(src => src.ProductVariantId))
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
                 .ForMember(dest => dest.PriceAtPurchase, opt => opt.MapFrom(src => src.PriceAtPurchase));

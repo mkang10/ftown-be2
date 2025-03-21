@@ -36,6 +36,8 @@ namespace Infrastructure
                     .ThenInclude(v => v.Size)
                 .Include(p => p.ProductVariants)
                     .ThenInclude(v => v.Color)
+                .Include(p => p.ProductVariants)
+                    .ThenInclude(v => v.WareHousesStocks)
                 .Include(p => p.Category)
                 .Include(p => p.ProductImages) // 👈 Thêm Include để lấy danh sách ảnh
                 .FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -102,7 +104,23 @@ namespace Infrastructure
                 .FirstOrDefaultAsync();
         }
 
+        public async Task AddProductAsync(Product product)
+        {
+            _context.Products.Add(product);
+            await _context.SaveChangesAsync();
+        }
 
+        public async Task AddProductVariantsAsync(List<ProductVariant> variants)
+        {
+            _context.ProductVariants.AddRange(variants);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task AddProductImagesAsync(List<ProductImage> images)
+        {
+            _context.ProductImages.AddRange(images);
+            await _context.SaveChangesAsync();
+        }
 
         //public async Task AddProduct(Product product)
         //{

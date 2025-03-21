@@ -19,6 +19,7 @@ namespace API.Controllers
         private readonly GetProductVariantByIdHandler _getProductVariantByIdHandler;
         private readonly GetAllProductVariantsByIdsHandler _getAllProductVariantsByIdsHandler;
         private readonly GetProductVariantByDetailsHandler _getProductVariantByDetailsHandler;
+        private readonly CreateProductHandler _createProductHandler;
         private readonly ElasticsearchService _elasticsearchService;
         public ProductController(
             GetAllProductsHandler getAllProductsHandler,
@@ -26,6 +27,7 @@ namespace API.Controllers
             GetProductVariantByIdHandler getProductVariantByIdHandler,
             GetAllProductVariantsByIdsHandler getAllProductVariantsByIdsHandler,
             GetProductVariantByDetailsHandler getAllProductVariantByDetailsHandler,
+            CreateProductHandler createProductHandler,
             ElasticsearchService elasticsearchService)
         {
             _getAllProductsHandler = getAllProductsHandler;
@@ -33,6 +35,7 @@ namespace API.Controllers
             _getProductVariantByIdHandler = getProductVariantByIdHandler;
             _getAllProductVariantsByIdsHandler = getAllProductVariantsByIdsHandler;
             _getProductVariantByDetailsHandler = getAllProductVariantByDetailsHandler;
+            _createProductHandler = createProductHandler;
             _elasticsearchService = elasticsearchService;
         }
 
@@ -93,7 +96,7 @@ namespace API.Controllers
             return Ok(new ResponseDTO<ProductVariantResponse>(variant, true, "Lấy biến thể sản phẩm thành công!"));
         }
 
-
+        
         //[HttpPut("variant/update")]
         //public async Task<ActionResult<ResponseDTO<bool>>> UpdateProductVariant([FromBody] ProductVariantRequest request)
         //{

@@ -52,6 +52,7 @@ namespace API.AppStarts
             services.AddScoped<GetAllProductVariantsByIdsHandler>();
             services.AddScoped<GetStockQuantityHandler>();
             services.AddScoped<GetProductVariantByDetailsHandler>();
+            services.AddScoped<CreateProductHandler>();
             services.AddScoped<RedisHandler>();
 
             services.AddCors(options =>
