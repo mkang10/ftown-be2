@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <Folder Include="Commons\Filter\" />
-    <Folder Include="Entities\" />
     <Folder Include="ValueObjects\" />
   </ItemGroup>
 

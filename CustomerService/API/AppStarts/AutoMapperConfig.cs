@@ -50,9 +50,17 @@ namespace API.AppStarts
             //mapping feedback 
             CreateMap<CreateFeedBackRequestDTO, Feedback>()
            .ForMember(dest => dest.FeedbackId, opt => opt.Ignore());
-
+            //update feedback
+            CreateMap<UpdateFeedbackRequestDTO, Feedback>()
+           .ForMember(dest => dest.ProductId, opt => opt.Ignore());
+            //feedback reverse
             CreateMap<Feedback, CreateFeedBackRequestDTO>();
+            CreateMap<Feedback, FeedbackRequestDTO>().ReverseMap();
 
+            //mapping Reply request
+            CreateMap<ReplyFeedback, ReplyRequestDTO>().ReverseMap();
+            CreateMap<ReplyFeedback, CreateReplyRequestDTO>().ReverseMap();
+            CreateMap<ReplyFeedback, UpdateReplyRequestDTO>().ReverseMap();
 
 
         }

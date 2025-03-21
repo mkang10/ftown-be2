@@ -11,7 +11,9 @@ public partial class WareHousesStock
 
     public int StockQuantity { get; set; }
 
-    public int WarehouseId { get; set; }
+    public int WareHouseId { get; set; }
 
     public virtual ICollection<WareHouseStockAudit> WareHouseStockAudits { get; set; } = new List<WareHouseStockAudit>();
+
+    public virtual ICollection<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
 }
