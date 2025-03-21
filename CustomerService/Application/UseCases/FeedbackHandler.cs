@@ -173,13 +173,13 @@ namespace Application.UseCases
                 var trips = await _commentRepository.GettAllCommentByAccountId(id, paginationParameter);
 
                 // Kiểm tra null cho trips và trips.Items
-                if (trips == null || trips.Items == null || !trips.Items.Any())
+                if (!trips.Any())
                 {
                     throw new Exception("No data!");
                 }
 
                 // Map danh sách Feedback sang FeedbackRequestDTO
-                var tripModels = _mapper.Map<List<FeedbackRequestDTO>>(trips.Items);
+                var tripModels = _mapper.Map<List<FeedbackRequestDTO>>(trips);
 
                 // Tạo đối tượng Pagination<FeedbackRequestDTO> mới dựa trên các thuộc tính của trips
                 var paginationResult = new Pagination<FeedbackRequestDTO>(

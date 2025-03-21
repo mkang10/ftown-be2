@@ -23,6 +23,8 @@ namespace Application.DTO.Request
         public DateTime? CreatedDate { get; set; }
 
         public string? ImagePath { get; set; }
+
+        public int? OrderDetailId { get; set; }
     }
 
     public class ReplyRequestDTO

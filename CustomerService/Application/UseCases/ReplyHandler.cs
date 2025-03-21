@@ -93,13 +93,13 @@ namespace Application.UseCases
                 var db = _redis.GetDatabase();
 
                 // check cache null or not ?
-                var cachedData = await db.StringGetAsync(cacheKey);
-                if (cachedData.HasValue)
-                {
-                    // if not null , deserialize object
-                    var cachedResult = JsonConvert.DeserializeObject<Pagination<ReplyRequestDTO>>(cachedData);
-                    return cachedResult;
-                }
+                //var cachedData = await db.StringGetAsync(cacheKey);
+                //if (cachedData.HasValue)
+                //{
+                //    // if not null , deserialize object
+                //    var cachedResult = JsonConvert.DeserializeObject<Pagination<ReplyRequestDTO>>(cachedData);
+                //    return cachedResult;
+                //}
 
                 // if null cache, get data from db and write it down cache
                 var trips = await _commentRepository.GettAllReplyByFeedbackId(id, paginationParameter);
