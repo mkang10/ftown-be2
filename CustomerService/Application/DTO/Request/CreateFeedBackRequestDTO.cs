@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 namespace Application.DTO.Request
 {
     public class CreateFeedBackRequestDTO
+
     {
+        public int? orderDetailId { get; set; }
         public int AccountId { get; set; }
 
         public int ProductId { get; set; }

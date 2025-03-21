@@ -46,6 +46,15 @@ namespace API.AppStarts
 
             // Chuyển đổi DTO → Entity
             CreateMap<AddToCartRequest, CartItem>();
+
+            //mapping feedback 
+            CreateMap<CreateFeedBackRequestDTO, Feedback>()
+           .ForMember(dest => dest.FeedbackId, opt => opt.Ignore());
+
+            CreateMap<Feedback, CreateFeedBackRequestDTO>();
+
+
+
         }
     }
 }

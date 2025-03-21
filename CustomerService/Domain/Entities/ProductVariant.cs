@@ -34,6 +34,4 @@ public partial class ProductVariant
     public virtual ICollection<ReturnOrderItem> ReturnOrderItems { get; set; } = new List<ReturnOrderItem>();
 
     public virtual Size? Size { get; set; }
-
-    public virtual ICollection<WareHousesStock> WareHousesStocks { get; set; } = new List<WareHousesStock>();
 }

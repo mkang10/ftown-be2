@@ -1,8 +1,10 @@
 ﻿
 
+using Application.Interfaces;
 using Application.UseCases;
 using Domain.Interfaces;
 using Infrastructure;
+using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.AppStarts
@@ -30,6 +32,11 @@ namespace API.AppStarts
             services.AddScoped<ICartRepository, CartRepository>();  
             services.AddScoped<GetShoppingCartHandler>();
             services.AddSingleton<IRedisCacheService, RedisCacheService>();
+            services.AddScoped<ICommentRepository, CommentRepository>();
+            services.AddScoped<ICommentService, FeedbackHandler>();
+            services.AddScoped<IOrderDetailRepository, OrderDetailRepository>();
+
+            services.AddScoped<IReplyFeedbackService, ReplyHandler>();
 
             //services.AddScoped<IOrderRepository, OrderRepository>();
 

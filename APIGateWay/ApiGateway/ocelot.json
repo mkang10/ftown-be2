@@ -56,6 +56,10 @@
         {
           "Host": "localhost",
           "Port": 7264
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7264
         }
       ],
       "UpstreamPathTemplate": "/cart/{id}/add",
@@ -167,6 +171,10 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
+          "Port": 7266
+        },
+        {
+          "Host": "10.87.12.203",
           "Port": 7266
         }
       ],

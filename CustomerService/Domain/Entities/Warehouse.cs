@@ -30,6 +30,4 @@ public partial class Warehouse
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
     public virtual ICollection<StoreExportStoreDetail> StoreExportStoreDetails { get; set; } = new List<StoreExportStoreDetail>();
-
-    public virtual ICollection<WareHousesStock> WareHousesStocks { get; set; } = new List<WareHousesStock>();
 }

@@ -62,20 +62,25 @@ namespace Infrastructure.Repositories
 
         public async Task<Pagination<Feedback>> GettAllCommentByAccountId(int id, PaginationParameter paginationParameter)
         {
-            var itemCount = await _context.Feedbacks
-                                                       .Where(f => f.AccountId == id)
-                                                       .CountAsync();
+            // Lấy các feedback của tài khoản theo id
+            var query = _context.Feedbacks
+                                .Where(f => f.AccountId == id);
 
-            var items = await _context.Feedbacks
-                                       .Where(f => f.AccountId == id)
-                                       .Skip((paginationParameter.PageIndex - 1) * paginationParameter.PageSize)
-                                       .Take(paginationParameter.PageSize)
-                                       .AsNoTracking()
-                                       .ToListAsync();
+            // Đếm tổng số feedback
+            var itemCount = await query.CountAsync();
+
+            // Thêm mệnh đề OrderBy để đảm bảo thứ tự trước khi sử dụng Skip/Take.
+            var items = await query
+                                .OrderBy(f => f.FeedbackId)
+                                .Skip((paginationParameter.PageIndex - 1) * paginationParameter.PageSize)
+                                .Take(paginationParameter.PageSize)
+                                .AsNoTracking()
+                                .ToListAsync();
 
             var result = new Pagination<Feedback>(items, itemCount, paginationParameter.PageIndex, paginationParameter.PageSize);
             return result;
         }
+
 
         public async Task<Pagination<Feedback>> GettAllFeedbackByProductId(int id, PaginationParameter paginationParameter)
         {
