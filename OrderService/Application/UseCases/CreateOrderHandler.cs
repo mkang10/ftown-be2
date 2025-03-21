@@ -34,6 +34,7 @@ namespace Application.UseCases
         private readonly ILogger<CreateOrderHandler> _logger;
         private readonly ShippingCostHandler _shippingCostHandler;
         private readonly AuditLogHandler _auditLogHandler;
+        private readonly INotificationClient _notificationClient;
         public CreateOrderHandler(
             IDistributedCache cache,
             IOrderRepository orderRepository,
@@ -49,7 +50,8 @@ namespace Application.UseCases
             GetSelectedCartItemsHandler getSelectedCartItemsHandler,
             ShippingCostHandler shippingCostHandler,
             ILogger<CreateOrderHandler> logger,
-            AuditLogHandler auditLogHandler)
+            AuditLogHandler auditLogHandler,
+            INotificationClient notificationClient)
         {
             _cache = cache;
             _mapper = mapper;
@@ -66,6 +68,7 @@ namespace Application.UseCases
             _shippingCostHandler = shippingCostHandler;
             _logger = logger;
             _auditLogHandler = auditLogHandler;
+            _notificationClient = notificationClient;
         }
 
         public async Task<OrderResponse?> Handle(CreateOrderRequest request)
@@ -230,8 +233,20 @@ namespace Application.UseCases
                                 newOrder.OrderId,
                                 "Pending Confirmed",
                                 request.AccountId,
-                                "Đơn hàng đã được xác nhận."
+                                "Đơn hàng đang chờ xác nhận."
                             );
+                    var notificationRequest = new SendNotificationRequest
+                    {
+                        AccountId = newOrder.AccountId,
+                        Title = "Đơn hàng mới",
+                        Message = $"Đơn hàng #{newOrder.OrderId} đã được tạo thành công!",
+                        NotificationType = "Order",
+                        TargetId = newOrder.OrderId,
+                        TargetType = "Order"
+                    };
+
+                    await _notificationClient.SendNotificationAsync(notificationRequest);
+
                     await _unitOfWork.CommitAsync();
 
                     var orderResponse = _mapper.Map<OrderResponse>(newOrder);

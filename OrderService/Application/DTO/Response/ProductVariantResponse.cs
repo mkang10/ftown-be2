@@ -9,6 +9,7 @@ namespace Application.DTO.Response
     public class ProductVariantResponse
     {
         public int VariantId { get; set; } // ID của biến thể sản phẩm
+        public int ProductId { get; set; }
         public string ProductName { get; set; } = string.Empty; // Tên sản phẩm
         public string? Size { get; set; } // Kích thước (có thể null)
         public string? Color { get; set; } // Màu sắc (có thể null)

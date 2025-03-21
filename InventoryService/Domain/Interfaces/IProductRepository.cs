@@ -18,5 +18,8 @@ namespace Domain.Interfaces
         Task<List<ProductVariant>> GetProductVariantsByIdsAsync(List<int> variantIds);
         Task<Dictionary<int, int>> GetProductVariantsStockAsync(List<int> variantIds);
         Task<ProductVariant?> GetProductVariantByDetailsAsync(int productId, string size, string color);
+        Task AddProductAsync(Product product);
+        Task AddProductVariantsAsync(List<ProductVariant> variants);
+        Task AddProductImagesAsync(List<ProductImage> images);
     }
 }

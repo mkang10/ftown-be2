@@ -34,6 +34,10 @@ namespace API.AppStarts
             {
                 client.BaseAddress = new Uri("https://localhost:7265/api/");
             });
+            services.AddHttpClient<INotificationClient, NotificationServiceClient>(client =>
+            {
+                client.BaseAddress = new Uri("https://localhost:7270/api/");
+            });
             services.AddHttpClient<IPayOSService, PayOSService>(client =>
             {
                 var serviceProvider = services.BuildServiceProvider();
