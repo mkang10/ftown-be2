@@ -37,38 +37,34 @@ namespace Application.UseCases
 
         }
 
-        public async Task<CreateFeedBackRequestDTO> Create(CreateFeedBackRequestDTO request)
+        public async Task<List<CreateFeedBackRequestDTO>> CreateMultiple(List<CreateFeedBackRequestDTO> feedbackRequests)
         {
-            try
-            {
-                // Kiểm tra xem OrderDetailId đã được cung cấp chưa.
-                if (!request.orderDetailId.HasValue)
-                    throw new Exception("OrderDetailId phải được cung cấp khi tạo feedback.");
+            var createdFeedbacks = new List<CreateFeedBackRequestDTO>();
 
-                // Lấy thông tin OrderDetail dựa vào OrderDetailId.
+            foreach (var request in feedbackRequests)
+            {
+                // Kiểm tra OrderDetailId hợp lệ
+                if (!request.orderDetailId.HasValue)
+                    continue; // Bỏ qua feedback không hợp lệ
+
+                // Lấy thông tin OrderDetail từ repository
                 var orderDetail = await _orderDetailRepository.GetOrderDetailById(request.orderDetailId.Value);
 
-                // Kiểm tra xem OrderDetail tồn tại và đơn hàng liên quan có trạng thái "completed".
-                if (orderDetail == null || orderDetail.Order == null ||
-                    !string.Equals(orderDetail.Order.Status, "completed", StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new Exception("Feedback chỉ được tạo cho đơn hàng có trạng thái completed.");
-                }
+                // Kiểm tra đơn hàng có trạng thái "completed"
+                if (orderDetail?.Order?.Status?.Equals("completed", StringComparison.OrdinalIgnoreCase) != true)
+                    continue; // Bỏ qua nếu đơn hàng chưa hoàn thành
 
-                // Map DTO sang entity Feedback.
+                // Map DTO sang entity và lưu vào database
                 var feedbackEntity = _mapper.Map<Feedback>(request);
-
-                // Tạo feedback qua repository.
                 var createdFeedback = await _commentRepository.CreateFeedback(feedbackEntity);
 
-                // Map entity vừa tạo về DTO và trả về.
-                return _mapper.Map<CreateFeedBackRequestDTO>(createdFeedback);
+                // Thêm feedback đã tạo vào danh sách kết quả
+                createdFeedbacks.Add(_mapper.Map<CreateFeedBackRequestDTO>(createdFeedback));
             }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
+
+            return createdFeedbacks; // Trả về danh sách feedback đã tạo
         }
+
 
 
         public async Task<bool> Delete(int id)

@@ -96,23 +96,31 @@ namespace API.Controllers
             }
         }
 
-        [HttpPost("create")]
-        public async Task<IActionResult> Create(CreateFeedBackRequestDTO feedback)
+        [HttpPost("create-multiple")]
+        public async Task<IActionResult> CreateMultiple([FromBody] CreateMultipleFeedBackRequest feedbackRequest)
         {
             try
             {
-                var data = await _service.Create(feedback);
-                if (data == null)
+                if (feedbackRequest?.Feedbacks == null || !feedbackRequest.Feedbacks.Any())
                 {
-                    return BadRequest(new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString()));
+                    return BadRequest(new MessageRespondDTO<string>(null, false, "Danh sách feedback không được để trống."));
                 }
-                return Ok(new MessageRespondDTO<CreateFeedBackRequestDTO>(data, true, StatusSuccess.Success.ToString()));
+
+                var createdFeedbacks = await _service.CreateMultiple(feedbackRequest.Feedbacks);
+
+                if (createdFeedbacks == null || !createdFeedbacks.Any())
+                {
+                    return BadRequest(new MessageRespondDTO<string>(null, false, "Không thể tạo feedback."));
+                }
+
+                return Ok(new MessageRespondDTO<List<CreateFeedBackRequestDTO>>(createdFeedbacks, true, StatusSuccess.Success.ToString()));
             }
             catch (Exception ex)
             {
-                return BadRequest(new MessageRespondDTO<object>(null, false, ex.Message));
+                return BadRequest(new MessageRespondDTO<string>(null, false, ex.Message));
             }
         }
+
 
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteFeedback(int id)
