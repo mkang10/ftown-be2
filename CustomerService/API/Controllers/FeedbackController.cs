@@ -97,11 +97,11 @@ namespace API.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> Create(CreateFeedBackRequestDTO user)
+        public async Task<IActionResult> Create(CreateFeedBackRequestDTO feedback)
         {
             try
             {
-                var data = await _service.Create(user);
+                var data = await _service.Create(feedback);
                 if (data == null)
                 {
                     return BadRequest(new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString()));

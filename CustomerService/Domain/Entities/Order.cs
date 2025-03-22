@@ -21,8 +21,6 @@ public partial class Order
 
     public decimal? ShippingCost { get; set; }
 
-    public decimal? Tax { get; set; }
-
     public string? DeliveryMethod { get; set; }
 
     public string FullName { get; set; } = null!;

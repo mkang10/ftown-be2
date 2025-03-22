@@ -569,7 +569,6 @@ public partial class FtownContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("Pending");
-            entity.Property(e => e.Tax).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.WareHouseId).HasColumnName("WareHouseID");
 
             entity.HasOne(d => d.Account).WithMany(p => p.Orders)

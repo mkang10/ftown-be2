@@ -12,7 +12,7 @@
           "Host": "10.87.12.203",
           "Port": 7261
         }
-      
+
       ],
       "UpstreamPathTemplate": "/auth/login",
       "UpstreamHttpMethod": [ "Post" ]
@@ -251,6 +251,18 @@
         }
       ],
       "UpstreamPathTemplate": "/return-requests/submit-return-request",
+      "UpstreamHttpMethod": [ "Post" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/feedback/create",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7264
+        }
+      ],
+      "UpstreamPathTemplate": "/feedback/create",
       "UpstreamHttpMethod": [ "Post" ]
     },
     {
