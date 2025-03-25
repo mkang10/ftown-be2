@@ -1,67 +1,64 @@
-﻿using AutoMapper;
-using Domain.Entities;
-using Domain.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using Domain.Entities;
+using Domain.DTO.Response;
+using Domain.DTO.Request;
+using Domain.Interfaces;
 
 namespace Application.UseCases
 {
+    public class RejectHandler
+    {
+        private readonly IImportRepos _repository;
+        private readonly IAuditLogRepos _auditLogRepos;
 
-public class RejectHandler    {
-        private readonly IInventoryImportRepository _repository;
-        private readonly IMapper _mapper;
-
-        public RejectHandler(IInventoryImportRepository repository, IMapper mapper)
+        public RejectHandler(IImportRepos repository, IAuditLogRepos auditLogRepos)
         {
             _repository = repository;
-            _mapper = mapper;
+            _auditLogRepos = auditLogRepos;
         }
 
-       
-        // Hàm reject đơn import
         public async Task RejectImportAsync(int importId, int changedBy, string? comments)
         {
             // Lấy đơn import theo ID
             var import = await _repository.GetByIdAsync(importId);
             if (import == null)
-                throw new Exception("Inventory import not found.");
+                throw new Exception($"Không tìm thấy đơn nhập hàng với ID = {importId}.");
 
-            // Chỉ xử lý nếu trạng thái hiện tại là "pending"
+            // Kiểm tra trạng thái: chỉ từ chối đơn đang ở trạng thái "pending"
             if (!string.Equals(import.Status?.Trim(), "pending", StringComparison.OrdinalIgnoreCase))
-                throw new Exception("Only pending import requests can be rejected.");
+                throw new Exception("Chỉ có thể từ chối đơn nhập hàng đang ở trạng thái 'pending'.");
 
-            // Cập nhật trạng thái và các trường liên quan
-            import.Status = "rejected";
+            // Cập nhật trạng thái và hoàn thành đơn import
+            import.Status = "Rejected";
             import.CompletedDate = DateTime.UtcNow;
 
-            // Tạo một bản ghi History mới
-            var history = new InventoryImportHistory
+            // Cập nhật lại đơn import qua repository
+            await _repository.UpdateAsync(import);
+
+            // Tạo AuditLog: thay vì serialize toàn bộ entity (có thể gây vòng lặp),
+            // ta cấu hình serialize với ReferenceLoopHandling.Ignore
+            var serializedChangeData = JsonConvert.SerializeObject(import, new JsonSerializerSettings
             {
-                ImportId = import.ImportId,
-                Status = "rejected",
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            });
+
+            var auditLog = new AuditLog
+            {
+                TableName = "Import",
+                RecordId = import.ImportId.ToString(),
+                Operation = "REJECT",
+                ChangeDate = DateTime.UtcNow,
                 ChangedBy = changedBy,
-                ChangedDate = DateTime.UtcNow,
-                Comments = comments
+                ChangeData = serializedChangeData,
+                Comment = comments ?? "Đơn nhập hàng bị từ chối"
             };
 
-            // Lấy đối tượng Account từ repository
-            var account = await _repository.GetAccountByIdAsync(changedBy);
-            if (account == null)
-                throw new Exception($"Account with ID = {changedBy} not found.");
-
-            history.ChangedByNavigation = account;
-
-            // Thêm history vào đơn import
-            import.InventoryImportHistories.Add(history);
-
-            // Cập nhật lại đơn import
-            await _repository.UpdateAsync(import);
+            _auditLogRepos.AddAsync(auditLog);
+            await _auditLogRepos.SaveChangesAsync();
         }
-
     }
-
 }
-

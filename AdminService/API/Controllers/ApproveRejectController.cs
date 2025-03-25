@@ -1,7 +1,6 @@
-﻿using Application.DTO.Request;
-using Application.DTO.Response;
-using Application.DTO.Response.Domain.DTO.Response;
-using Application.UseCases;
+﻿using Application.UseCases;
+using Domain.DTO.Request;
+using Domain.DTO.Response;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,18 +12,21 @@ namespace API.Controllers
     {
         private readonly ApproveHandler _appHandler;
         private readonly RejectHandler _reHandler;
-        private readonly GetAllPendingHandler _getHandler;
+        private readonly GetAllImportHandler _getHandler;
+        private readonly GetImportDetailHandler _getDetailHandler;
 
 
 
-        public InventoryImportController(ApproveHandler appHandler, RejectHandler reHandler, GetAllPendingHandler getHandler)
+        public InventoryImportController(GetImportDetailHandler getDetailHandler, ApproveHandler appHandler, RejectHandler reHandler, GetAllImportHandler getHandler)
         {
             _appHandler = appHandler;
             _reHandler = reHandler;
             _getHandler = getHandler;
+            _getDetailHandler = getDetailHandler;
         }
+      
 
-        // Endpoint approve: POST api/InventoryImport/{importId}/approve
+        //// Endpoint approve: POST api/InventoryImport/{importId}/approve
         [HttpPost("{importId}/approve")]
         public async Task<IActionResult> ApproveImport(int importId, [FromBody] ApproveRejectRequestDto request)
         {
@@ -74,19 +76,39 @@ namespace API.Controllers
             }
         }
 
-        [HttpGet("pending")]
-        public async Task<IActionResult> GetPendingInventoryImports()
+        [HttpGet("filter")]
+        public async Task<IActionResult> GetInventoryImports([FromQuery] InventoryImportFilterDto filter)
         {
             try
             {
-                var pendingImports = await _getHandler.GetAllPendingInventoryImportsAsync();
-                var response = new ResponseDTO<List<InventoryPendingResponseDto>>(pendingImports, true, "Lấy danh sách Inventory Import pending thành công.");
+                var pagedResult = await _getHandler.GetInventoryImportsAsync(filter);
+                var response = new ResponseDTO<PagedResult<InventoryImportResponseDto>>(
+                    pagedResult,
+                    true,
+                    "Lấy danh sách Inventory Import thành công."
+                );
                 return Ok(response);
             }
             catch (Exception ex)
             {
                 var errorResponse = new ResponseDTO<string>(null, false, $"Có lỗi xảy ra: {ex.Message}");
                 return StatusCode(500, errorResponse);
+            }
+        }
+
+        [HttpGet("{importId}")]
+        public async Task<IActionResult> GetInventoryDetail(int importId)
+        {
+            try
+            {
+                var inventoryDetail = await _getDetailHandler.GetInventoryDetailAsync(importId);
+                var response = new ResponseDTO<InventoryImportDetailDto>(inventoryDetail, true, "Lấy dữ liệu thành công.");
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                var response = new ResponseDTO<InventoryImportDetailDto>(null, false, ex.Message);
+                return BadRequest(response);
             }
         }
     }

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Domain.DTO.Response;
 using Domain.DTO.Request;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Services
 {
@@ -25,9 +26,9 @@ namespace Infrastructure.Services
             _configuration = configuration;
         }
 
-        public async Task<LoginResponse> AuthenticateAsync(string username, string password)
+        public async Task<LoginResponse> AuthenticateAsync(string email, string password)
         {
-            var account = await _accountRepos.GetUserByUsernameAsync(username);
+            var account = await _accountRepos.GetUserByUsernameAsync(email);
 
             if (account != null && VerifyPassword(password, account.PasswordHash))
             {
@@ -49,6 +50,9 @@ namespace Infrastructure.Services
                     };
                 }
 
+                // Lấy thông tin chi tiết dựa theo RoleId
+                object? roleDetails = await _accountRepos.GetRoleDetailsAsync(account);
+
                 return new LoginResponse
                 {
                     Token = token,
@@ -58,13 +62,16 @@ namespace Infrastructure.Services
                         FullName = account.FullName,
                         RoleId = account.RoleId,
                         IsActive = account.IsActive,
-                        Email = account.Email
+                        Email = account.Email,
+                        RoleDetails = roleDetails // Chứa thông tin chi tiết theo vai trò
                     }
                 };
             }
 
             return null;
         }
+
+       
 
         public async Task<TokenResponse> RegisterAsync(RegisterReq registerDTO)
         {

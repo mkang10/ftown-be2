@@ -12,7 +12,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins",
         policy => policy
-            .WithOrigins("http://localhost:3000", "https://vietnong.id.vn") // Thêm nguồn mới
+            .WithOrigins("http://localhost:3000", "http://localhost:5000") // Thêm nguồn mới
             .AllowAnyMethod()
             .AllowAnyHeader());
 });

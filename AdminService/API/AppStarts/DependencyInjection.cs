@@ -26,11 +26,13 @@ namespace API.AppStarts
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 
-            //services.AddScoped<IOrderRepository, OrderRepository>();
-            services.AddScoped<IInventoryImportRepository, InventoryImportRepository>();
+            services.AddScoped<IImportRepos, InventoryImportRepository>();
+            services.AddScoped<IAuditLogRepos, AuditLogRepository>();
+
             services.AddScoped<ApproveHandler>();
             services.AddScoped<RejectHandler>();
-            services.AddScoped<GetAllPendingHandler>();
+            services.AddScoped<GetAllImportHandler>();
+            services.AddScoped<GetImportDetailHandler>();
 
 
 
@@ -43,6 +45,6 @@ namespace API.AppStarts
 
         }
 
-      
+
     }
 }
