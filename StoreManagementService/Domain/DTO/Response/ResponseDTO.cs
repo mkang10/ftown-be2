@@ -7,19 +7,39 @@ using System.Threading.Tasks;
 namespace Domain.DTO.Response
 {
 
-    public class ResponseDTO<T>
+    namespace Domain.DTO.Response
     {
-        public T Data { get; set; }
-        public bool Status { get; set; }
-        public string Message { get; set; }
-
-        public ResponseDTO(T data, bool status, string message)
+        public class PaginatedResponseDTO<T>
         {
-            Data = data;
-            Status = status;
-            Message = message;
+            public List<T> Data { get; set; }
+            public int TotalRecords { get; set; }
+            public int Page { get; set; }
+            public int PageSize { get; set; }
+
+            public PaginatedResponseDTO(List<T> data, int totalRecords, int page, int pageSize)
+            {
+                Data = data;
+                TotalRecords = totalRecords;
+                Page = page;
+                PageSize = pageSize;
+            }
+        }
+
+        public class ResponseDTO<T>
+        {
+            public T Data { get; set; }
+            public bool Status { get; set; }
+            public string Message { get; set; }
+
+            public ResponseDTO(T data, bool status, string message)
+            {
+                Data = data;
+                Status = status;
+                Message = message;
+            }
         }
     }
+
 
 
 }

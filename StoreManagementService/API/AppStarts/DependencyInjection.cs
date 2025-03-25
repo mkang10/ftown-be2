@@ -1,6 +1,7 @@
 ﻿
 
 using Application.UseCases;
+using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -26,9 +27,23 @@ namespace API.AppStarts
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 
-            services.AddScoped<IInventoryImportRepos, InventoryImportRepository>();
-            services.AddScoped<InventoryImportHandler>();
-            services.AddScoped<GetInventoryImportHandler>();
+            services.AddScoped<IImportRepos, ImportRepos>();
+            services.AddScoped<IStaffDetailRepository, StaffDetailRepository>();
+            services.AddScoped<IAuditLogRepos, AuditLogRepos>();
+            services.AddScoped<IWareHouseStockRepos, WareHouseStockRepos>();
+
+            services.AddScoped<CreateImportHandler>();
+            services.AddScoped<GetImportHandler>();
+            services.AddScoped<GetAllStaffHandler>();
+            services.AddScoped<AssignStaffHandler>();
+
+            services.AddScoped<GetAllProductHandler>();
+            services.AddScoped<ImportDoneHandler>();
+            services.AddScoped<ImportIncompletedHandler>();
+            services.AddScoped<ImportShortageHandler>();
+
+            services.AddScoped<GetAllStaffImportHandler>();
+
 
 
 
@@ -43,6 +58,6 @@ namespace API.AppStarts
 
         }
 
-      
+
     }
 }

@@ -26,7 +26,7 @@ namespace WebAPI.Controllers
         {
             try
             {
-                var response = await _authService.AuthenticateAsync(loginDTO.Username, loginDTO.Password);
+                var response = await _authService.AuthenticateAsync(loginDTO.email, loginDTO.Password);
 
                 if (response == null)
                 {
