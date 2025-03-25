@@ -1,9 +1,19 @@
+
 using API.AppStarts;
 using StackExchange.Redis;
 
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
+
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigins",
+        policy => policy
+            .WithOrigins("http://localhost:3000", "http://localhost:5000") // Thêm nguồn mới
+            .AllowAnyMethod()
+            .AllowAnyHeader());
 
 // Add services to the container.
 var redisConfig = builder.Configuration.GetSection("Redis");
@@ -22,7 +32,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 
     var configuration = ConfigurationOptions.Parse(redisConnection, true);
     return ConnectionMultiplexer.Connect(configuration);
-});
+
 // Add depen
 builder.Services.InstallService(builder.Configuration);
 builder.Services.AddControllers();
@@ -38,6 +48,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors("AllowSpecificOrigins");
+
 
 app.UseHttpsRedirection();
 
