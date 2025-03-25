@@ -9,6 +9,13 @@ var builder = WebApplication.CreateBuilder(args);
 //    options.ListenAnyIP(443, listenOptions => listenOptions.UseHttps()); // HTTPS
 //});
 // ??c c?u hình t? ocelot.json
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost",
+        builder => builder.WithOrigins("http://localhost:3000" , "http://10.87.12.203:8081")
+                          .AllowAnyMethod()
+                          .AllowAnyHeader());
+});
 builder.Configuration.SetBasePath(builder.Environment.ContentRootPath)
                      .AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
 builder.Services.AddOcelot();
@@ -19,6 +26,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 app.UseRouting();
+
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapGet("/", async context =>
@@ -27,13 +35,16 @@ app.UseEndpoints(endpoints =>
     });
 });
 
-await app.UseOcelot();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors("AllowLocalhost");
+
+await app.UseOcelot();
 
 app.UseHttpsRedirection();
 

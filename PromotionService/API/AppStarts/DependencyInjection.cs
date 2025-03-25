@@ -1,5 +1,8 @@
 ﻿
 
+using Application.UseCases;
+using Domain.Entities;
+using Domain.Interfaces;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,7 +28,13 @@ namespace API.AppStarts
 
 
             //services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<IPromotionRepository,PromotionRepository>();
 
+            //Handler
+            services.AddScoped<CreatePromotionHandler>();
+            services.AddScoped<DeletePromotionHandler>();
+            services.AddScoped<UpdatePromotionHandler>();   
+            services.AddScoped<GetAllPromotionsHandler>();
 
 
             // auto mapper

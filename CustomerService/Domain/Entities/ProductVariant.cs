@@ -23,17 +23,15 @@ public partial class ProductVariant
 
     public decimal? Weight { get; set; }
 
+    public int? WarehouseStockId { get; set; }
+
     public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
-
-    public virtual ICollection<InventoryImportDetail> InventoryImportDetails { get; set; } = new List<InventoryImportDetail>();
-
-    public virtual ICollection<InventoryTransactionDetail> InventoryTransactionDetails { get; set; } = new List<InventoryTransactionDetail>();
 
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
     public virtual Product Product { get; set; } = null!;
 
-    public virtual ICollection<StoreStock> StoreStocks { get; set; } = new List<StoreStock>();
+    public virtual ICollection<ReturnOrderItem> ReturnOrderItems { get; set; } = new List<ReturnOrderItem>();
 
     public virtual ICollection<WishListItem> WishListItems { get; set; } = new List<WishListItem>();
 }

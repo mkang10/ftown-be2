@@ -7,7 +7,12 @@
         {
           "Host": "localhost",
           "Port": 7261
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7261
         }
+
       ],
       "UpstreamPathTemplate": "/auth/login",
       "UpstreamHttpMethod": [ "Post" ]
@@ -18,6 +23,10 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
+          "Port": 7261
+        },
+        {
+          "Host": "10.87.12.203",
           "Port": 7261
         }
       ],
@@ -31,6 +40,10 @@
         {
           "Host": "localhost",
           "Port": 7264
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7264
         }
       ],
       "UpstreamPathTemplate": "/cart/{id}",
@@ -42,6 +55,10 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
+          "Port": 7264
+        },
+        {
+          "Host": "10.87.12.203",
           "Port": 7264
         }
       ],
@@ -55,6 +72,10 @@
         {
           "Host": "localhost",
           "Port": 7264
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7264
         }
       ],
       "UpstreamPathTemplate": "/cart/{id}/remove/{productVariantId}",
@@ -66,6 +87,10 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
+          "Port": 7264
+        },
+        {
+          "Host": "10.87.12.203",
           "Port": 7264
         }
       ],
@@ -79,9 +104,29 @@
         {
           "Host": "localhost",
           "Port": 7265
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7265
+        },
+        {
+          "Host": "10.0.2.2",
+          "Port": 7265
         }
       ],
       "UpstreamPathTemplate": "/products/view-all",
+      "UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/stores",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7265
+        }
+      ],
+      "UpstreamPathTemplate": "/stores",
       "UpstreamHttpMethod": [ "Get" ]
     },
     {
@@ -95,6 +140,130 @@
       ],
       "UpstreamPathTemplate": "/products/{productId}",
       "UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/checkout",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/checkout",
+      "UpstreamHttpMethod": [ "Post" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/shippingaddresses",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/shippingaddresses",
+      "UpstreamHttpMethod": [ "Post" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/orders",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7266
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/orders",
+      "UpstreamHttpMethod": [ "Post" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/orders",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/orders",
+      "UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/orders/{orderId}/details",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/orders/{orderId}/details",
+      "UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/orders/returnable",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/orders/returnable",
+      "UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/return-requests/order-items",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/return-requests/order-items",
+      "UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/return-requests/checkout",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/return-requests/checkout",
+      "UpstreamHttpMethod": [ "Post" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/return-requests/submit-return-request",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/return-requests/submit-return-request",
+      "UpstreamHttpMethod": [ "Post" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/feedback/create",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7264
+        }
+      ],
+      "UpstreamPathTemplate": "/feedback/create",
+      "UpstreamHttpMethod": [ "Post" ]
     },
     {
       "DownstreamPathTemplate": "/api/order/{everything}",

@@ -32,6 +32,7 @@ namespace Application.UseCases
         /// <returns>ShippingAddress nếu tồn tại và thuộc về tài khoản, ngược lại trả về null.</returns>
         public async Task<ShippingAddress?> HandleAsync(int shippingAddressId, int accountId)
         {
+
             var cacheKey = GetCacheKey(shippingAddressId);
 
             // Kiểm tra dữ liệu trên Redis

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Domain.DTO.Response;
 using Domain.Entities;
 
@@ -36,6 +36,15 @@ namespace API.AppStarts
                            opt => opt.MapFrom(src => src.WareHouse.WarehouseName))
                 .ForMember(dest => dest.StaffName,
                            opt => opt.MapFrom(src => src.StaffDetail != null ? src.StaffDetail.Account.FullName : null));
+                            //CreateMap<Account, AccountDTO>();
+            CreateMap<Account, UserRequestDTO>().ReverseMap();
+            CreateMap<Account, BanUserRequestDTO>().ReverseMap();
+            CreateMap<Account, CreateUserRequestWithPasswordDTO>().ReverseMap();
+
+
+            CreateMap<Role, RoleRequestDTO>().ReverseMap();
+            CreateMap<Role, RoleCreateRequestDTO>().ReverseMap();
+
         }
     }
-}
+}       

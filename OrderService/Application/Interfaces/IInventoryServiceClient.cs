@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Application.DTO.Response;
+using Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +10,9 @@ namespace Application.Interfaces
 {
     public interface IInventoryServiceClient
     {
-        Task<ProductVariant?> GetProductVariantByIdAsync(int productVariantId);
-        Task<List<Store>> GetAllStoresAsync();
+        Task<ProductVariantResponse?> GetProductVariantByIdAsync(int productVariantId);
         Task<int> GetStockQuantityAsync(int storeId, int variantId);
-        Task<bool> UpdateStockAfterOrderAsync(int storeId, List<OrderDetail> orderDetails);
+        Task<bool> UpdateStockAfterOrderAsync(int warehouseId, List<OrderDetail> orderDetails);
+        Task<Dictionary<int, ProductVariantResponse?>> GetAllProductVariantsByIdsAsync(List<int> variantIds);
     }
 }

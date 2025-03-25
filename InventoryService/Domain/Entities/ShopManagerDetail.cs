@@ -21,5 +21,5 @@ public partial class ShopManagerDetail
 
     public virtual Account Account { get; set; } = null!;
 
-    public virtual Store Store { get; set; } = null!;
+    public virtual ICollection<CheckDetail> CheckDetails { get; set; } = new List<CheckDetail>();
 }
