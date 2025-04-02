@@ -23,53 +23,48 @@ namespace Application.UseCases
         private readonly IOrderRepository _orderRepository;
         private readonly ICustomerServiceClient _customerServiceClient;
         private readonly IInventoryServiceClient _inventoryServiceClient;
-        private readonly IPaymentRepository _paymentRepository;
         private readonly IPayOSService _payOSService;
         private readonly IConfiguration _configuration;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IShippingAddressRepository _shippingAddressRepository;
         private readonly GetShippingAddressHandler _getShippingAddressHandler;
         private readonly IMapper _mapper;
-        private readonly GetSelectedCartItemsHandler _getSelectedCartItemsHandler;
         private readonly ILogger<CreateOrderHandler> _logger;
         private readonly ShippingCostHandler _shippingCostHandler;
         private readonly AuditLogHandler _auditLogHandler;
         private readonly INotificationClient _notificationClient;
-        public CreateOrderHandler(
+        private readonly IOrderProcessingHelper _orderHelper;
+		public CreateOrderHandler(
             IDistributedCache cache,
             IOrderRepository orderRepository,
             ICustomerServiceClient customerServiceClient,
             IInventoryServiceClient inventoryServiceClient,
-            IPaymentRepository paymentRepository,
             IPayOSService payOSService,
             IConfiguration configuration,
             IUnitOfWork unitOfWork,
-            IShippingAddressRepository shippingAddressRepository,
             GetShippingAddressHandler getShippingAddressHandler,
             IMapper mapper,
-            GetSelectedCartItemsHandler getSelectedCartItemsHandler,
             ShippingCostHandler shippingCostHandler,
             ILogger<CreateOrderHandler> logger,
             AuditLogHandler auditLogHandler,
-            INotificationClient notificationClient)
+            INotificationClient notificationClient,
+			IOrderProcessingHelper orderHelper)
         {
             _cache = cache;
             _mapper = mapper;
             _orderRepository = orderRepository;
             _customerServiceClient = customerServiceClient;
             _inventoryServiceClient = inventoryServiceClient;
-            _paymentRepository = paymentRepository;
             _payOSService = payOSService;
             _configuration = configuration;
             _unitOfWork = unitOfWork;
-            _shippingAddressRepository = shippingAddressRepository;
             _getShippingAddressHandler = getShippingAddressHandler;
-            _getSelectedCartItemsHandler = getSelectedCartItemsHandler;
             _shippingCostHandler = shippingCostHandler;
             _logger = logger;
             _auditLogHandler = auditLogHandler;
             _notificationClient = notificationClient;
-        }
+            _orderHelper = orderHelper;
+
+		}
 
         public async Task<OrderResponse?> Handle(CreateOrderRequest request)
         {
@@ -78,7 +73,7 @@ namespace Application.UseCases
 
             try
             {
-                // 1. Lấy thông tin phiên checkout từ Redis bằng CheckOutSessionId
+                // Lấy thông tin phiên checkout từ Redis bằng CheckOutSessionId
                 var cacheKey = $"checkout:{request.CheckOutSessionId}";
                 var checkoutDataJson = await _cache.GetStringAsync(cacheKey);
                 if (string.IsNullOrEmpty(checkoutDataJson))
@@ -95,7 +90,10 @@ namespace Application.UseCases
 
                 // Xác định ShippingAddressId cần dùng:
                 // Nếu request có ShippingAddressId mới thì ưu tiên dùng nó, nếu không dùng ShippingAddressId lưu trong phiên checkout.
-                int shippingAddressId = request.ShippingAddressId ?? checkoutData.ShippingAddressId;
+                int shippingAddressId = request.ShippingAddressId
+                        ?? checkoutData.ShippingAddressId
+                        ?? throw new InvalidOperationException("Shipping address is required.");
+
 
                 // Lấy thông tin địa chỉ giao hàng dựa trên shippingAddressId được xác định
                 var shippingAddress = await _getShippingAddressHandler.HandleAsync(shippingAddressId, request.AccountId);
@@ -131,7 +129,7 @@ namespace Application.UseCases
                 }
          
                 // Lấy WarehouseId từ appsettings.json, nếu không có thì dùng giá trị mặc định (1)
-                int warehouseId = int.TryParse(_configuration["Warehouse:OnlineWarehouseId"], out var wId) ? wId : 1;
+                int warehouseId = int.TryParse(_configuration["Warehouse:OnlineWarehouseId"], out var wId) ? wId : 2;
 
 
                 // Tạo Order và copy snapshot thông tin từ ShippingAddress
@@ -164,78 +162,33 @@ namespace Application.UseCases
                         return null;
                     }
 
-                    // Tạo đối tượng Payment (chưa commit)
-                    var payment = new Payment
-                    {
-                        OrderId = newOrder.OrderId,
-                        PaymentMethod = request.PaymentMethod,
-                        PaymentStatus = "Pending",
-                        Amount = totalAmount + shippingCost,
-                        TransactionDate = DateTime.UtcNow
-                    };
-                    await _paymentRepository.SavePaymentAsync(payment);
+					// Tạo đối tượng Payment (chưa commit)
+					await _orderHelper.SavePaymentAndOrderDetailsAsync(newOrder, orderDetails, request.PaymentMethod, totalAmount, shippingCost);
 
-                    // Lưu OrderDetails
-                    await _orderRepository.SaveOrderDetailsAsync(orderDetails);
-                    newOrder.OrderDetails = orderDetails;
+					// Sau khi đặt hàng thành công, xóa sản phẩm khỏi giỏ hàng
+					await _orderHelper.ClearCartAsync(request.AccountId, orderItems.Select(i => i.ProductVariantId).ToList());
 
-                    // Sau khi đặt hàng thành công, xóa sản phẩm khỏi giỏ hàng
-                    var productVariantIds = orderItems.Select(i => i.ProductVariantId).ToList();
-                    var cartCleared = await _customerServiceClient.ClearCartAfterOrderAsync(request.AccountId, productVariantIds);
-                    if (!cartCleared)
-                    {
-                        _logger.LogWarning("Không thể xóa sản phẩm khỏi giỏ hàng sau khi đặt hàng. AccountId: {AccountId}", request.AccountId);
-                    }
+					// Commit transaction
+					await _unitOfWork.CommitAsync();
 
-                    // Commit transaction
-                    await _unitOfWork.CommitAsync();
-
-                    var orderResponse = _mapper.Map<OrderResponse>(newOrder);
-                    orderResponse.PaymentMethod = request.PaymentMethod;
-                    orderResponse.PaymentUrl = paymentUrl;
-                    return orderResponse;
-                }
+					return _orderHelper.BuildOrderResponse(newOrder, request.PaymentMethod, paymentUrl);
+				}
                 else if (request.PaymentMethod == "COD")
                 {
-                    var payment = new Payment
-                    {
-                        OrderId = newOrder.OrderId,
-                        PaymentMethod = request.PaymentMethod,
-                        PaymentStatus = "Pending",
-                        Amount = totalAmount + shippingCost,
-                        TransactionDate = DateTime.UtcNow
-                    };
-                    await _paymentRepository.SavePaymentAsync(payment);
-
-                    // Lưu OrderDetails
-                    await _orderRepository.SaveOrderDetailsAsync(orderDetails);
-
-                    newOrder.OrderDetails = orderDetails;
-
-                    // Cập nhật tồn kho ngay lập tức
-                    var updateStockSuccess = await _inventoryServiceClient.UpdateStockAfterOrderAsync(warehouseId, orderDetails);
+					await _orderHelper.SavePaymentAndOrderDetailsAsync(newOrder, orderDetails, request.PaymentMethod, totalAmount, shippingCost);
+					// Cập nhật tồn kho ngay lập tức
+					var updateStockSuccess = await _inventoryServiceClient.UpdateStockAfterOrderAsync(warehouseId, orderDetails);
                     if (!updateStockSuccess)
                     {
                         await _unitOfWork.RollbackAsync();
                         return null;
                     }
 
-                    // Xóa sản phẩm đã đặt khỏi giỏ hàng
-                    var productVariantIds = orderItems.Select(i => i.ProductVariantId).ToList();
-                    var cartCleared = await _customerServiceClient.ClearCartAfterOrderAsync(request.AccountId, productVariantIds);
-                    if (!cartCleared)
-                    {
-                        _logger.LogWarning("Không thể xóa sản phẩm khỏi giỏ hàng sau khi đặt hàng. AccountId: {AccountId}", request.AccountId);
-                    }
+					await _orderHelper.ClearCartAsync(request.AccountId, orderItems.Select(i => i.ProductVariantId).ToList());
 
-                    // Ghi lại lịch sử đơn hàng
-                    await _auditLogHandler.LogOrderStatusChangeAsync(
-                                newOrder.OrderId,
-                                "Pending Confirmed",
-                                request.AccountId,
-                                "Đơn hàng đang chờ xác nhận."
-                            );
-                    var notificationRequest = new SendNotificationRequest
+					// Ghi lại lịch sử đơn hàng
+					await _orderHelper.LogPendingConfirmedStatusAsync(newOrder.OrderId, request.AccountId);
+					var notificationRequest = new SendNotificationRequest
                     {
                         AccountId = newOrder.AccountId,
                         Title = "Đơn hàng mới",
@@ -248,11 +201,8 @@ namespace Application.UseCases
                     await _notificationClient.SendNotificationAsync(notificationRequest);
 
                     await _unitOfWork.CommitAsync();
-
-                    var orderResponse = _mapper.Map<OrderResponse>(newOrder);
-                    orderResponse.PaymentMethod = request.PaymentMethod;
-                    return orderResponse;
-                }
+					return _orderHelper.BuildOrderResponse(newOrder, request.PaymentMethod);
+				}
 
                 await _unitOfWork.RollbackAsync();
                 return null;

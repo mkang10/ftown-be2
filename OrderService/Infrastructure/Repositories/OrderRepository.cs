@@ -1,5 +1,6 @@
 ﻿using Domain.Entities;
 using Domain.Interfaces;
+using Infrastructure.DBContext;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure
+namespace Infrastructure.Repositories
 {
     public class OrderRepository : IOrderRepository
     {
@@ -37,7 +38,7 @@ namespace Infrastructure
 
         public async Task<Order?> GetOrderByIdAsync(long orderId)
         {
-            return await _context.Orders.FirstOrDefaultAsync(o => o.OrderId== orderId);
+            return await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId);
         }
         public async Task<List<Order>> GetOrderHistoryByAccountIdAsync(int accountId)
         {

@@ -12,8 +12,8 @@ namespace Application.DTO.Response
         public string Name { get; set; }
         public string? Description { get; set; }
 
-        public string? ImagePath { get; set; } // Ảnh chính (có thể giữ lại để tương thích)
-        public List<string>? ImagePaths { get; set; } = new(); // 👈 Thêm danh sách ảnh
+        public string? ImagePath { get; set; } 
+        public List<string>? ImagePaths { get; set; } = new(); 
 
         public string? Origin { get; set; }
         public string? Model { get; set; }
@@ -21,7 +21,7 @@ namespace Application.DTO.Response
         public string? Style { get; set; }
         public string? Material { get; set; }
         public string? CategoryName { get; set; }
-
-        public List<ProductVariantResponse> Variants { get; set; } = new();
+		public bool? IsFavorite { get; set; }
+		public List<ProductVariantResponse> Variants { get; set; } = new();
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Application.DTO.Response;
+using Application.Enum;
 using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -39,14 +40,18 @@ namespace Infrastructure
                 .Include(p => p.ProductVariants)
                     .ThenInclude(v => v.WareHousesStocks)
                 .Include(p => p.Category)
-                .Include(p => p.ProductImages) // 👈 Thêm Include để lấy danh sách ảnh
+                .Include(p => p.ProductImages) 
                 .FirstOrDefaultAsync(p => p.ProductId == productId);
         }
-
-        public async Task<ProductVariant?> GetProductVariantByIdAsync(int variantId)
+		public async Task<bool> IsProductFavoriteAsync(int accountId, int productId)
+		{
+			return await _context.FavoriteProducts
+				.AnyAsync(f => f.AccountId == accountId && f.ProductId == productId);
+		}
+		public async Task<ProductVariant?> GetProductVariantByIdAsync(int variantId)
         {
             return await _context.ProductVariants
-                .Include(pv => pv.Product) // Lấy thông tin Product cha
+                .Include(pv => pv.Product) 
                 .Include(pv => pv.Size)
                 .Include(pv => pv.Color)
                 .FirstOrDefaultAsync(pv => pv.VariantId == variantId);
@@ -65,9 +70,11 @@ namespace Infrastructure
         public async Task<List<Product>> GetPagedProductsWithVariantsAsync(int page, int pageSize)
         {
             return await _context.Products
-                .Include(p => p.ProductVariants)
+				.Where(p => p.Status == ProductStatus.ActiveOnline.ToString()
+		                   || p.Status == ProductStatus.ActiveBoth.ToString() )
+				.Include(p => p.ProductVariants)
                 .Include(p => p.Category)
-                .Include(p => p.ProductImages) // Lấy luôn các ảnh của sản phẩm
+                .Include(p => p.ProductImages) 
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -76,14 +83,14 @@ namespace Infrastructure
         public async Task<List<ProductVariant>> GetProductVariantsByIdsAsync(List<int> variantIds)
         {
             return await _context.ProductVariants
-                .Include(pv => pv.Product) // Lấy thông tin Product cha
+                .Include(pv => pv.Product) 
                 .Include(pv => pv.Size)
                 .Include(pv => pv.Color)
                 .Where(pv => variantIds.Contains(pv.VariantId))
                 .ToListAsync();
         }
 
-        // 🔥 Cập nhật truy vấn lấy tồn kho từ StoreStock
+        // Cập nhật truy vấn lấy tồn kho từ StoreStock
         public async Task<Dictionary<int, int>> GetProductVariantsStockAsync(List<int> variantIds)
         {
             return await _context.WareHousesStocks
@@ -109,6 +116,11 @@ namespace Infrastructure
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
         }
+        public async Task AddProductsAsync(IEnumerable<Product> products)
+        {
+            _context.Products.AddRange(products);
+            await _context.SaveChangesAsync();
+        }
 
         public async Task AddProductVariantsAsync(List<ProductVariant> variants)
         {
@@ -122,15 +134,56 @@ namespace Infrastructure
             await _context.SaveChangesAsync();
         }
 
-        //public async Task AddProduct(Product product)
-        //{
-        //    _context.Products.Add(product);
-        //    await _context.SaveChangesAsync();
+		public async Task AddFavoriteAsync(int accountId, int productId)
+		{
+			bool exists = await _context.FavoriteProducts
+				.AnyAsync(f => f.AccountId == accountId && f.ProductId == productId);
 
-        //    var productDto = _mapper.Map<ProductListResponse>(product);
+			if (!exists)
+			{
+				_context.FavoriteProducts.Add(new FavoriteProduct
+				{
+					AccountId = accountId,
+					ProductId = productId,
+					CreatedAt = DateTime.UtcNow
+				});
 
-        //    // Index vào Elasticsearch
-        //    await _elasticsearchService.IndexProductAsync(productDto);
-        //}
-    }
+				await _context.SaveChangesAsync();
+			}
+		}
+
+		public async Task RemoveFavoriteAsync(int accountId, int productId)
+		{
+			var favorite = await _context.FavoriteProducts
+				.FirstOrDefaultAsync(f => f.AccountId == accountId && f.ProductId == productId);
+
+			if (favorite != null)
+			{
+				_context.FavoriteProducts.Remove(favorite);
+				await _context.SaveChangesAsync();
+			}
+		}
+
+		public async Task<List<Product>> GetFavoritePagedProductsAsync(int accountId, int page, int pageSize)
+		{
+			var query = from product in _context.Products
+						join favorite in _context.FavoriteProducts
+							on product.ProductId equals favorite.ProductId
+						where favorite.AccountId == accountId
+						   && (product.Status == ProductStatus.ActiveOnline.ToString()
+							   || product.Status == ProductStatus.ActiveBoth.ToString())
+						orderby favorite.CreatedAt descending // ✅ Sắp xếp mới nhất trước
+						select product;
+
+			return await query
+				.Include(p => p.ProductVariants)
+				.Include(p => p.Category)
+				.Include(p => p.ProductImages)
+				.Skip((page - 1) * pageSize)
+				.Take(pageSize)
+				.ToListAsync();
+		}
+
+
+	}
 }

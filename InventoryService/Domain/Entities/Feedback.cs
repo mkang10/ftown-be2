@@ -21,7 +21,11 @@ public partial class Feedback
 
     public string? ImagePath { get; set; }
 
+    public int? OrderDetailId { get; set; }
+
     public virtual Account Account { get; set; } = null!;
+
+    public virtual OrderDetail? OrderDetail { get; set; }
 
     public virtual Product Product { get; set; } = null!;
 
