@@ -11,20 +11,14 @@ namespace Application.DTO.Request
     {
         [Required]
         public string FullName { get; set; }
-
         [Required]
         [EmailAddress]
         public string Email { get; set; }
-
         public string? PhoneNumber { get; set; }
         public string? Address { get; set; }
         public string? ImagePath { get; set; }
-
-        //public int? LoyaltyPoints { get; set; }
-        //public string? MembershipLevel { get; set; }
         public DateOnly? DateOfBirth { get; set; }
         public string? Gender { get; set; }
-        public string? CustomerType { get; set; }
         public string? PreferredPaymentMethod { get; set; }
     }
 }

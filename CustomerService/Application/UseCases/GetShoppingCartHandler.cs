@@ -40,10 +40,10 @@ namespace Application.UseCases
         public async Task<ResponseDTO<List<CartItemResponse>>> Handle(int accountId)
         {
             var cartKey = GetCartKey(accountId);
-            // 1. Kiểm tra giỏ hàng trong Redis
+            // Kiểm tra giỏ hàng trong Redis
             var cart = await _redisCacheService.GetCacheAsync<List<CartItem>>(cartKey) ?? new List<CartItem>();
 
-            // 2. Nếu cache trống, tải từ DB và cập nhật cache
+            // Nếu cache trống, tải từ DB và cập nhật cache
             if (!cart.Any())
             {
                 Console.WriteLine("⏳ Cache miss: Lấy giỏ hàng từ Database...");
@@ -54,16 +54,16 @@ namespace Application.UseCases
                 }
             }
 
-            // 3. Nếu vẫn trống, trả về giỏ hàng rỗng
+            // Nếu vẫn trống, trả về giỏ hàng rỗng
             if (!cart.Any())
             {
                 return new ResponseDTO<List<CartItemResponse>>(new List<CartItemResponse>(), true, "Giỏ hàng trống.");
             }
 
-            // 4. Ánh xạ sang response
+            // Ánh xạ sang response
             var cartItemResponses = _mapper.Map<List<CartItemResponse>>(cart);
 
-            // 5. Lấy thông tin sản phẩm song song từ InventoryService
+            // Lấy thông tin sản phẩm song song từ InventoryService
             var tasks = cartItemResponses.Select(async item =>
             {
                 var productVariant = await _inventoryServiceClient.GetProductVariantById(item.ProductVariantId);
@@ -85,7 +85,7 @@ namespace Application.UseCases
 
         public async Task<ResponseDTO<bool>> AddCartItem(int accountId, AddToCartRequest cartItemDto)
         {
-            // 🔍 1. Lấy ProductVariant từ InventoryService dựa trên ProductId, Size, Color
+            //Lấy ProductVariant từ InventoryService dựa trên ProductId, Size, Color
             var productVariant = await _inventoryServiceClient.GetProductVariantByDetails(cartItemDto.ProductId, cartItemDto.Size, cartItemDto.Color);
 
             if (productVariant == null)
@@ -100,14 +100,14 @@ namespace Application.UseCases
 
             var cartKey = GetCartKey(accountId);
 
-            // 🛒 2. Lấy giỏ hàng từ Redis; nếu không có thì tải từ DB
+            //Lấy giỏ hàng từ Redis; nếu không có thì tải từ DB
             var cart = await _redisCacheService.GetCacheAsync<List<CartItem>>(cartKey);
             if (cart == null)
             {
                 cart = await _cartRepository.GetCartFromDatabaseAsync(accountId) ?? new List<CartItem>();
             }
 
-            // 🔄 3. Cập nhật giỏ hàng trong bộ nhớ
+            //Cập nhật giỏ hàng trong bộ nhớ
             var existingItem = cart.FirstOrDefault(c => c.ProductVariantId == productVariant.VariantId);
             if (existingItem != null)
             {
@@ -122,14 +122,14 @@ namespace Application.UseCases
                 });
             }
 
-            // 💾 4. Cập nhật dữ liệu vào DB qua repository
+            // Cập nhật dữ liệu vào DB qua repository
             await _cartRepository.AddToCartAsync(accountId, new CartItem
             {
                 ProductVariantId = productVariant.VariantId,
                 Quantity = cartItemDto.Quantity
             });
 
-            // 🔄 5. Cập nhật cache Redis với giỏ hàng mới nhất
+            // Cập nhật cache Redis với giỏ hàng mới nhất
             await _redisCacheService.SetCacheAsync(cartKey, cart, TimeSpan.FromMinutes(30));
 
             return new ResponseDTO<bool>(true, true, "Thêm sản phẩm vào giỏ hàng thành công!");

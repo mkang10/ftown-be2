@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 
 namespace Infrastructure
 {
-    public class EditProfileRepository : IEditProfileRepository
-    {
+    public class ProfileRepository : IProfileRepository
+	{
         private readonly FtownContext _context;
 
-        public EditProfileRepository(FtownContext context)
+        public ProfileRepository(FtownContext context)
         {
             _context = context;
         }

@@ -11,5 +11,6 @@ namespace Domain.Interfaces
         Task<T?> GetCacheAsync<T>(string key);
         Task SetCacheAsync<T>(string key, T value, TimeSpan expiration);
         Task RemoveCacheAsync(string key);
-    }
+		Task RemoveByPatternAsync(string pattern);
+	}
 }

@@ -7,7 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Infrastructure
+namespace Infrastructure.HelperServices
 {
     public class RedisCacheService : IRedisCacheService
     {
