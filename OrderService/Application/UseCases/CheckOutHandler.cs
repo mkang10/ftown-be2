@@ -3,6 +3,7 @@ using Application.DTO.Response;
 using Application.Interfaces;
 using AutoMapper;
 using Azure.Core;
+using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Caching.Distributed;
@@ -49,16 +50,11 @@ namespace Application.UseCases
         {
             var checkOutSessionId = Guid.NewGuid().ToString(); // Tạo Session ID
 
-            // Lấy địa chỉ giao hàng mặc định và tất cả địa chỉ của account 
-
+            // Lấy địa chỉ giao hàng mặc định và tất cả địa chỉ của account
             var shippingAddresses = await _shippingAddressRepository.GetShippingAddressesByAccountIdAsync(request.AccountId);
-            if (shippingAddresses == null || !shippingAddresses.Any())
-                return null;
-
             var defaultAddress = await _shippingAddressRepository.GetDefaultShippingAddressAsync(request.AccountId);
-            if (defaultAddress == null) return null;
 
-            // Lấy danh sách sản phẩm đã chọn từ giỏ hàng sử dụng GetSelectedCartItemsHandler
+            // Lấy danh sách sản phẩm đã chọn từ giỏ hàng
             var orderItems = await _getSelectedCartItemsHandler.Handle(request.AccountId, request.SelectedProductVariantIds);
             if (orderItems == null || !orderItems.Any()) return null;
 
@@ -66,24 +62,33 @@ namespace Application.UseCases
             var totalAmount = orderItems.Sum(item => item.DiscountedPrice * item.Quantity);
             if (totalAmount <= 0) return null;
 
-            // Tính phí vận chuyển dựa vào địa chỉ mặc định
-            decimal shippingCost = _shippingCostHandler.CalculateShippingCost(defaultAddress.City, defaultAddress.District);
+            // Tính phí vận chuyển nếu có địa chỉ mặc định, ngược lại gán = 0
+            decimal shippingCost = 0;
+            int? shippingAddressId = null;
 
-            // Danh sách phương thức thanh toán
+            if (defaultAddress != null)
+            {
+                shippingCost = _shippingCostHandler.CalculateShippingCost(defaultAddress.City, defaultAddress.District);
+                shippingAddressId = defaultAddress.AddressId;
+            }
+
             var availablePaymentMethods = new List<string> { "COD", "PAYOS" };
 
-            // Lưu dữ liệu vào Redis (hết hạn sau 15 phút)
+            // Lưu dữ liệu vào Redis
             var checkOutData = new CheckOutData
             {
                 AccountId = request.AccountId,
                 OrderTotal = totalAmount,
                 ShippingCost = shippingCost,
-                ShippingAddressId = defaultAddress.AddressId,
+                ShippingAddressId = shippingAddressId,
                 Items = orderItems
             };
 
             var cacheKey = $"checkout:{checkOutSessionId}";
-            var cacheOptions = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15) };
+            var cacheOptions = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15)
+            };
             await _cache.SetStringAsync(cacheKey, JsonConvert.SerializeObject(checkOutData), cacheOptions);
 
             return new CheckOutResponse
@@ -92,8 +97,8 @@ namespace Application.UseCases
                 OrderTotal = totalAmount,
                 ShippingCost = shippingCost,
                 AvailablePaymentMethods = availablePaymentMethods,
-                ShippingAddress = defaultAddress,
-                ShippingAddresses = shippingAddresses,
+                ShippingAddress = defaultAddress, // Có thể null
+                ShippingAddresses = shippingAddresses ?? new List<ShippingAddress>(), // Tránh null
                 Items = orderItems.Select(item => new OrderItemResponse
                 {
                     ProductVariantId = item.ProductVariantId,
@@ -104,10 +109,11 @@ namespace Application.UseCases
                     Quantity = item.Quantity,
                     Price = item.Price,
                     PriceAtPurchase = item.DiscountedPrice,
-                    DiscountApplied = item.Price - item.DiscountedPrice // Nếu có logic giảm giá, cập nhật tại đây
+                    DiscountApplied = item.Price - item.DiscountedPrice
                 }).ToList()
             };
         }
-        
+
+
     }
 }

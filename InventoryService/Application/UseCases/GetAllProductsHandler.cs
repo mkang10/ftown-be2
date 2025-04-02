@@ -1,4 +1,5 @@
 ﻿using Application.DTO.Response;
+using Application.Interfaces;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
@@ -17,13 +18,14 @@ namespace Application.UseCases
         private readonly IRedisCacheService _cacheService;
         private readonly IMapper _mapper;
         private readonly IPromotionRepository _promotionRepository;
-
-        public GetAllProductsHandler(IProductRepository productRepository, IMapper mapper, IRedisCacheService cacheService, IPromotionRepository promotionRepository)
+		private readonly IPromotionService _promotionService;
+		public GetAllProductsHandler(IProductRepository productRepository, IMapper mapper, IRedisCacheService cacheService, IPromotionRepository promotionRepository, IPromotionService promotionService)
         {
             _productRepository = productRepository;
             _mapper = mapper;
             _cacheService = cacheService;
             _promotionRepository = promotionRepository;
+            _promotionService = promotionService;
         }
 
         public async Task<List<ProductListResponse>> Handle(int page, int pageSize)
@@ -48,39 +50,21 @@ namespace Application.UseCases
             // ⚡ Dùng AutoMapper để chuyển đổi Entity -> DTO
             var productList = _mapper.Map<List<ProductListResponse>>(products);
 
-            // 🔥 Tính giá sau khuyến mãi
-            foreach (var product in productList)
-            {
-                var applicablePromotion = promotions.FirstOrDefault(p =>
-                    !string.IsNullOrEmpty(p.ApplyValue) &&
-                    JsonConvert.DeserializeObject<List<int>>(p.ApplyValue).Contains(product.ProductId));
+			// 🔥 Tính giá sau khuyến mãi
+			foreach (var product in productList)
+			{
+				_promotionService.ApplyPromotion(
+					product.ProductId,
+					product.Price,
+					promotions,
+					out var discountedPrice,
+					out var promotionTitle);
 
-                if (applicablePromotion != null)
-                {
-                    decimal discountedPrice = product.Price;
-
-                    if (applicablePromotion.DiscountType == "PERCENTAGE")
-                    {
-                        decimal discountAmount = (product.Price * applicablePromotion.DiscountValue) / 100;
-                        discountedPrice = Math.Max(product.Price - discountAmount, 0);
-                    }
-                    else if (applicablePromotion.DiscountType == "FIXED_AMOUNT")
-                    {
-                        discountedPrice = Math.Max(product.Price - applicablePromotion.DiscountValue, 0);
-                    }
-
-                    product.DiscountedPrice = discountedPrice;
-                    product.PromotionTitle = applicablePromotion.Title;
-                }
-                else
-                {
-                    product.DiscountedPrice = product.Price;
-                    product.PromotionTitle = null;
-                }
-            }
-
-            // ✅ Lưu vào cache với TTL 10 phút
-            await _cacheService.SetCacheAsync(cacheKey, productList, TimeSpan.FromMinutes(10));
+				product.DiscountedPrice = discountedPrice;
+				product.PromotionTitle = promotionTitle;
+			}
+			// ✅ Lưu vào cache với TTL 10 phút
+			await _cacheService.SetCacheAsync(cacheKey, productList, TimeSpan.FromMinutes(10));
 
             return productList;
         }

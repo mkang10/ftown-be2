@@ -2,10 +2,13 @@
 
 using Application.Interfaces;
 using Application.UseCases;
+using CloudinaryDotNet;
 using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Nest;
 
 namespace API.AppStarts
@@ -28,8 +31,24 @@ namespace API.AppStarts
             services.AddScoped<IExcelService, ExcelHandler>();
             // use DI here
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            // Cloudinary configuration
+            services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
+            services.AddSingleton(sp =>
+            {
+                var settings = sp.GetRequiredService<IOptions<CloudinarySettings>>().Value;
+                if (string.IsNullOrEmpty(settings.CloudName) ||
+                    string.IsNullOrEmpty(settings.ApiKey) ||
+                    string.IsNullOrEmpty(settings.ApiSecret))
+                {
+                    throw new ArgumentException("CloudinarySettings không được cấu hình đúng trong appsettings.json");
+                }
+                var account = new CloudinaryDotNet.Account(settings.CloudName, settings.ApiKey, settings.ApiSecret);
+                return new Cloudinary(account);
+            });
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
             services.AddSingleton<ElasticsearchService>();
-            services.AddSingleton<IRedisCacheService, RedisCacheService>();
+            services.AddScoped<IPromotionService, PromotionService>();
+			services.AddSingleton<IRedisCacheService, RedisCacheService>();
             services.AddSingleton<IElasticClient>(sp =>
             {
                 var configuration = sp.GetRequiredService<IConfiguration>();
@@ -54,7 +73,9 @@ namespace API.AppStarts
             services.AddScoped<GetProductVariantByDetailsHandler>();
             services.AddScoped<CreateProductHandler>();
             services.AddScoped<RedisHandler>();
-
+            services.AddScoped<GetFavoriteProductsHandler>();
+            services.AddScoped<AddFavoriteHandler>();
+            services.AddScoped<RemoveFavoriteHandler>();
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowLocalhost",

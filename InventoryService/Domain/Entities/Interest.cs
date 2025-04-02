@@ -10,4 +10,6 @@ public partial class Interest
     public string Name { get; set; } = null!;
 
     public virtual ICollection<AccountInterest> AccountInterests { get; set; } = new List<AccountInterest>();
+
+    public virtual ICollection<ProductStyle> ProductStyles { get; set; } = new List<ProductStyle>();
 }

@@ -1,38 +1,32 @@
 using API.AppStarts;
 using Application.Interfaces;
 using CloudinaryDotNet;
-using Infrastructure;
+using Infrastructure.HelperServices;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
-// Add services to the container.
-var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>();
-
-// Ki?m tra n?u c?u hình Cloudinary b? thi?u ho?c không h?p l?
-if (cloudinarySettings == null ||
-    string.IsNullOrEmpty(cloudinarySettings.CloudName) ||
-    string.IsNullOrEmpty(cloudinarySettings.ApiKey) ||
-    string.IsNullOrEmpty(cloudinarySettings.ApiSecret))
-{
-    throw new ArgumentException("CloudinarySettings không ???c c?u hình ?úng trong appsettings.json");
-}
-
-// ??ng ký CloudinarySettings vào DI container
+// ??ng ký c?u hình CloudinarySettings
 builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection("CloudinarySettings")
 );
 
-// ??ng ký Cloudinary v?i tài kho?n ???c kh?i t?o t? c?u hình
-var cloudinaryAccount = new Account(
-    cloudinarySettings.CloudName,
-    cloudinarySettings.ApiKey,
-    cloudinarySettings.ApiSecret
-);
-var cloudinary = new Cloudinary(cloudinaryAccount);
+// ??ng ký Cloudinary d??i d?ng Singleton, s? d?ng IOptions ?? l?y c?u hình
+builder.Services.AddSingleton(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<CloudinarySettings>>().Value;
+    if (string.IsNullOrEmpty(settings.CloudName) ||
+        string.IsNullOrEmpty(settings.ApiKey) ||
+        string.IsNullOrEmpty(settings.ApiSecret))
+    {
+        throw new ArgumentException("CloudinarySettings không ???c c?u hình ?úng trong appsettings.json");
+    }
 
-builder.Services.AddSingleton(cloudinary);
+    var account = new Account(settings.CloudName, settings.ApiKey, settings.ApiSecret);
+    return new Cloudinary(account);
+});
 
 // ??ng ký CloudinaryService
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();

@@ -1,5 +1,6 @@
 ﻿using Domain.Entities;
 using Domain.Interfaces;
+using Infrastructure.DBContext;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure
+namespace Infrastructure.Repositories
 {
     public class ReturnOrderRepository : IReturnOrderRepository
     {
@@ -24,18 +25,6 @@ namespace Infrastructure
             await _context.SaveChangesAsync();
         }
 
-        //public async Task AddReturnOrderMediaAsync(List<ReturnOrderMedium> mediaList)
-        //{
-        //    _context.ReturnOrderMedia.AddRange(mediaList);
-        //    await _context.SaveChangesAsync();
-        //}
-
-        //public async Task<ReturnOrder?> GetReturnOrderByIdAsync(int returnOrderId)
-        //{
-        //    return await _context.ReturnOrders
-        //        .Include(r => r.ReturnOrderMedia)
-        //        .FirstOrDefaultAsync(r => r.ReturnOrderId == returnOrderId);
-        //}
 
         public async Task<List<ReturnOrder>> GetReturnOrdersByAccountIdAsync(int accountId)
         {

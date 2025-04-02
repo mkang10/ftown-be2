@@ -1,4 +1,5 @@
 ﻿using Application.DTO.Request;
+using Application.DTO.Response;
 using Application.UseCases;
 using Domain.Entities;
 using Domain.Interfaces;
@@ -14,6 +15,7 @@ namespace API.Controllers
         private readonly IShippingAddressRepository _shippingAddressRepository;
         private readonly ILogger<ShippingAddressController> _logger;
         private readonly ShippingCostHandler _shippingCostHandler;
+
         public ShippingAddressController(IShippingAddressRepository shippingAddressRepository,
                                          ILogger<ShippingAddressController> logger,
                                          ShippingCostHandler shippingCostHandler)
@@ -27,7 +29,9 @@ namespace API.Controllers
         public async Task<IActionResult> CreateShippingAddress([FromBody] CreateShippingAddressRequest request)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                return BadRequest(new ResponseDTO(false, "Invalid request"));
+            }
 
             var newAddress = new ShippingAddress
             {
@@ -40,12 +44,15 @@ namespace API.Controllers
                 PostalCode = request.PostalCode,
                 RecipientName = request.RecipientName,
                 RecipientPhone = request.RecipientPhone,
-                Email =request.Email,
+                Email = request.Email,
                 IsDefault = request.IsDefault ?? false
             };
 
             await _shippingAddressRepository.CreateAsync(newAddress);
-            return CreatedAtAction(nameof(GetShippingAddressById), new { id = newAddress.AddressId }, newAddress);
+
+            return CreatedAtAction(nameof(GetShippingAddressById),
+                new { id = newAddress.AddressId },
+                new ResponseDTO<ShippingAddress>(newAddress, true, "Created successfully"));
         }
 
         [HttpGet("{id}")]
@@ -53,15 +60,32 @@ namespace API.Controllers
         {
             var address = await _shippingAddressRepository.GetByIdAsync(id);
             if (address == null)
-                return NotFound();
-            return Ok(address);
+            {
+                return NotFound(new ResponseDTO(false, "Shipping address not found"));
+            }
+
+            return Ok(new ResponseDTO<ShippingAddress>(address, true, "Success"));
         }
+
+        [HttpGet("account/{accountId}")]
+        public async Task<IActionResult> GetShippingAddressesByAccountId(int accountId)
+        {
+            var addresses = await _shippingAddressRepository.GetShippingAddressesByAccountIdAsync(accountId);
+            if (addresses == null || !addresses.Any())
+            {
+                return NotFound(new ResponseDTO(false, "No shipping addresses found"));
+            }
+
+            return Ok(new ResponseDTO<List<ShippingAddress>>(addresses, true, "Success"));
+        }
+
         [HttpGet("cost")]
         public IActionResult GetShippingCost([FromQuery] string city, [FromQuery] string district)
         {
             var shippingCost = _shippingCostHandler.CalculateShippingCost(city, district);
-            return Ok(new { shippingCost });
+            return Ok(new ResponseDTO<decimal>(shippingCost, true, "Shipping cost calculated successfully"));
         }
     }
+
 
 }

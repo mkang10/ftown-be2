@@ -27,7 +27,9 @@ namespace API.AppStarts
                                           .Where(pi => pi.IsMain)
                                           .Select(pi => pi.ImagePath)
                                           .FirstOrDefault()));
-
+            CreateMap<CreateProductRequest, Product>()
+            .ForMember(dest => dest.ProductImages, opt => opt.Ignore())  // Vì sẽ xử lý upload ảnh riêng
+            .ForMember(dest => dest.Status, opt => opt.Ignore());
             // Mapping từ Product -> ProductDetailResponse (Chi tiết sản phẩm)
             CreateMap<Product, ProductDetailResponse>()
                  .ForMember(dest => dest.CategoryName,
@@ -39,6 +41,7 @@ namespace API.AppStarts
                                                        .Where(i => i.IsMain)
                                                        .Select(i => i.ImagePath)
                                                        .FirstOrDefault()))
+                 
                  .ForMember(dest => dest.ImagePaths, // Danh sách ảnh
                             opt => opt.MapFrom(src => src.ProductImages
                                                        .Select(i => i.ImagePath)
