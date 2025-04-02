@@ -26,7 +26,7 @@ namespace API.AppStarts
 
             // use DI here
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddScoped<IEditProfileRepository, EditProfileRepository>();
+            services.AddScoped<IProfileRepository, ProfileRepository>();
             services.AddScoped<EditProfileHandler>();
             services.AddScoped<GetCustomerProfileHandler>();
             services.AddScoped<ICartRepository, CartRepository>();  
@@ -37,7 +37,7 @@ namespace API.AppStarts
             services.AddScoped<IOrderDetailRepository, OrderDetailRepository>();
 
             services.AddScoped<IReplyFeedbackService, ReplyHandler>();
-
+            services.AddScoped<ICustomerProfileDataService, CustomerProfileDataService>();
             //services.AddScoped<IOrderRepository, OrderRepository>();
 
 

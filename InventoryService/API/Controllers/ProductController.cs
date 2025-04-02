@@ -51,19 +51,20 @@ namespace API.Controllers
         }
 
 
-        [HttpGet("{productId}")]
-        public async Task<ActionResult<ResponseDTO<ProductDetailResponse>>> GetProductDetail(int productId)
-        {
-            var product = await _getProductDetailHandler.Handle(productId);
+		[HttpGet("{productId}")]
+		public async Task<ActionResult<ResponseDTO<ProductDetailResponse>>> GetProductDetail(int productId, [FromQuery] int? accountId)
+		{
+			var product = await _getProductDetailHandler.Handle(productId, accountId);
 
-            if (product == null)
-                return NotFound(new ResponseDTO<ProductDetailResponse>(null, false, "Không tìm thấy sản phẩm!"));
+			if (product == null)
+				return NotFound(new ResponseDTO<ProductDetailResponse>(null, false, "Không tìm thấy sản phẩm!"));
 
-            return Ok(new ResponseDTO<ProductDetailResponse>(product, true, "Lấy chi tiết sản phẩm thành công!"));
-        }
+			return Ok(new ResponseDTO<ProductDetailResponse>(product, true, "Lấy chi tiết sản phẩm thành công!"));
+		}
 
 
-        [HttpGet("variant/{variantId}")]
+
+		[HttpGet("variant/{variantId}")]
         public async Task<ActionResult<ResponseDTO<ProductVariantResponse>>> GetProductVariantById(int variantId)
         {
             var variant = await _getProductVariantByIdHandler.Handle(variantId);
@@ -96,19 +97,46 @@ namespace API.Controllers
             return Ok(new ResponseDTO<ProductVariantResponse>(variant, true, "Lấy biến thể sản phẩm thành công!"));
         }
 
+        [HttpPost("create")]
+        public async Task<IActionResult> Create([FromForm] CreateProductRequest request)
+        {
+            try
+            {
+                var productDetail = await _createProductHandler.CreateProductAsync(request);
+                var response = new ResponseDTO<ProductDetailResponse>(productDetail, true, "Tạo sản phẩm thành công");
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                var errorResponse = new ResponseDTO(false, $"Lỗi: {ex.Message}");
+                return BadRequest(errorResponse);
+            }
+        }
+
+        // Endpoint tạo nhiều sản phẩm cùng lúc
+        [HttpPost("create-multiple")]
+        public async Task<IActionResult> CreateMultiple([FromForm] List<CreateProductRequest> requests)
+        {
+            if (requests == null || !requests.Any())
+                return BadRequest(new ResponseDTO(false, "Không có sản phẩm nào được gửi lên"));
+
+            try
+            {
+                var productDetails = await _createProductHandler.CreateMultipleProductsAsync(requests);
+                var response = new ResponseDTO<List<ProductDetailResponse>>(
+                    productDetails,
+                    true,
+                    $"Tạo thành công {productDetails.Count} sản phẩm"
+                );
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                var errorResponse = new ResponseDTO(false, $"Lỗi: {ex.Message}");
+                return BadRequest(errorResponse);
+            }
+        }
         
-        //[HttpPut("variant/update")]
-        //public async Task<ActionResult<ResponseDTO<bool>>> UpdateProductVariant([FromBody] ProductVariantRequest request)
-        //{
-        //    var productVariant = _mapper.Map<ProductVariant>(request);
-
-        //    var result = await _updateProductVariantHandler.Handle(productVariant);
-
-        //    if (!result)
-        //        return BadRequest(new ResponseDTO<bool>(false, false, "Cập nhật biến thể sản phẩm thất bại."));
-
-        //    return Ok(new ResponseDTO<bool>(true, true, "Cập nhật biến thể sản phẩm thành công!"));
-        //}
 
         //[HttpGet("search")]
         //public async Task<ActionResult<List<ProductListResponse>>> SearchProducts([FromQuery] string query)

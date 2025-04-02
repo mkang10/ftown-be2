@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Interfaces
 {
-    public interface IEditProfileRepository
+    public interface IProfileRepository
     {
         Task<Account?> GetAccountByIdAsync(int accountId);
         Task<CustomerDetail?> GetCustomerDetailByAccountIdAsync(int accountId);

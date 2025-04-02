@@ -17,5 +17,13 @@ public partial class Notification
 
     public DateTime? CreatedDate { get; set; }
 
+    public string Title { get; set; } = null!;
+
+    public int? TargetId { get; set; }
+
+    public string? TargetType { get; set; }
+
+    public DateTime? ExpirationDate { get; set; }
+
     public virtual Account Account { get; set; } = null!;
 }

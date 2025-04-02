@@ -1,4 +1,5 @@
 ﻿using Application.DTO.Response;
+using Application.Interfaces;
 using AutoMapper;
 using Azure;
 using Domain.Entities;
@@ -18,12 +19,14 @@ namespace Application.UseCases
         private readonly IRedisCacheService _cacheService;
         private readonly IMapper _mapper;
         private readonly IPromotionRepository _promotionRepository;
-        public GetProductVariantByIdHandler(IProductRepository productRepository, IRedisCacheService cacheService, IMapper mapper, IPromotionRepository promotionRepository)
+		private readonly IPromotionService _promotionService;
+		public GetProductVariantByIdHandler(IProductRepository productRepository, IRedisCacheService cacheService, IMapper mapper, IPromotionRepository promotionRepository, IPromotionService promotionService)
         {
             _productRepository = productRepository;
             _cacheService = cacheService;
             _mapper = mapper;
             _promotionRepository = promotionRepository;
+            _promotionService = promotionService;
         }
 
         public async Task<ProductVariantResponse?> Handle(int variantId)
@@ -48,36 +51,18 @@ namespace Application.UseCases
             // 🔹 Lấy danh sách khuyến mãi đang hoạt động
             var promotions = await _promotionRepository.GetActiveProductPromotionsAsync();
 
-            // 🔥 Kiểm tra sản phẩm có khuyến mãi không
-            var applicablePromotion = promotions.FirstOrDefault(p =>
-                !string.IsNullOrEmpty(p.ApplyValue) &&
-                JsonConvert.DeserializeObject<List<int>>(p.ApplyValue).Contains(productVariant.ProductId));
+			_promotionService.ApplyPromotion(
+			productVariant.ProductId,
+			variantResponse.Price,
+			promotions,
+			out var discountedPrice,
+			out var promotionTitle);
 
-            if (applicablePromotion != null)
-            {
-                decimal discountedPrice = variantResponse.Price;
+			variantResponse.DiscountedPrice = discountedPrice;
+			variantResponse.PromotionTitle = promotionTitle;
 
-                if (applicablePromotion.DiscountType == "PERCENTAGE")
-                {
-                    decimal discountAmount = (variantResponse.Price * applicablePromotion.DiscountValue) / 100;
-                    discountedPrice = Math.Max(variantResponse.Price - discountAmount, 0);
-                }
-                else if (applicablePromotion.DiscountType == "FIXED_AMOUNT")
-                {
-                    discountedPrice = Math.Max(variantResponse.Price - applicablePromotion.DiscountValue, 0);
-                }
-
-                variantResponse.DiscountedPrice = discountedPrice;
-                variantResponse.PromotionTitle = applicablePromotion.Title;
-            }
-            else
-            {
-                variantResponse.DiscountedPrice = variantResponse.Price;
-                variantResponse.PromotionTitle = null;
-            }
-
-            // ✅ Lưu vào cache với TTL 30 phút
-            await _cacheService.SetCacheAsync(cacheKey, variantResponse, TimeSpan.FromMinutes(30));
+			// ✅ Lưu vào cache với TTL 30 phút
+			await _cacheService.SetCacheAsync(cacheKey, variantResponse, TimeSpan.FromMinutes(30));
 
             return variantResponse;
         }

@@ -15,6 +15,7 @@ namespace Application.DTO.Response
         public decimal DiscountedPrice { get; set; } // Giá sau khi áp dụng khuyến mãi
         public string? CategoryName { get; set; }
         public string? PromotionTitle { get; set; } // Tên khuyến mãi nếu có
+        public bool? IsFavorite { get; set; }
 
-    }
+	}
 }

@@ -1,8 +1,10 @@
 ﻿using Application.DTO.Request;
 using Application.DTO.Response;
+using Application.Interfaces;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,57 +17,77 @@ namespace Application.UseCases
     {
         private readonly IProductRepository _productRepository;
         private readonly IMapper _mapper;
-
-        public CreateProductHandler(IProductRepository productRepository, IMapper mapper)
+        private readonly ICloudinaryService _cloudinaryService;
+        public CreateProductHandler(IProductRepository productRepository, IMapper mapper, ICloudinaryService cloudinaryService)
         {
             _productRepository = productRepository;
             _mapper = mapper;
+            _cloudinaryService = cloudinaryService;
         }
 
-        public async Task<ProductDetailResponse> Handle(CreateProductRequest request)
-        {
-            // ✅ Kiểm tra xem danh sách biến thể có ít nhất 1 cái không
-            if (request.Variants == null || request.Variants.Count == 0)
-                throw new ArgumentException("Sản phẩm phải có ít nhất một biến thể!");
+		public async Task<ProductDetailResponse> CreateProductAsync(CreateProductRequest request)
+		{
+			var product = _mapper.Map<Product>(request);
+			product.Status = "Draft";
 
-            // ✅ Tạo đối tượng Product từ DTO
-            var product = _mapper.Map<Product>(request);
+			// Upload ảnh (nếu có)
+			if (request.ImageFiles != null && request.ImageFiles.Any())
+			{
+				var (mainImagePath, productImages) = await UploadProductImagesAsync(request.ImageFiles);
+				product.ImagePath = mainImagePath; // Lưu ảnh chính vào Product
+				product.ProductImages = productImages;
+			}
 
-            // ✅ Thêm vào database
-            await _productRepository.AddProductAsync(product);
+			await _productRepository.AddProductAsync(product);
+			return _mapper.Map<ProductDetailResponse>(product);
+		}
 
-            // ✅ Lưu biến thể sản phẩm (cần gán ProductId trước)
-            var productVariants = request.Variants.Select(variantDto => new ProductVariant
-            {
-                ProductId = product.ProductId, // Lấy ID sau khi tạo Product
-                Price = variantDto.Price,
-                ImagePath = variantDto.ImagePath,
-                Sku = variantDto.Sku,
-                Barcode = variantDto.Barcode,
-                Weight = variantDto.Weight,
-                SizeId = variantDto.SizeId,
-                ColorId = variantDto.ColorId
-            }).ToList();
 
-            await _productRepository.AddProductVariantsAsync(productVariants);
+		// Tạo nhiều sản phẩm cùng lúc
+		public async Task<List<ProductDetailResponse>> CreateMultipleProductsAsync(List<CreateProductRequest> requests)
+		{
+			var products = _mapper.Map<List<Product>>(requests);
 
-            // ✅ Lưu ảnh sản phẩm (nếu có)
-            if (request.ProductImages != null && request.ProductImages.Any())
-            {
-                var productImages = request.ProductImages.Select(imgPath => new ProductImage
-                {
-                    ProductId = product.ProductId,
-                    ImagePath = imgPath,
-                    IsMain = false, // Ảnh chính có thể xác định sau
-                    CreatedDate = DateTime.UtcNow
-                }).ToList();
+			for (int i = 0; i < products.Count; i++)
+			{
+				products[i].Status = "Draft";
 
-                await _productRepository.AddProductImagesAsync(productImages);
-            }
+				if (requests[i].ImageFiles != null && requests[i].ImageFiles.Any())
+				{
+					var (mainImagePath, productImages) = await UploadProductImagesAsync(requests[i].ImageFiles);
+					products[i].ImagePath = mainImagePath;
+					products[i].ProductImages = productImages;
+				}
+			}
 
-            // ✅ Trả về thông tin sản phẩm vừa tạo
-            return _mapper.Map<ProductDetailResponse>(product);
-        }
-    }
+			await _productRepository.AddProductsAsync(products);
+			return _mapper.Map<List<ProductDetailResponse>>(products);
+		}
 
+		private async Task<(string mainImagePath, List<ProductImage> images)> UploadProductImagesAsync(List<IFormFile> imageFiles)
+		{
+			var images = new List<ProductImage>();
+			string mainImagePath = string.Empty;
+
+			for (int i = 0; i < imageFiles.Count; i++)
+			{
+				var imageUrl = await _cloudinaryService.UploadMediaAsync(imageFiles[i]);
+
+				var productImage = new ProductImage
+				{
+					ImagePath = imageUrl,
+					IsMain = (i == 0),
+					CreatedDate = DateTime.UtcNow
+				};
+
+				if (i == 0)
+					mainImagePath = imageUrl;
+
+				images.Add(productImage);
+			}
+
+			return (mainImagePath, images);
+		}
+
+	}
 }

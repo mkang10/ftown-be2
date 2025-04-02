@@ -43,6 +43,8 @@ public partial class FtownContext : DbContext
 
     public virtual DbSet<DispatchDetail> DispatchDetails { get; set; }
 
+    public virtual DbSet<FavoriteProduct> FavoriteProducts { get; set; }
+
     public virtual DbSet<Feedback> Feedbacks { get; set; }
 
     public virtual DbSet<Import> Imports { get; set; }
@@ -68,6 +70,8 @@ public partial class FtownContext : DbContext
     public virtual DbSet<Product> Products { get; set; }
 
     public virtual DbSet<ProductImage> ProductImages { get; set; }
+
+    public virtual DbSet<ProductStyle> ProductStyles { get; set; }
 
     public virtual DbSet<ProductVariant> ProductVariants { get; set; }
 
@@ -148,9 +152,10 @@ public partial class FtownContext : DbContext
             entity.Property(e => e.AccountId).HasColumnName("AccountID");
             entity.Property(e => e.InteractionCount).HasDefaultValue(0);
             entity.Property(e => e.InterestId).HasColumnName("InterestID");
-            entity.Property(e => e.LastInteractionDate)
+            entity.Property(e => e.LastUpdated)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.Source).HasMaxLength(20);
 
             entity.HasOne(d => d.Account).WithMany(p => p.AccountInterests)
                 .HasForeignKey(d => d.AccountId)
@@ -392,6 +397,29 @@ public partial class FtownContext : DbContext
                 .HasConstraintName("FK_StoreDispatchDetails_StoreDispatch");
         });
 
+        modelBuilder.Entity<FavoriteProduct>(entity =>
+        {
+            entity.HasKey(e => e.FavoriteId).HasName("PK__Favorite__CE74FAD54EA660C4");
+
+            entity.ToTable("FavoriteProduct");
+
+            entity.HasIndex(e => new { e.AccountId, e.ProductId }, "UQ_Favorite_Account_Product").IsUnique();
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Account).WithMany(p => p.FavoriteProducts)
+                .HasForeignKey(d => d.AccountId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Favorite_Account");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.FavoriteProducts)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Favorite_Product");
+        });
+
         modelBuilder.Entity<Feedback>(entity =>
         {
             entity.HasKey(e => e.FeedbackId).HasName("PK__Feedback__6A4BEDF67A481618");
@@ -403,6 +431,7 @@ public partial class FtownContext : DbContext
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.OrderDetailId).HasColumnName("OrderDetailID");
             entity.Property(e => e.ProductId).HasColumnName("ProductID");
             entity.Property(e => e.Title).HasMaxLength(255);
 
@@ -410,6 +439,11 @@ public partial class FtownContext : DbContext
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Feedback__Accoun__607251E5");
+
+            entity.HasOne(d => d.OrderDetail).WithMany(p => p.Feedbacks)
+                .HasForeignKey(d => d.OrderDetailId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Feedback_OrderDetails");
 
             entity.HasOne(d => d.Product).WithMany(p => p.Feedbacks)
                 .HasForeignKey(d => d.ProductId)
@@ -523,8 +557,14 @@ public partial class FtownContext : DbContext
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.ExpirationDate).HasColumnType("datetime");
             entity.Property(e => e.IsRead).HasDefaultValue(false);
             entity.Property(e => e.NotificationType).HasMaxLength(50);
+            entity.Property(e => e.TargetId).HasColumnName("TargetID");
+            entity.Property(e => e.TargetType).HasMaxLength(50);
+            entity.Property(e => e.Title)
+                .HasMaxLength(255)
+                .HasDefaultValue("");
 
             entity.HasOne(d => d.Account).WithMany(p => p.Notifications)
                 .HasForeignKey(d => d.AccountId)
@@ -664,6 +704,9 @@ public partial class FtownContext : DbContext
             entity.Property(e => e.Name).HasMaxLength(255);
             entity.Property(e => e.Occasion).HasMaxLength(255);
             entity.Property(e => e.Origin).HasMaxLength(255);
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasDefaultValue("Draft");
             entity.Property(e => e.Style).HasMaxLength(255);
 
             entity.HasOne(d => d.Category).WithMany(p => p.Products)
@@ -686,6 +729,27 @@ public partial class FtownContext : DbContext
                 .HasForeignKey(d => d.ProductId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ProductImage_Product");
+        });
+
+        modelBuilder.Entity<ProductStyle>(entity =>
+        {
+            entity.HasKey(e => e.ProductStyleId).HasName("PK__ProductS__E75B9D8ABB3AD2F8");
+
+            entity.ToTable("ProductStyle");
+
+            entity.Property(e => e.ProductStyleId).HasColumnName("ProductStyleID");
+            entity.Property(e => e.InterestId).HasColumnName("InterestID");
+            entity.Property(e => e.ProductId).HasColumnName("ProductID");
+
+            entity.HasOne(d => d.Interest).WithMany(p => p.ProductStyles)
+                .HasForeignKey(d => d.InterestId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ProductStyle_Interests");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.ProductStyles)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ProductStyle_Product");
         });
 
         modelBuilder.Entity<ProductVariant>(entity =>
