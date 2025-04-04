@@ -21,13 +21,17 @@ namespace Application.DTO.Request
         public string from_phone { get; set; }
         public string from_address { get; set; }
         public string from_ward_code { get; set; }
-        public int from_district_id { get; set; }
+        public string from_district_name { get; set; }
+        public string from_province_name { get; set; }
+
         public int deliver_station_id { get; set; }
         public string to_name { get; set; }
         public string to_phone { get; set; }
         public string to_address { get; set; }
-        public string to_ward_code { get; set; }
-        public int to_district_id { get; set; }
+        public string to_ward_name { get; set; }
+        public string to_district_name { get; set; }
+        public string to_province_name { get; set; }
+
         public int weight { get; set; }
         public int length { get; set; }
         public int width { get; set; }

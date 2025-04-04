@@ -5,6 +5,7 @@ using Application.UseCases;
 using Domain.Interfaces;
 using Infrastructure;
 using Infrastructure.Clients;
+using Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.AppStarts
@@ -48,7 +49,9 @@ namespace API.AppStarts
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddSingleton<IRedisCacheService, RedisCacheService>();
-            
+            services.AddScoped<GHNLogHandler>();
+            services.AddScoped<IGHNLogRepository, GHNLogRepository>();
+
             //Repository
 
             services.AddScoped<IOrderRepository, OrderRepository>();

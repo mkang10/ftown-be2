@@ -53,6 +53,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     var configuration = ConfigurationOptions.Parse(redisConnection, true);
     return ConnectionMultiplexer.Connect(configuration);
 });
+
 // Add depen
 builder.Services.InstallService(builder.Configuration);
 builder.Services.AddControllers();
