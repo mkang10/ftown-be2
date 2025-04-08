@@ -1,37 +1,38 @@
 ﻿using AutoMapper;
 using Domain.DTO.Response;
 using Domain.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Application.UseCases
+public class GetImportDetailHandler
 {
+    private readonly IImportRepos _importRepos;
+    private readonly IAuditLogRepos _auditLogRepos;
+    private readonly IMapper _mapper;
 
-
-    public class GetImportDetailHandler
+    public GetImportDetailHandler(IImportRepos importRepos, IAuditLogRepos auditLogRepos, IMapper mapper)
     {
-        private readonly IImportRepos _inventoryRepository;
-        private readonly IMapper _mapper;
+        _importRepos = importRepos;
+        _auditLogRepos = auditLogRepos;
+        _mapper = mapper;
+    }
 
-        public GetImportDetailHandler(IImportRepos inventoryRepository, IMapper mapper)
+    public async Task<InventoryImportDetailDto> GetInventoryDetailAsync(int importId)
+    {
+        // Lấy thông tin Import bao gồm các detail, store detail, v.v.
+        var import = await _importRepos.GetImportByIdAsync(importId);
+        if (import == null)
         {
-            _inventoryRepository = inventoryRepository;
-            _mapper = mapper;
+            throw new Exception("Không tìm thấy phiếu nhập kho có Id: " + importId);
         }
 
-        public async Task<InventoryImportDetailDto> GetInventoryDetailAsync(int importId)
-        {
-            var inventory = await _inventoryRepository.GetImportByIdAsync(importId);
-            if (inventory == null)
-            {
-                throw new Exception("Không tìm thấy phiếu nhập kho có Id: " + importId);
-            }
+        // Mapping dữ liệu Import sang DTO
+        var dto = _mapper.Map<InventoryImportDetailDto>(import);
 
-            // Sử dụng AutoMapper để mapping dữ liệu sang DTO
-            return _mapper.Map<InventoryImportDetailDto>(inventory);
-        }
+        // Lấy danh sách AuditLog cho bảng Import với RecordId bằng importId
+        var auditLogs = await _auditLogRepos.GetAuditLogsByTableAndRecordIdAsync("Import", importId.ToString());
+
+        // Ánh xạ sang DTO của AuditLog và gán vào InventoryImportDetailDto
+        dto.AuditLogs = _mapper.Map<List<AuditLogRes>>(auditLogs);
+
+        return dto;
     }
 }

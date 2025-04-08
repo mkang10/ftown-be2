@@ -1,4 +1,6 @@
-﻿using Domain.Entities;
+﻿using Domain.DTO.Response;
+using Domain.DTO.Response.Domain.DTO.Response;
+using Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +13,19 @@ namespace Domain.Interfaces
     {
         
         Task UpdateWarehouseStockAsync(Import import, int staffId);
+        Task UpdateDispatchWarehouseStockAsync(Dispatch dispatch, int staffId);
+
 
         Task SaveChangesAsync();
+
+        Task UpdateWarehouseStockForSingleDispatchDetailAsync(StoreExportStoreDetail storeDetail, int productVariantId, int staffId);
+
+
+        Task UpdateWarehouseStockForSingleDetailAsync(ImportStoreDetail storeDetail, int productVariantId, int staffId);
+
+
+
+        Task<PaginatedResponseDTO<WarehouseStockDto>> GetAllWareHouse(int page, int pageSize, CancellationToken cancellationToken = default);
+
     }
 }

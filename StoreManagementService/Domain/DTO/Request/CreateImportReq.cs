@@ -10,12 +10,13 @@ namespace Domain.DTO.Request
     {
         // Thông tin của đơn Import
         public int CreatedBy { get; set; }
-        public string? ReferenceNumber { get; set; }
-        public int? HandleBy { get; set; }
-        public int? OriginalImportId { get; set; }
 
+        public string? ReferenceNumber { get; set; }
+
+        
         public List<CreateImportDetailDto> ImportDetails { get; set; } = new();
     }
+
 
     public class CreateImportDetailDto
     {
@@ -30,5 +31,7 @@ namespace Domain.DTO.Request
     {
         public int WareHouseId { get; set; }
         public int AllocatedQuantity { get; set; }
+
+        public int? HandleBy { get; set; }
     }
 }

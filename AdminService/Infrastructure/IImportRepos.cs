@@ -146,16 +146,24 @@ namespace Infrastructure
                 .Include(i => i.CreatedByNavigation)
                 .Include(i => i.ImportDetails)
                     .ThenInclude(d => d.ProductVariant)
-                        .ThenInclude(pv => pv.Product) // Include để lấy ProductName
+                        .ThenInclude(pv => pv.Product) // Lấy ProductName
+                                                       // Nếu Size và Color là navigation properties, include thêm chúng:
+                .Include(i => i.ImportDetails)
+                    .ThenInclude(d => d.ProductVariant)
+                        .ThenInclude(pv => pv.Size)
+                .Include(i => i.ImportDetails)
+                    .ThenInclude(d => d.ProductVariant)
+                        .ThenInclude(pv => pv.Color)
                 .Include(i => i.ImportDetails)
                     .ThenInclude(d => d.ImportStoreDetails)
                         .ThenInclude(s => s.StaffDetail)
                             .ThenInclude(sd => sd.Account)  // Include bảng Account
                 .Include(i => i.ImportDetails)
                     .ThenInclude(d => d.ImportStoreDetails)
-                        .ThenInclude(s => s.WareHouse)
+                        .ThenInclude(s => s.Warehouse)
                 .FirstOrDefaultAsync(i => i.ImportId == importId);
         }
+
 
         public async Task<Import?> GetByIdAssignAsync(int importId)
         {
@@ -165,8 +173,45 @@ namespace Infrastructure
                 .FirstOrDefaultAsync(i => i.ImportId == importId);
         }
 
-     
 
-      
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
+
+
+        public void Add(Import import)
+        {
+            _context.Imports.Add(import);
+        }
+
+        public async Task<Import> GetByIdAsyncWithDetails(int id)
+        {
+            return await _context.Imports
+                .Include(i => i.ImportDetails)
+                    .ThenInclude(d => d.ImportStoreDetails)
+                .FirstOrDefaultAsync(i => i.ImportId == id);
+        }
+
+        public async Task<PaginatedResponseDTO<Warehouse>> GetAllWarehousesAsync(int page, int pageSize)
+        {
+            var query = _context.Warehouses
+            
+                .AsQueryable();
+
+            int totalRecords = await query.CountAsync();
+
+            var data = await query.OrderBy(w => w.WarehouseId)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PaginatedResponseDTO<Warehouse>(data, totalRecords, page, pageSize);
+        }
+        public async Task<Warehouse> GetWareHouseByIdAsync(int id)
+        {
+            return await _context.Warehouses.FindAsync(id);
+        }
+
     }
 }

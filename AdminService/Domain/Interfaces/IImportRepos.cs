@@ -18,9 +18,16 @@ namespace Domain.Interfaces
 
         Task<PagedResult<Import>> GetImportsAsync(InventoryImportFilterDto filter);
 
-
+        Task SaveChangesAsync();
         Task<Import> GetImportByIdAsync(int importId);
 
+        void Add(Import import);
+
+        Task<Import> GetByIdAsyncWithDetails(int id);
+
+        Task<PaginatedResponseDTO<Warehouse>> GetAllWarehousesAsync(int page, int pageSize);
+
+        Task<Warehouse> GetWareHouseByIdAsync(int id);
 
     }
 }

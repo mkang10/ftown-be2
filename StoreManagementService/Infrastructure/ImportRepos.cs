@@ -32,9 +32,9 @@ namespace Infrastructure
         {
             var query = _context.Imports
                 .Include(i => i.CreatedByNavigation)
-                .Include(i => i.HandleByNavigation) // Lấy thông tin ShopManagerDetail
                 .Include(i => i.ImportDetails)
                     .ThenInclude(d => d.ImportStoreDetails)
+                           .ThenInclude(d => d.HandleByNavigation)
                 .AsQueryable();
 
             // Filtering
@@ -45,7 +45,10 @@ namespace Infrastructure
                 query = query.Where(i => i.ReferenceNumber.Contains(filter.ReferenceNumber));
 
             if (filter.HandleBy.HasValue)
-                query = query.Where(i => i.HandleBy == filter.HandleBy);
+            {
+                query = query.Where(i => i.ImportDetails.Any(d =>
+                                  d.ImportStoreDetails.Any(s => s.HandleBy == filter.HandleBy.Value)));
+            }
 
             if (filter.FromDate.HasValue)
                 query = query.Where(i => i.CreatedDate >= filter.FromDate.Value);
@@ -71,18 +74,44 @@ namespace Infrastructure
 
             return (imports, totalRecords);
         }
-        public async Task<List<ProductVariant>> GetAllAsync()
+        public async Task<PaginatedResponseDTO<ProductVariant>> GetAllAsync(int page, int pageSize)
         {
-            return await _context.ProductVariants
-                .Include(pv => pv.Product) // Include để lấy Product.Name
+            var query = _context.ProductVariants
+                .Include(pv => pv.Product)
+                    .ThenInclude(p => p.ProductImages) // Để lấy hình ảnh, ví dụ: IsMain = true
+                .Include(pv => pv.Size)
+                .Include(pv => pv.Color)
+                .AsQueryable();
+
+            int totalRecords = await query.CountAsync();
+
+            var data = await query.OrderBy(pv => pv.VariantId)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            return new PaginatedResponseDTO<ProductVariant>(data, totalRecords, page, pageSize);
         }
+
+        
+
         public async Task<Import?> GetByIdAssignAsync(int importId)
         {
             return await _context.Imports
                 .Include(i => i.ImportDetails)
                     .ThenInclude(detail => detail.ImportStoreDetails)
                 .FirstOrDefaultAsync(i => i.ImportId == importId);
+        }
+
+        public async Task<Transfer> GetTransferByImportIdAsync(int importId)
+        {
+            // Lấy Transfer mà có trong collection Imports tồn tại Import có importId bằng giá trị truyền vào
+            var transfer = await _context.Transfers
+                .Include(t => t.Import)     
+                .Include(t => t.Dispatch)   
+        .FirstOrDefaultAsync(t => t.ImportId == importId);
+
+            return transfer;
         }
         public async Task UpdateAsync(Import import)
         {
@@ -103,9 +132,47 @@ namespace Infrastructure
         public async Task<Import?> GetByIdAsync(int importId)
         {
             return await _context.Imports
-
+                .Include(i => i.ImportDetails)
+            .ThenInclude(d => d.ImportStoreDetails)
                 .FirstOrDefaultAsync(i => i.ImportId == importId);
         }
+
+        public async Task<Import> GetByIdAsyncWithDetails(int id)
+        {
+            return await _context.Imports
+                .Include(i => i.ImportDetails)
+                    .ThenInclude(d => d.ImportStoreDetails)
+                .FirstOrDefaultAsync(i => i.ImportId == id);
+        }
+
+        public async Task<List<Import>> GetAllByOriginalImportIdAsync(int originalImportId)
+        {
+            return await _context.Imports
+                .Include(i => i.ImportDetails)
+                    .ThenInclude(d => d.ImportStoreDetails)
+                .Where(i => i.OriginalImportId == originalImportId)
+                .ToListAsync();
+        }
+        public async Task ReloadAsync(Import import)
+        {
+            // Reload đối tượng Import
+            await _context.Entry(import).ReloadAsync();
+
+            // Reload các ImportDetail
+            foreach (var importDetail in import.ImportDetails)
+            {
+                await _context.Entry(importDetail).ReloadAsync();
+
+                // Reload các ImportStoreDetail trong ImportDetail
+                foreach (var storeDetail in importDetail.ImportStoreDetails)
+                {
+                    await _context.Entry(storeDetail).ReloadAsync();
+                }
+            }
+        }
+
+
+
 
         public async Task<PaginatedResponseDTO<ImportStoreDetail>> GetStoreDetailsByStaffDetailAsync(ImportStoreDetailFilterDto filter)
         {

@@ -20,6 +20,8 @@ namespace Domain.DTO.Response
 
         public DateTime? CompletedDate { get; set; }
         public List<InventoryImportDetailItemDto> Details { get; set; } = new();
+        public List<AuditLogRes> AuditLogs { get; set; } = new List<AuditLogRes>();
+
     }
 
     public class InventoryImportDetailItemDto
@@ -28,6 +30,7 @@ namespace Domain.DTO.Response
         public int ProductVariantId { get; set; }
         public int Quantity { get; set; }
         public string ProductVariantName { get; set; }  // Lấy từ ProductVariant.Name
+
         public List<InventoryImportStoreDetailDto> StoreDetails { get; set; } = new();
     }
 
@@ -36,6 +39,8 @@ namespace Domain.DTO.Response
         public int StoreId { get; set; }
         public string StoreName { get; set; }  // Lấy từ Store.Name
         public int AllocatedQuantity { get; set; }
+        public int ActualQuantity { get; set; }
+
         public string? Status { get; set; }
         public string? Comments { get; set; }
         public int? StaffDetailId { get; set; }

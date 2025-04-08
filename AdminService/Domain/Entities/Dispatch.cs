@@ -17,6 +17,8 @@ public partial class Dispatch
 
     public string? Remarks { get; set; }
 
+    public virtual Account CreatedByNavigation { get; set; } = null!;
+
     public virtual ICollection<DispatchDetail> DispatchDetails { get; set; } = new List<DispatchDetail>();
 
     public virtual ICollection<Transfer> Transfers { get; set; } = new List<Transfer>();
