@@ -35,6 +35,8 @@ public partial class Account
 
     public virtual ICollection<CustomerDetail> CustomerDetails { get; set; } = new List<CustomerDetail>();
 
+    public virtual ICollection<Dispatch> Dispatches { get; set; } = new List<Dispatch>();
+
     public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
 
     public virtual ICollection<Import> Imports { get; set; } = new List<Import>();

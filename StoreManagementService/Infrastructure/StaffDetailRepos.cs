@@ -31,10 +31,11 @@ namespace Infrastructure
                   .FirstOrDefaultAsync(s => s.Account.AccountId == accountId);
         }
 
-        public async Task<IEnumerable<StaffNameDto>> GetAllStaffNamesAsync()
+        public async Task<IEnumerable<StaffNameDto>> GetAllStaffNamesAsync(int warehouseId)
         {
             return await _context.StaffDetails
                 .Include(s => s.Account)
+                .Where(s => s.StoreId == warehouseId) // lọc theo warehouse
                 .GroupBy(s => new { s.StaffDetailId, s.Account.FullName })
                 .Select(g => new StaffNameDto
                 {
@@ -43,6 +44,7 @@ namespace Infrastructure
                 })
                 .ToListAsync();
         }
+
 
         public async Task<StaffDetail?> GetByAcIdAsync(int accountId)
         {

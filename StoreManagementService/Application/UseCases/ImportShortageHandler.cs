@@ -21,7 +21,7 @@ namespace Application.UseCases
             _wareHouseStockRepos = wareHouseStockRepos;
         }
 
-        public async Task ProcessImportIncompletedAsync(int importId, int staffId, List<UpdateStoreDetailDto> confirmations)
+        public async Task ImportIncompletedAsync(int importId, int staffId, List<UpdateStoreDetailDto> confirmations)
         {
             var import = await _importRepos.GetByIdAssignAsync(importId);
             if (import == null)
@@ -29,33 +29,42 @@ namespace Application.UseCases
                 throw new Exception("Import không tồn tại");
             }
 
-            // Kiểm tra trạng thái Import phải là "Processing"
-            if (!string.Equals(import.Status, "Processing", StringComparison.OrdinalIgnoreCase))
+            // Chỉ cho phép xử lý các Import có trạng thái Processing hoặc Partial Success
+            if (!string.Equals(import.Status, "Processing", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(import.Status, "Partial Success", StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException("Chỉ cho phép chỉnh sửa các Import có trạng thái Processing");
+                throw new InvalidOperationException("Chỉ cho phép chỉnh sửa các Import có trạng thái Processing hoặc Partial Success");
             }
 
-            // Duyệt qua từng ImportDetail và cập nhật trạng thái của ImportStoreDetail cho trường hợp thiếu hàng
+            // Danh sách các store detail được cập nhật để dùng cho việc cập nhật tồn kho sau này
+            var updatedStoreDetails = new List<(ImportStoreDetail storeDetail, int productVariantId)>();
+
+            // Duyệt qua từng ImportDetail và ImportStoreDetail
             foreach (var importDetail in import.ImportDetails)
             {
                 foreach (var storeDetail in importDetail.ImportStoreDetails)
                 {
-                    var confirmation = confirmations.FirstOrDefault(c => c.ImportStoreDetailId == storeDetail.ImportStoreId);
+                    // Tìm thông tin xác nhận tương ứng
+                    var confirmation = confirmations.FirstOrDefault(c => c.StoreDetailId == storeDetail.ImportStoreId);
                     if (confirmation == null)
                     {
                         continue;
                     }
 
-                    // Cập nhật trạng thái và comment cho trường hợp hàng thiếu
+                    // Kiểm tra số lượng thực nhận không vượt quá số lượng được phân bổ
+                    if (confirmation.ActualReceivedQuantity > storeDetail.AllocatedQuantity)
+                    {
+                        throw new InvalidOperationException("ActualReceivedQuantity không được lớn hơn AllocatedQuantity, vui lòng nhập lại");
+                    }
+
+                    // Cập nhật ImportStoreDetail theo thông tin confirmation (chỉ những detail này mới bị ảnh hưởng)
                     storeDetail.Status = "Shortage";
                     storeDetail.Comments = string.IsNullOrEmpty(confirmation.Comment)
-                                           ? "Hàng không đủ"
-                                           : confirmation.Comment;
-
-                    // Cập nhật số lượng thực nhận từ thông tin confirmation
+                                             ? "Hàng không đủ"
+                                             : confirmation.Comment;
                     storeDetail.ActualReceivedQuantity = confirmation.ActualReceivedQuantity;
 
-                    // Tạo AuditLog cho mỗi ImportStoreDetail được cập nhật (nếu cần)
+                    // Tạo AuditLog cho từng ImportStoreDetail được cập nhật
                     var auditLogDetail = new AuditLog
                     {
                         TableName = "ImportStoreDetail",
@@ -67,13 +76,16 @@ namespace Application.UseCases
                         Comment = storeDetail.Comments
                     };
                     _auditLogRepos.Add(auditLogDetail);
+
+                    // Lưu lại store detail và variantId để cập nhật tồn kho sau
+                    updatedStoreDetails.Add((storeDetail, importDetail.ProductVariantId));
                 }
             }
 
-            // Lưu các thay đổi cập nhật trạng thái vào Import và ImportStoreDetails
+            // Lưu các thay đổi cho ImportStoreDetail và audit log
             await _importRepos.SaveChangesAsync();
 
-            // Cập nhật trạng thái của Import thành "Partial Success" nếu có bất kỳ chi tiết nào có status "Shortage"
+            // Nếu có bất kỳ ImportStoreDetail nào có trạng thái Shortage, cập nhật Import status thành Partial Success
             if (import.ImportDetails.Any(id => id.ImportStoreDetails.Any(sd => string.Equals(sd.Status, "Shortage", StringComparison.OrdinalIgnoreCase))))
             {
                 import.Status = "Partial Success";
@@ -90,15 +102,20 @@ namespace Application.UseCases
                     Comment = "Some ImportStoreDetails have status Shortage"
                 };
                 _auditLogRepos.Add(auditLogImport);
-                // Lưu lại cập nhật import status
+
                 await _importRepos.SaveChangesAsync();
             }
 
-            // Gọi repository để cập nhật tồn kho dựa trên số lượng thực nhận
-            await _wareHouseStockRepos.UpdateWarehouseStockAsync(import, staffId);
+            // Cập nhật tồn kho cho từng ImportStoreDetail đã được cập nhật bằng hàm UpdateWarehouseStockForSingleDetailAsync
+            foreach (var item in updatedStoreDetails)
+            {
+                await _wareHouseStockRepos.UpdateWarehouseStockForSingleDetailAsync(item.storeDetail, item.productVariantId, staffId);
+            }
 
-            // Lưu các bản ghi audit (nếu có thêm thay đổi sau khi cập nhật tồn kho)
+            // Lưu lại các bản ghi audit được thêm trong quá trình cập nhật tồn kho (nếu có)
             await _auditLogRepos.SaveChangesAsync();
         }
+
+
     }
 }

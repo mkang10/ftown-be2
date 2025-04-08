@@ -21,6 +21,10 @@ public partial class ImportStoreDetail
 
     public int? WarehouseId { get; set; }
 
+    public int? HandleBy { get; set; }
+
+    public virtual ShopManagerDetail? HandleByNavigation { get; set; }
+
     public virtual ImportDetail ImportDetail { get; set; } = null!;
 
     public virtual StaffDetail? StaffDetail { get; set; }

@@ -30,10 +30,12 @@ namespace Application.UseCases
                 throw new Exception("Import không tồn tại");
             }
 
-            if (!string.Equals(import.Status, "Processing", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(import.Status, "Processing", StringComparison.OrdinalIgnoreCase) &&
+     !string.Equals(import.Status, "Partial Success", StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException("Chỉ cho phép chỉnh sửa các Import có trạng thái Processing");
+                throw new InvalidOperationException("Chỉ cho phép chỉnh sửa các Import có trạng thái Processing hoặc Partial Success");
             }
+
 
             // 1. Cập nhật từng ImportStoreDetail về trạng thái "Failed" dựa trên confirmations
             UpdateStoreDetailsToFailed(import, confirmations, staffId);
@@ -60,7 +62,7 @@ namespace Application.UseCases
                 foreach (var storeDetail in importDetail.ImportStoreDetails)
                 {
                     // Tìm confirmation dựa trên ImportStoreDetailId
-                    var confirmation = confirmations.FirstOrDefault(c => c.ImportStoreDetailId == storeDetail.ImportStoreId);
+                    var confirmation = confirmations.FirstOrDefault(c => c.StoreDetailId == storeDetail.ImportStoreId);
                     if (confirmation == null)
                     {
                         continue;

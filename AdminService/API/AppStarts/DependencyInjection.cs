@@ -28,11 +28,20 @@ namespace API.AppStarts
 
             services.AddScoped<IImportRepos, InventoryImportRepository>();
             services.AddScoped<IAuditLogRepos, AuditLogRepository>();
+            services.AddScoped<IDispatchRepos, DispatchRepos>();
+            services.AddScoped<IImportStoreRepos, ImportStoreRepos>();
+            services.AddScoped<IStoreExportRepos, StoreExportRepos>();
+            services.AddScoped<ITransferRepos, TransferRepos>();
 
             services.AddScoped<ApproveHandler>();
             services.AddScoped<RejectHandler>();
             services.AddScoped<GetAllImportHandler>();
             services.AddScoped<GetImportDetailHandler>();
+            services.AddScoped<CreateImportHandler>();
+            services.AddScoped<GetWareHouseHandler>();
+            services.AddScoped<TransferHandler>();
+            services.AddScoped<GetAllTransferHandler>();
+
 
 
 
