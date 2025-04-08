@@ -3,8 +3,10 @@
 using Application.Interfaces;
 using Application.UseCases;
 using Domain.Interfaces;
-using Infrastructure;
 using Infrastructure.Clients;
+using Infrastructure.DBContext;
+using Infrastructure.HelperServices;
+using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.AppStarts
@@ -52,7 +54,7 @@ namespace API.AppStarts
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddSingleton<IRedisCacheService, RedisCacheService>();
-            
+            services.AddScoped<IOrderProcessingHelper, OrderProcessingHelper>();
             //Repository
 
             services.AddScoped<IOrderRepository, OrderRepository>();
@@ -64,7 +66,6 @@ namespace API.AppStarts
             //Handler
 
             services.AddScoped<CreateOrderHandler>();
-            services.AddScoped<ProcessPaymentHandler>();
             services.AddScoped<GetShippingAddressHandler>();
             services.AddScoped<GetOrdersByStatusHandler>();
             services.AddScoped<GetSelectedCartItemsHandler>();

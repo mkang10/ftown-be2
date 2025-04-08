@@ -110,7 +110,6 @@ public partial class FtownContext : DbContext
 
     public virtual DbSet<WishListItem> WishListItems { get; set; }
 
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Account>(entity =>

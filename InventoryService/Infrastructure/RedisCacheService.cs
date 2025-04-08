@@ -40,5 +40,18 @@ namespace Infrastructure
         {
             await _cacheDb.KeyDeleteAsync(key);
         }
-    }
+		public async Task RemoveByPatternAsync(string pattern)
+		{
+			var endpoints = _cacheDb.Multiplexer.GetEndPoints();
+			var server = _cacheDb.Multiplexer.GetServer(endpoints.First());
+
+			var keys = server.Keys(pattern: pattern).ToArray();
+
+			foreach (var key in keys)
+			{
+				await _cacheDb.KeyDeleteAsync(key);
+			}
+		}
+
+	}
 }

@@ -9,7 +9,7 @@ public partial class Order
 
     public int AccountId { get; set; }
 
-    public int? WareHouseId { get; set; }
+    public int WareHouseId { get; set; }
 
     public int? ShippingAddressId { get; set; }
 
