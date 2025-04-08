@@ -28,11 +28,21 @@ namespace Infrastructure
             return await _context.Payments
                 .FirstOrDefaultAsync(p => p.OrderId == orderId);
         }
-
+        public async Task<Payment?> GetPaymentByOrderIdAsync(long orderId)
+        {
+            return await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId);
+        }
         public async Task UpdatePaymentAsync(Payment payment)
         {
             _context.Payments.Update(payment);
             await _context.SaveChangesAsync();
+        }
+        public async Task<string?> GetPaymentMethodByOrderIdAsync(int orderId)
+        {
+            return await _context.Payments
+                .Where(p => p.OrderId == orderId)
+                .Select(p => p.PaymentMethod)
+                .FirstOrDefaultAsync();
         }
     }
 }

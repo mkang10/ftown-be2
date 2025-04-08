@@ -1,4 +1,5 @@
 ﻿using Application.DTO.Response;
+using Application.Interfaces;
 using AutoMapper;
 using Domain.Interfaces;
 using System;
@@ -13,17 +14,37 @@ namespace Application.UseCases
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IMapper _mapper;
+        private readonly IInventoryServiceClient _inventoryServiceClient;
 
-        public GetOrdersByStatusHandler(IOrderRepository orderRepository, IMapper mapper)
+        public GetOrdersByStatusHandler(IOrderRepository orderRepository, IMapper mapper, IInventoryServiceClient inventoryServiceClient)
         {
             _orderRepository = orderRepository;
             _mapper = mapper;
+            _inventoryServiceClient = inventoryServiceClient;
         }
 
-        public async Task<List<OrderResponse>> HandleAsync(string status)
+        public async Task<List<OrderResponse>> HandleAsync(string? status, int? accountId)
         {
-            var orders = await _orderRepository.GetOrdersByStatusAsync(status);
-            return _mapper.Map<List<OrderResponse>>(orders);
+            var orders = await _orderRepository.GetOrdersByStatusAsync(status, accountId);
+            var orderResponses = _mapper.Map<List<OrderResponse>>(orders);
+
+            // Enrich từng order item với thông tin chi tiết từ ProductVariant thông qua InventoryServiceClient
+            foreach (var orderResponse in orderResponses)
+            {
+                foreach (var item in orderResponse.Items)
+                {
+                    var variantDetails = await _inventoryServiceClient.GetProductVariantByIdAsync(item.ProductVariantId);
+                    if (variantDetails != null)
+                    {
+                        item.ProductName = variantDetails.ProductName;
+                        item.Color = variantDetails.Color;
+                        item.Size = variantDetails.Size;
+                        item.ImageUrl = variantDetails.ImagePath;
+                    }
+                }
+            }
+
+            return orderResponses;
         }
     }
 

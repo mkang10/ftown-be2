@@ -142,5 +142,26 @@ namespace Infrastructure
                 await _context.SaveChangesAsync();
             }
         }
+        public async Task RemoveSelectedItemsFromCart(int accountId, List<int> selectedProductVariantIds)
+        {
+            var cart = await _context.ShoppingCarts
+                .Include(c => c.CartItems)
+                .FirstOrDefaultAsync(c => c.AccountId == accountId);
+
+            if (cart == null || cart.CartItems == null)
+                return;
+
+            // ✅ Xóa các sản phẩm được chọn khỏi giỏ hàng
+            var itemsToRemove = cart.CartItems
+                .Where(item => selectedProductVariantIds.Contains(item.ProductVariantId))
+                .ToList();
+
+            _context.CartItems.RemoveRange(itemsToRemove); // ✅ Xóa chỉ CartItem
+            await _context.SaveChangesAsync(); // ✅ Lưu thay đổi
+
+            // ❌ Không xóa ShoppingCart (Không cần kiểm tra giỏ hàng trống)
+        }
+
+
     }
 }

@@ -10,6 +10,6 @@ namespace Application.Interfaces
     public interface ICustomerServiceClient
     {
         Task<List<CartItem>?> GetCartAsync(int accountId);
-        Task ClearCartAfterOrderAsync(int accountId);
+        Task<bool> ClearCartAfterOrderAsync(int accountId, List<int> selectedProductVariantIds);
     }
 }

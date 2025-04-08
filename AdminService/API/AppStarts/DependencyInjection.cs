@@ -1,4 +1,3 @@
-﻿
 
 using Application.UseCases;
 using Domain.Interfaces;
@@ -37,12 +36,16 @@ namespace API.AppStarts
             services.AddScoped<RejectHandler>();
             services.AddScoped<GetAllImportHandler>();
             services.AddScoped<GetImportDetailHandler>();
+  services.AddScoped<IUserManagementService, GetAccountHandler>();
+            services.AddScoped<IRoleService, GetRoleHandler>();
             services.AddScoped<CreateImportHandler>();
             services.AddScoped<GetWareHouseHandler>();
             services.AddScoped<TransferHandler>();
             services.AddScoped<GetAllTransferHandler>();
 
 
+
+            services.AddScoped<IUserManagementRepository, UserManagementRepository>();
 
 
             // auto mapper
@@ -57,3 +60,4 @@ namespace API.AppStarts
 
     }
 }
+

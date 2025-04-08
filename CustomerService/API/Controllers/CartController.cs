@@ -70,12 +70,16 @@ namespace API.Controllers
             return Ok(new { message = "Giỏ hàng đã được đồng bộ sang Database." });
         }
 
-        // Xóa giỏ hàng sau khi tạo đơn hàng thành công
         [HttpPost("{accountId}/clear-after-order")]
-        public async Task<IActionResult> ClearCartAfterOrder(int accountId)
+        public async Task<IActionResult> ClearCartAfterOrder(int accountId, [FromBody] List<int> selectedProductVariantIds)
         {
-            await _cartHandler.ClearCartAfterOrderAsync(accountId);
-            return Ok(new { message = "Giỏ hàng đã được xóa sau khi tạo đơn hàng thành công." });
+            if (selectedProductVariantIds == null || !selectedProductVariantIds.Any())
+            {
+                return BadRequest(new { message = "Danh sách sản phẩm cần xóa không hợp lệ." });
+            }
+
+            await _cartHandler.ClearCartAfterOrderAsync(accountId, selectedProductVariantIds);
+            return Ok(new { message = "Các sản phẩm được chọn đã được xóa khỏi giỏ hàng." });
         }
     }
 }

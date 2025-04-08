@@ -24,6 +24,4 @@ public partial class Payment
     public string? PaymentNotes { get; set; }
 
     public virtual Order Order { get; set; } = null!;
-
-    public virtual ICollection<PaymentHistory> PaymentHistories { get; set; } = new List<PaymentHistory>();
 }

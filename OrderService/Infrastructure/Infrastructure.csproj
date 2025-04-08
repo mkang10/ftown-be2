@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CloudinaryDotNet" Version="1.27.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
     <PackageReference Include="payOS" Version="1.0.9" />
     <PackageReference Include="StackExchange.Redis" Version="2.8.24" />
   </ItemGroup>

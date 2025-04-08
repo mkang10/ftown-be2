@@ -19,4 +19,15 @@ namespace Application.DTO.Response
             Message = message;
         }
     }
+    public class ResponseDTO
+    {
+        public bool Status { get; set; }
+        public string Message { get; set; }
+
+        public ResponseDTO(bool status, string message)
+        {
+            Status = status;
+            Message = message;
+        }
+    }
 }
