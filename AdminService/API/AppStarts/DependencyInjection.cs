@@ -1,7 +1,9 @@
 
+using Application.Interfaces;
 using Application.UseCases;
 using Domain.Interfaces;
 using Infrastructure;
+using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.AppStarts

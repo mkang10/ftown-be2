@@ -21,7 +21,7 @@ public partial class Order
 
     public decimal? ShippingCost { get; set; }
 
-    public decimal? Tax { get; set; }
+    public string? Ghnid { get; set; }
 
     public string? DeliveryMethod { get; set; }
 
@@ -40,6 +40,8 @@ public partial class Order
     public string? Country { get; set; }
 
     public string? Province { get; set; }
+
+    public bool? IsFeedback { get; set; }
 
     public virtual Account Account { get; set; } = null!;
 
