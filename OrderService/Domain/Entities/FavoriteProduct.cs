@@ -16,4 +16,5 @@ public partial class FavoriteProduct
     public virtual Account Account { get; set; } = null!;
 
     public virtual Product Product { get; set; } = null!;
+
 }
