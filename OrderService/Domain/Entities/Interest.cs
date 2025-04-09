@@ -1,6 +1,6 @@
+
 ﻿using System;
 using System.Collections.Generic;
-
 namespace Domain.Entities;
 
 public partial class Interest
@@ -11,3 +11,4 @@ public partial class Interest
 
     public virtual ICollection<AccountInterest> AccountInterests { get; set; } = new List<AccountInterest>();
 }
+

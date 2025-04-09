@@ -1,4 +1,6 @@
-﻿using Domain.Interfaces;
+﻿using Application.Enums;
+using Domain.Interfaces;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,35 +19,28 @@ namespace Application.UseCases
             _auditLogRepository = auditLogRepository;
         }
 
-        public async Task LogOrderStatusChangeAsync(int orderId, string newStatus, int changedBy, string comment)
+        public async Task LogOrderActionAsync(
+                                            int orderId,
+                                            AuditOperation operation,
+                                            object? changeDetails,
+                                            int changedBy,
+                                            string comment)
         {
+            string? changeData = changeDetails != null
+                ? JsonConvert.SerializeObject(changeDetails)
+                : null;
+
             await _auditLogRepository.AddAuditLogAsync(
-                "Orders",
-                orderId.ToString(),
-                newStatus,
-                changedBy,
-                null,
-                comment
+                tableName: "Orders",
+                recordId: orderId.ToString(),
+                operation: operation.ToString(),
+                changedBy: changedBy,
+                changeData: changeData,
+                comment: comment
             );
         }
 
-        public async Task LogOrderStatusChangeWithDetailsAsync(int orderId, string oldStatus, string newStatus, int changedBy, string comment)
-        {
-            var changeData = new
-            {
-                OldStatus = oldStatus,
-                NewStatus = newStatus
-            };
 
-            await _auditLogRepository.AddAuditLogAsync(
-                "Orders",
-                orderId.ToString(),
-                newStatus,
-                changedBy,
-                JsonSerializer.Serialize(changeData),
-                comment
-            );
-        }
     }
 
 }

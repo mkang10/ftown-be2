@@ -4,8 +4,6 @@ using Application.UseCases;
 using Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-
-using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -81,5 +79,20 @@ namespace API.Controllers
             await _cartHandler.ClearCartAfterOrderAsync(accountId, selectedProductVariantIds);
             return Ok(new { message = "Các sản phẩm được chọn đã được xóa khỏi giỏ hàng." });
         }
+
+        // Cập nhật số lượng sản phẩm trong giỏ hàng (tăng/giảm 1)
+        [HttpPost("{accountId}/change-quantity")]
+        public async Task<ActionResult<ResponseDTO<bool>>> ChangeCartItemQuantity(int accountId, [FromBody] ChangeCartItemQuantityRequest request)
+        {
+            var response = await _cartHandler.ChangeCartItemQuantity(accountId, request);
+
+            if (!response.Status)
+            {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        }
+
     }
 }

@@ -43,7 +43,7 @@ namespace Infrastructure
                 var uploadParams = new ImageUploadParams
                 {
                     File = new FileDescription(file.FileName, stream),
-                    Folder = "return_order_media"
+                    Folder = "Product_Images"
                 };
                 uploadResult = await _cloudinary.UploadAsync(uploadParams);
             }
@@ -52,7 +52,7 @@ namespace Infrastructure
                 var uploadParams = new VideoUploadParams
                 {
                     File = new FileDescription(file.FileName, stream),
-                    Folder = "return_order_media"
+                    Folder = "Product_Images"
                 };
                 uploadResult = await _cloudinary.UploadAsync(uploadParams);
             }
@@ -61,7 +61,7 @@ namespace Infrastructure
                 var uploadParams = new RawUploadParams
                 {
                     File = new FileDescription(file.FileName, stream),
-                    Folder = "return_order_media"
+                    Folder = "Product_Images"
                 };
                 uploadResult = await _cloudinary.UploadAsync(uploadParams);
             }
