@@ -54,4 +54,15 @@ public class AuditLogRepository : IAuditLogRepos
             .OrderByDescending(log => log.ChangeDate)
             .ToListAsync();
     }
+
+    public void Add(AuditLog auditLog)
+    {
+        _context.AuditLogs.Add(auditLog);
+    }
+    public async Task<List<AuditLog>> GetAuditLogsByTableAndRecordIdAsync(string tableName, string recordId)
+    {
+        return await _context.AuditLogs
+            .Where(a => a.TableName == tableName && a.RecordId == recordId)
+            .ToListAsync();
+    }
 }

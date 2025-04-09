@@ -26,9 +26,9 @@ namespace Application.UseCases
 
 
 
-        public async Task<ResponseDTO<IEnumerable<StaffNameDto>>> GetAllStaffNamesAsync()
+        public async Task<ResponseDTO<IEnumerable<StaffNameDto>>> GetAllStaffNamesAsync(int warehouseId)
         {
-            var staffNames = await _staffRepos.GetAllStaffNamesAsync();
+            var staffNames = await _staffRepos.GetAllStaffNamesAsync(warehouseId);
             return new ResponseDTO<IEnumerable<StaffNameDto>>(staffNames, true, "Staff names retrieved successfully");
         }
     }

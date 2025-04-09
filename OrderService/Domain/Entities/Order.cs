@@ -1,6 +1,6 @@
+
 ﻿using System;
 using System.Collections.Generic;
-
 namespace Domain.Entities;
 
 public partial class Order
@@ -9,7 +9,7 @@ public partial class Order
 
     public int AccountId { get; set; }
 
-    public int WareHouseId { get; set; }
+    public int? WareHouseId { get; set; }
 
     public int? ShippingAddressId { get; set; }
 
@@ -20,6 +20,8 @@ public partial class Order
     public decimal? OrderTotal { get; set; }
 
     public decimal? ShippingCost { get; set; }
+
+    public string? Ghnid { get; set; }
 
     public string? DeliveryMethod { get; set; }
 
@@ -39,6 +41,8 @@ public partial class Order
 
     public string? Province { get; set; }
 
+    public bool? IsFeedback { get; set; }
+
     public virtual Account Account { get; set; } = null!;
 
     public virtual ICollection<DeliveryTracking> DeliveryTrackings { get; set; } = new List<DeliveryTracking>();
@@ -55,3 +59,4 @@ public partial class Order
 
     public virtual Warehouse? WareHouse { get; set; }
 }
+

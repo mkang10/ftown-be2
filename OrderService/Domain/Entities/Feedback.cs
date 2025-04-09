@@ -21,9 +21,12 @@ public partial class Feedback
 
     public string? ImagePath { get; set; }
 
+    public int? OrderDetailId { get; set; }
+
     public virtual Account Account { get; set; } = null!;
 
     public virtual Product Product { get; set; } = null!;
 
     public virtual ICollection<ReplyFeedback> ReplyFeedbacks { get; set; } = new List<ReplyFeedback>();
 }
+

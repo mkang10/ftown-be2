@@ -41,15 +41,15 @@ namespace API.Controllers
             _getAllStaffImport = getAllStaffImport;
         }
 
-       
+
 
         [HttpGet("product")]
-        public async Task<IActionResult> GetAllProductVariants()
+        public async Task<IActionResult> GetAllProductVariants([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
             {
-                var variants = await _getProductVar.GetAllProductVariantsAsync();
-                var response = new ResponseDTO<List<ProductVariantResponseDto>>(variants, true, "Lấy danh sách Product Variant thành công.");
+                var pagedVariants = await _getProductVar.GetAllProductVariantsAsync(page, pageSize);
+                var response = new ResponseDTO<PaginatedResponseDTO<ProductVariantResponseDto>>(pagedVariants, true, "Lấy danh sách Product Variant thành công.");
                 return Ok(response);
             }
             catch (Exception ex)
@@ -60,9 +60,9 @@ namespace API.Controllers
         }
 
         [HttpGet("names")]
-        public async Task<IActionResult> GetStaffNames()
+        public async Task<IActionResult> GetStaffNames(int warehouseId)
         {
-            var response = await _getAllStaff.GetAllStaffNamesAsync();
+            var response = await _getAllStaff.GetAllStaffNamesAsync(warehouseId);
             if (!response.Status)
             {
                 return NotFound(response);
@@ -141,6 +141,34 @@ namespace API.Controllers
                 return StatusCode(500, new ResponseDTO<object>(null, false, $"Lỗi server: {ex.Message}"));
             }
         }
+
+        [HttpPost("create-supplement")]
+        public async Task<IActionResult> CreateSupplementImport([FromBody] SupplementImportRequestDto request)
+        {
+            try
+            {
+                if (request == null || request.ImportDetails == null || !request.ImportDetails.Any())
+                    return BadRequest(new ResponseDTO<object>(null, false, "Dữ liệu import không hợp lệ!"));
+                if (request.OriginalImportId <= 0)
+                    return BadRequest(new ResponseDTO<object>(null, false, "OriginalImportId không hợp lệ!"));
+
+                var response = await _createhandler.CreateSupplementImportAsync(request);
+                return Ok(response);
+            }
+            catch (ArgumentException argEx)
+            {
+                return BadRequest(new ResponseDTO<object>(null, false, argEx.Message));
+            }
+            catch (UnauthorizedAccessException uaEx)
+            {
+                return Unauthorized(new ResponseDTO<object>(null, false, uaEx.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>(null, false, $"Lỗi server: {ex.Message}"));
+            }
+        }
+
 
         [HttpPost("{importId}/done")]
         public async Task<IActionResult> ProcessImportDone(int importId, int staffId ,[FromBody] List<UpdateStoreDetailDto> confirmations)
@@ -232,7 +260,7 @@ namespace API.Controllers
         {
             try
             {
-                await _importShortageHandler.ProcessImportIncompletedAsync(importId, staffId, confirmations);
+                await _importShortageHandler.ImportIncompletedAsync(importId, staffId, confirmations);
                 var response = new ResponseDTO<string>(
                     data: "Cập nhật tồn kho cho đơn nhập hàng thiếu thành công",
                     status: true,

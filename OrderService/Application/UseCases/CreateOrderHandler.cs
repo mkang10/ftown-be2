@@ -33,7 +33,7 @@ namespace Application.UseCases
         private readonly AuditLogHandler _auditLogHandler;
         private readonly INotificationClient _notificationClient;
         private readonly IOrderProcessingHelper _orderHelper;
-		public CreateOrderHandler(
+        public CreateOrderHandler(
             IDistributedCache cache,
             IOrderRepository orderRepository,
             ICustomerServiceClient customerServiceClient,
@@ -47,7 +47,7 @@ namespace Application.UseCases
             ILogger<CreateOrderHandler> logger,
             AuditLogHandler auditLogHandler,
             INotificationClient notificationClient,
-			IOrderProcessingHelper orderHelper)
+            IOrderProcessingHelper orderHelper)
         {
             _cache = cache;
             _mapper = mapper;
@@ -64,7 +64,7 @@ namespace Application.UseCases
             _notificationClient = notificationClient;
             _orderHelper = orderHelper;
 
-		}
+        }
 
         public async Task<OrderResponse?> Handle(CreateOrderRequest request)
         {
@@ -89,7 +89,6 @@ namespace Application.UseCases
                 }
 
                 // Xác định ShippingAddressId cần dùng:
-                // Nếu request có ShippingAddressId mới thì ưu tiên dùng nó, nếu không dùng ShippingAddressId lưu trong phiên checkout.
                 int shippingAddressId = request.ShippingAddressId
                         ?? checkoutData.ShippingAddressId
                         ?? throw new InvalidOperationException("Shipping address is required.");
@@ -121,14 +120,14 @@ namespace Application.UseCases
                 }
 
                 // Lấy tổng tiền và phí vận chuyển đã tính từ phiên checkout
-                var totalAmount = checkoutData.OrderTotal;
-                if (totalAmount <= 0)
+                var subTotal = checkoutData.SubTotal;
+                if (subTotal <= 0)
                 {
                     await _unitOfWork.RollbackAsync();
                     return null;
                 }
-         
-                // Lấy WarehouseId từ appsettings.json, nếu không có thì dùng giá trị mặc định (1)
+
+                // Lấy WarehouseId từ appsettings.json, nếu không có thì dùng giá trị mặc định
                 int warehouseId = int.TryParse(_configuration["Warehouse:OnlineWarehouseId"], out var wId) ? wId : 2;
 
 
@@ -136,7 +135,7 @@ namespace Application.UseCases
                 var newOrder = _mapper.Map<Order>(shippingAddress);
                 newOrder.AccountId = request.AccountId;
                 newOrder.CreatedDate = DateTime.UtcNow;
-                newOrder.OrderTotal = totalAmount;
+                newOrder.OrderTotal = subTotal;
                 newOrder.ShippingCost = shippingCost;
                 newOrder.ShippingAddressId = shippingAddress.AddressId;
 
@@ -155,54 +154,60 @@ namespace Application.UseCases
                 if (request.PaymentMethod == "PAYOS")
                 {
                     // Gọi PayOS tạo link thanh toán
-                    var paymentUrl = await _payOSService.CreatePayment(newOrder.OrderId, totalAmount + shippingCost, request.PaymentMethod);
+                    var paymentUrl = await _payOSService.CreatePayment(newOrder.OrderId, subTotal + shippingCost, request.PaymentMethod);
                     if (string.IsNullOrEmpty(paymentUrl))
                     {
                         await _unitOfWork.RollbackAsync();
                         return null;
                     }
 
-					// Tạo đối tượng Payment (chưa commit)
-					await _orderHelper.SavePaymentAndOrderDetailsAsync(newOrder, orderDetails, request.PaymentMethod, totalAmount, shippingCost);
+                    // Tạo đối tượng Payment (chưa commit)
+                    await _orderHelper.SavePaymentAndOrderDetailsAsync(newOrder, orderDetails, request.PaymentMethod, subTotal, shippingCost);
 
-					// Sau khi đặt hàng thành công, xóa sản phẩm khỏi giỏ hàng
-					await _orderHelper.ClearCartAsync(request.AccountId, orderItems.Select(i => i.ProductVariantId).ToList());
+                    // Sau khi đặt hàng thành công, xóa sản phẩm khỏi giỏ hàng
+                    await _orderHelper.ClearCartAsync(request.AccountId, orderItems.Select(i => i.ProductVariantId).ToList());
 
-					// Commit transaction
-					await _unitOfWork.CommitAsync();
+                    // Ghi lại lịch sử đơn hàng
+                    await _orderHelper.LogPendingPaymentStatusAsync(newOrder.OrderId, request.AccountId);
 
-					return _orderHelper.BuildOrderResponse(newOrder, request.PaymentMethod, paymentUrl);
-				}
+                    await _orderHelper.SendOrderNotificationAsync(
+                                    newOrder.AccountId,
+                                    newOrder.OrderId,
+                                    "Đơn hàng mới",
+                                    $"Đơn hàng #{newOrder.OrderId} đã được tạo thành công và đang chờ thanh toán."
+                                );
+                    // Commit transaction
+                    await _unitOfWork.CommitAsync();
+
+                    return _orderHelper.BuildOrderResponse(newOrder, request.PaymentMethod, paymentUrl);
+                }
                 else if (request.PaymentMethod == "COD")
                 {
-					await _orderHelper.SavePaymentAndOrderDetailsAsync(newOrder, orderDetails, request.PaymentMethod, totalAmount, shippingCost);
-					// Cập nhật tồn kho ngay lập tức
-					var updateStockSuccess = await _inventoryServiceClient.UpdateStockAfterOrderAsync(warehouseId, orderDetails);
+                    await _orderHelper.SavePaymentAndOrderDetailsAsync(newOrder, orderDetails, request.PaymentMethod, subTotal, shippingCost);
+                    // Cập nhật tồn kho ngay lập tức
+                    var updateStockSuccess = await _inventoryServiceClient.UpdateStockAfterOrderAsync(warehouseId, orderDetails);
                     if (!updateStockSuccess)
                     {
                         await _unitOfWork.RollbackAsync();
                         return null;
                     }
 
-					await _orderHelper.ClearCartAsync(request.AccountId, orderItems.Select(i => i.ProductVariantId).ToList());
+                    await _orderHelper.ClearCartAsync(request.AccountId, orderItems.Select(i => i.ProductVariantId).ToList());
 
-					// Ghi lại lịch sử đơn hàng
-					await _orderHelper.LogPendingConfirmedStatusAsync(newOrder.OrderId, request.AccountId);
-					var notificationRequest = new SendNotificationRequest
-                    {
-                        AccountId = newOrder.AccountId,
-                        Title = "Đơn hàng mới",
-                        Message = $"Đơn hàng #{newOrder.OrderId} đã được tạo thành công!",
-                        NotificationType = "Order",
-                        TargetId = newOrder.OrderId,
-                        TargetType = "Order"
-                    };
+                    // Ghi lại lịch sử đơn hàng
+                    await _orderHelper.LogPendingConfirmedStatusAsync(newOrder.OrderId, request.AccountId);
+                    await _orderHelper.AssignOrderToManagerAsync(orderId: newOrder.OrderId, assignedBy: request.AccountId);
 
-                    await _notificationClient.SendNotificationAsync(notificationRequest);
+                    await _orderHelper.SendOrderNotificationAsync(
+                                        newOrder.AccountId,
+                                        newOrder.OrderId,
+                                        "Đơn hàng mới",
+                                        $"Đơn hàng #{newOrder.OrderId} đã được tạo thành công và đang chờ xác nhận."
+                                    );
 
                     await _unitOfWork.CommitAsync();
-					return _orderHelper.BuildOrderResponse(newOrder, request.PaymentMethod);
-				}
+                    return _orderHelper.BuildOrderResponse(newOrder, request.PaymentMethod);
+                }
 
                 await _unitOfWork.RollbackAsync();
                 return null;
@@ -224,7 +229,7 @@ namespace Application.UseCases
                 ProductVariantId = item.ProductVariantId,
                 Quantity = item.Quantity,
                 PriceAtPurchase = item.DiscountedPrice,
-                DiscountApplied = item.Price-item.DiscountedPrice
+                DiscountApplied = item.Price - item.DiscountedPrice
             }).ToList();
         }
 
@@ -284,6 +289,6 @@ namespace Application.UseCases
 
             return order;
         }
-        
+
     }
 }

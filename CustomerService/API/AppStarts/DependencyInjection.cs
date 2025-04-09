@@ -2,10 +2,13 @@
 
 using Application.Interfaces;
 using Application.UseCases;
+using CloudinaryDotNet;
 using Domain.Interfaces;
 using Infrastructure;
+using Infrastructure.HelperServices;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace API.AppStarts
 {
@@ -25,6 +28,22 @@ namespace API.AppStarts
             });
 
             // use DI here
+            // Cloudinary configuration
+            services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
+            services.AddSingleton(sp =>
+            {
+                var settings = sp.GetRequiredService<IOptions<CloudinarySettings>>().Value;
+                if (string.IsNullOrEmpty(settings.CloudName) ||
+                    string.IsNullOrEmpty(settings.ApiKey) ||
+                    string.IsNullOrEmpty(settings.ApiSecret))
+                {
+                    throw new ArgumentException("CloudinarySettings không được cấu hình đúng trong appsettings.json");
+                }
+                var account = new CloudinaryDotNet.Account(settings.CloudName, settings.ApiKey, settings.ApiSecret);
+                return new Cloudinary(account);
+            });
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
+
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IProfileRepository, ProfileRepository>();
             services.AddScoped<EditProfileHandler>();

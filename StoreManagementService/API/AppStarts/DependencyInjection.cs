@@ -31,18 +31,28 @@ namespace API.AppStarts
             services.AddScoped<IStaffDetailRepository, StaffDetailRepository>();
             services.AddScoped<IAuditLogRepos, AuditLogRepos>();
             services.AddScoped<IWareHouseStockRepos, WareHouseStockRepos>();
+            services.AddScoped<IDispatchRepos, DispatchRepos>();
+            services.AddScoped<IOrderRepository, OrderRepository>();
+
 
             services.AddScoped<CreateImportHandler>();
             services.AddScoped<GetImportHandler>();
             services.AddScoped<GetAllStaffHandler>();
             services.AddScoped<AssignStaffHandler>();
+            services.AddScoped<GetAllDispatchHandler>();
+            services.AddScoped<GetAllStaffDispatchHandler>();
 
             services.AddScoped<GetAllProductHandler>();
             services.AddScoped<ImportDoneHandler>();
             services.AddScoped<ImportIncompletedHandler>();
             services.AddScoped<ImportShortageHandler>();
+            services.AddScoped<DispatchDoneHandler>();
 
             services.AddScoped<GetAllStaffImportHandler>();
+            services.AddScoped<GetWarehouseStockHandler>();
+            services.AddScoped<GetOrderHandler>();
+            services.AddScoped<CompletedOrderHandler>();
+
 
 
 

@@ -23,9 +23,7 @@ public partial class Import
 
     public int? OriginalImportId { get; set; }
 
-    public int? HandleBy { get; set; }
-
-    public virtual ShopManagerDetail? HandleByNavigation { get; set; }
+    public virtual Account CreatedByNavigation { get; set; } = null!;
 
     public virtual ICollection<ImportDetail> ImportDetails { get; set; } = new List<ImportDetail>();
 

@@ -69,7 +69,10 @@ namespace Infrastructure.Repositories
                         .Select(m => new
                         {
                             m.ShopManagerDetailId,
-                            m.StoreId,
+                            StoreId = _context.Warehouses
+            .Where(w => w.ShopManagerId == m.ShopManagerDetailId)
+            .Select(w => w.WarehouseId)
+            .FirstOrDefault(),
                             m.ManagedDate,
                             m.YearsOfExperience,
                             m.ManagerCertifications,

@@ -24,8 +24,6 @@ namespace Domain.DTO.Response
             public DateTime? ApprovedDate { get; set; }
             public DateTime? CompletedDate { get; set; }
             public int? OriginalImportId { get; set; }
-            public int? HandleBy { get; set; }
-            public string? HandleByName { get; set; }
             public List<ImportDetailDto> ImportDetails { get; set; } = new List<ImportDetailDto>();
         }
 
@@ -44,11 +42,17 @@ namespace Domain.DTO.Response
         {
             public int ImportDetailId { get; set; }
             public int WareHouseId { get; set; }
+            public int ActualReceivedQuantity { get; set; }
+
             public int AllocatedQuantity { get; set; }
             public string? Status { get; set; }
             public string? Comments { get; set; }
             public int? StaffDetailId { get; set; }
-            public int StoreImportStoreId { get; set; }
+            public int ImportStoreId { get; set; }
+
+            public int? HandleBy { get; set; }
+            public string? HandleByName { get; set; }
+
         }
 
     }

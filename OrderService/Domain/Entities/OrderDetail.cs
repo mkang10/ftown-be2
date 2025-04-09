@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
 
 namespace Domain.Entities;
 
@@ -21,3 +22,4 @@ public partial class OrderDetail
 
     public virtual ProductVariant ProductVariant { get; set; } = null!;
 }
+

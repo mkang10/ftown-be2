@@ -123,5 +123,10 @@ namespace Infrastructure.Repositories
                 .ThenInclude(pv => pv.Product)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
         }
+        public async Task CreateAssignmentAsync(OrderAssignment assignment)
+        {
+            _context.OrderAssignments.Add(assignment);
+            await _context.SaveChangesAsync();
+        }
     }
 }

@@ -7,6 +7,7 @@ using Infrastructure.Clients;
 using Infrastructure.DBContext;
 using Infrastructure.HelperServices;
 using Infrastructure.Repositories;
+using Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.AppStarts
@@ -80,8 +81,10 @@ namespace API.AppStarts
             services.AddScoped<SubmitReturnRequestHandler>();
             services.AddScoped<RedisHandler>();
             services.AddScoped<AuditLogHandler>();
-            
-            
+
+            //GHN
+            services.AddScoped<GHNLogHandler>();
+            services.AddScoped<IGHNLogRepository, GHNLogRepository>();
 
 
 

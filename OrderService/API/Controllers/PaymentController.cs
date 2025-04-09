@@ -68,9 +68,7 @@ namespace API.Controllers
 
 				await _orderRepository.UpdateOrderStatusAsync(orderId, "Paid");
 				_logger.LogInformation("Cập nhật trạng thái đơn hàng {OrderId} thành Paid thành công.", orderId);
-				payment.PaymentStatus = "Paid";
-				await _paymentRepository.UpdatePaymentAsync(payment);
-				await _orderRepository.UpdateOrderStatusAsync(orderId, "Paid");
+				
 
 				var order = await _orderRepository.GetOrderByIdAsync(orderId);
 				if (order == null)
@@ -81,7 +79,7 @@ namespace API.Controllers
 
 				var orderDetails = order.OrderDetails.ToList();
 
-				var updateStockSuccess = await _inventoryServiceClient.UpdateStockAfterOrderAsync(order.WareHouseId, orderDetails);
+				var updateStockSuccess = await _inventoryServiceClient.UpdateStockAfterOrderAsync((int)order.WareHouseId, orderDetails);
 				if (!updateStockSuccess)
 				{
 					_logger.LogError("Cập nhật tồn kho thất bại cho OrderId: {OrderId}", orderId);

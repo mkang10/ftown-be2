@@ -62,6 +62,7 @@ namespace API.AppStarts
             //Handler    
 
             services.AddScoped<GetAllProductsHandler>();
+            services.AddScoped<FilterProductHandler>();
             services.AddScoped<GetProductDetailHandler>();
             services.AddScoped<GetProductVariantByIdHandler>();
             services.AddScoped<GetWarehouseByIdHandler>();

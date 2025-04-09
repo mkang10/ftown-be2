@@ -173,6 +173,52 @@ namespace Application.UseCases
             await _redisCacheService.RemoveCacheAsync(GetCartKey(accountId));
         }
 
+        public async Task<ResponseDTO<bool>> ChangeCartItemQuantity(int accountId, ChangeCartItemQuantityRequest request)
+        {
+            var cartKey = GetCartKey(accountId);
+
+            var cart = await _redisCacheService.GetCacheAsync<List<CartItem>>(cartKey);
+            if (cart == null)
+            {
+                cart = await _cartRepository.GetCartFromDatabaseAsync(accountId) ?? new List<CartItem>();
+            }
+
+            var item = cart.FirstOrDefault(c => c.ProductVariantId == request.ProductVariantId);
+            if (item == null)
+            {
+                return new ResponseDTO<bool>(false, false, "Sản phẩm không có trong giỏ hàng.");
+            }
+
+            var newQuantity = item.Quantity + request.QuantityChange;
+
+            // 👉 Nếu số lượng mới <= 0 → xoá khỏi giỏ
+            if (newQuantity <= 0)
+            {
+                cart.Remove(item);
+                await _cartRepository.RemoveFromCartAsync(accountId, request.ProductVariantId);
+                await _redisCacheService.SetCacheAsync(cartKey, cart, TimeSpan.FromMinutes(30));
+                return new ResponseDTO<bool>(true, true, "Sản phẩm đã được xóa khỏi giỏ hàng.");
+            }
+
+            // Kiểm tra tồn kho
+            var variant = await _inventoryServiceClient.GetProductVariantById(request.ProductVariantId);
+            if (variant == null)
+            {
+                return new ResponseDTO<bool>(false, false, "Sản phẩm không tồn tại.");
+            }
+
+            if (newQuantity > variant.StockQuantity)
+            {
+                return new ResponseDTO<bool>(false, false, "Số lượng vượt quá tồn kho.");
+            }
+
+            // Cập nhật số lượng mới
+            item.Quantity = newQuantity;
+            await _cartRepository.UpdateCartItemQuantityAsync(accountId, request.ProductVariantId, newQuantity);
+            await _redisCacheService.SetCacheAsync(cartKey, cart, TimeSpan.FromMinutes(30));
+
+            return new ResponseDTO<bool>(true, true, "Cập nhật số lượng sản phẩm thành công.");
+        }
 
     }
 }

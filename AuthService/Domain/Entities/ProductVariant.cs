@@ -9,9 +9,9 @@ public partial class ProductVariant
 
     public int ProductId { get; set; }
 
-    public string? Size { get; set; }
+    public int? SizeId { get; set; }
 
-    public string? Color { get; set; }
+    public int? ColorId { get; set; }
 
     public decimal Price { get; set; }
 
@@ -23,9 +23,11 @@ public partial class ProductVariant
 
     public decimal? Weight { get; set; }
 
-    public int? WarehouseStockId { get; set; }
-
     public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
+
+    public virtual Color? Color { get; set; }
+
+    public virtual ICollection<DispatchDetail> DispatchDetails { get; set; } = new List<DispatchDetail>();
 
     public virtual ICollection<ImportDetail> ImportDetails { get; set; } = new List<ImportDetail>();
 
@@ -34,6 +36,10 @@ public partial class ProductVariant
     public virtual Product Product { get; set; } = null!;
 
     public virtual ICollection<ReturnOrderItem> ReturnOrderItems { get; set; } = new List<ReturnOrderItem>();
+
+    public virtual Size? Size { get; set; }
+
+    public virtual ICollection<TransferDetail> TransferDetails { get; set; } = new List<TransferDetail>();
 
     public virtual ICollection<WareHousesStock> WareHousesStocks { get; set; } = new List<WareHousesStock>();
 

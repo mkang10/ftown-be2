@@ -13,7 +13,9 @@ public partial class AccountInterest
 
     public int? InteractionCount { get; set; }
 
-    public DateTime? LastInteractionDate { get; set; }
+    public DateTime? LastUpdated { get; set; }
+
+    public string Source { get; set; } = null!;
 
     public virtual Account Account { get; set; } = null!;
 
