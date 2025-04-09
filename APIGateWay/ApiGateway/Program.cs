@@ -11,10 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 // ??c c?u hình t? ocelot.json
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowLocalhost",
-        builder => builder.WithOrigins("http://localhost:3000" , "http://10.87.12.203:8081")
-                          .AllowAnyMethod()
-                          .AllowAnyHeader());
+    options.AddPolicy("AllowSpecificOrigins",
+        policy => policy
+            .WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-client-prod.vercel.app/") // Thêm ngu?n m?i
+            .AllowAnyMethod()
+            .AllowAnyHeader());
 });
 builder.Configuration.SetBasePath(builder.Environment.ContentRootPath)
                      .AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
@@ -26,7 +27,22 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 app.UseRouting();
-
+app.UseCors("AllowSpecificOrigins");
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == HttpMethods.Options)
+    {
+        context.Response.StatusCode = 200;
+        context.Response.Headers.Add("Access-Control-Allow-Origin", "https://ftown-client-prod.vercel.app");
+        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        await context.Response.CompleteAsync();
+    }
+    else
+    {
+        await next();
+    }
+});
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapGet("/", async context =>
@@ -42,7 +58,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseCors("AllowLocalhost");
+
 
 await app.UseOcelot();
 

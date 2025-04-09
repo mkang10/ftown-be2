@@ -102,6 +102,10 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
+          "Host": "inventoryservice123.azurewebsites.net",
+          "Port": 443
+        },
+        {
           "Host": "localhost",
           "Port": 7265
         },
@@ -133,6 +137,10 @@
       "DownstreamPathTemplate": "/api/products/{productId}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        {
+          "Host": "inventoryservice123.azurewebsites.net",
+          "Port": 443
+        },
         {
           "Host": "localhost",
           "Port": 7265

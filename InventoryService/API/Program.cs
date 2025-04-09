@@ -4,7 +4,14 @@ using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigins",
+        policy => policy
+            .WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-client-prod.vercel.app/") // Thêm ngu?n m?i
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
 // Add services to the container
 var redisConfig = builder.Configuration.GetSection("Redis");
 string redisConnectionString = $"{redisConfig["Host"]}:{redisConfig["Port"]},password={redisConfig["Password"]}";
@@ -36,10 +43,10 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "InventoryService API v1");
-    c.RoutePrefix = "swagger"; // ho?c "" n?u mu?n swagger ? root
+    c.RoutePrefix = "swagger"; 
 });
 
-app.UseCors("AllowLocalhost");
+app.UseCors("AllowSpecificOrigins");
 app.UseHttpsRedirection();
 
 app.UseAuthorization();

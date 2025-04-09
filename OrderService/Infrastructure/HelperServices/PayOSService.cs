@@ -42,12 +42,12 @@ namespace Infrastructure.HelperServices
         public async Task<string?> CreatePayment(int orderId, decimal amount, string paymentMethod)
         {
             var items = new List<ItemData> {
-    new ItemData("Đơn hàng #" + orderId, 1, Convert.ToInt32(amount))
+            new ItemData("Đơn hàng #" + orderId, 1, Convert.ToInt32(amount))
 
 };
-            long orderCode = long.Parse($"{orderId}{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() % 1000000}");
+            //long orderCode = long.Parse($"{orderId}{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() % 1000000}");
             var paymentData = new PaymentData(
-                orderCode: orderCode,
+                orderCode: orderId,
                 amount: (int)amount,
                 description: $"Thanh toán đơn hàng {orderId}",
                 items: items,
