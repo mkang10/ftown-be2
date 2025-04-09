@@ -43,16 +43,16 @@ namespace Infrastructure.HelperServices
         {
             var items = new List<ItemData> {
             new ItemData("Đơn hàng #" + orderId, 1, Convert.ToInt32(amount))
-
 };
             //long orderCode = long.Parse($"{orderId}{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() % 1000000}");
+
             var paymentData = new PaymentData(
                 orderCode: orderId,
                 amount: (int)amount,
                 description: $"Thanh toán đơn hàng {orderId}",
                 items: items,
                 cancelUrl: "http://localhost:7266/api/payment/cancel",
-                returnUrl: $"http://localhost:3000/profile/order"
+                returnUrl: $"https://ftown-client-prod.vercel.app/profile/order"
             );
 
             var createPayment = await _payOS.createPaymentLink(paymentData);

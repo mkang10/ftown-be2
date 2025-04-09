@@ -6,11 +6,14 @@ var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigins",
-        policy => policy
-            .WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-client-prod.vercel.app/") // Thêm ngu?n m?i
+    options.AddPolicy("AllowSpecificOrigins", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-client-prod.vercel.app")
             .AllowAnyMethod()
-            .AllowAnyHeader());
+            .AllowAnyHeader()
+            .AllowCredentials(); // N?u dùng cookie ho?c auth header
+    });
 });
 // Add services to the container
 var redisConfig = builder.Configuration.GetSection("Redis");
