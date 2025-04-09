@@ -25,9 +25,9 @@ public partial class StaffDetail
 
     public virtual Account Account { get; set; } = null!;
 
-    public virtual Store Store { get; set; } = null!;
+    public virtual ICollection<CheckDetail> CheckDetails { get; set; } = new List<CheckDetail>();
 
-    public virtual ICollection<StoreCheckDetail> StoreCheckDetails { get; set; } = new List<StoreCheckDetail>();
+    public virtual ICollection<ImportStoreDetail> ImportStoreDetails { get; set; } = new List<ImportStoreDetail>();
 
-    public virtual ICollection<StoreImportStoreDetail> StoreImportStoreDetails { get; set; } = new List<StoreImportStoreDetail>();
+    public virtual ICollection<StoreExportStoreDetail> StoreExportStoreDetails { get; set; } = new List<StoreExportStoreDetail>();
 }
