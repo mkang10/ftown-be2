@@ -1,4 +1,5 @@
-﻿using Application.DTO.Response;
+﻿using Application.DTO.Request;
+using Application.DTO.Response;
 using AutoMapper;
 using Domain.Entities;
 
@@ -13,6 +14,7 @@ namespace API.AppStarts
             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.OrderDetails));
 
             CreateMap<OrderDetail, OrderItemResponse>()
+                .ForMember(dest => dest.OrderDetailId, opt => opt.MapFrom(src => src.OrderDetailId))
                 .ForMember(dest => dest.ProductVariantId, opt => opt.MapFrom(src => src.ProductVariantId))
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
                 .ForMember(dest => dest.PriceAtPurchase, opt => opt.MapFrom(src => src.PriceAtPurchase));
@@ -27,9 +29,14 @@ namespace API.AppStarts
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.RecipientPhone));
 
-            CreateMap<OrderHistory, OrderHistoryResponse>()
-            .ForMember(dest => dest.ChangedByUser, opt => opt.MapFrom(src => src.ChangedByNavigation.Email)) // Lấy email của người thay đổi
-            .ForMember(dest => dest.ChangedDate, opt => opt.MapFrom(src => src.ChangedDate ?? DateTime.UtcNow));
+
+            CreateMap<OrderItemResponse, ReturnItemResponse>()
+            .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.PriceAtPurchase)); // Map giá lúc mua
+                                                                                            //.ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.PriceAtPurchase * src.Quantity)) // Tổng giá tiền
+                                                                                            //.ForMember(dest => dest.ReturnReason, opt => opt.Ignore()) // Không có sẵn trong OrderItemResponse
+                                                                                            //.ForMember(dest => dest.ReturnOption, opt => opt.Ignore()); // Không có sẵn trong OrderItemResponse
+            CreateMap<UpdateGHNIdDTO, Order>().ReverseMap();
+
         }
     }
 }

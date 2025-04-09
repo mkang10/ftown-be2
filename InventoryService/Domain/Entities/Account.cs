@@ -31,27 +31,19 @@ public partial class Account
 
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 
+    public virtual ICollection<ConversationParticipant> ConversationParticipants { get; set; } = new List<ConversationParticipant>();
+
     public virtual ICollection<CustomerDetail> CustomerDetails { get; set; } = new List<CustomerDetail>();
 
-    public virtual ICollection<Document> Documents { get; set; } = new List<Document>();
+    public virtual ICollection<FavoriteProduct> FavoriteProducts { get; set; } = new List<FavoriteProduct>();
 
     public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
 
-    public virtual ICollection<InventoryImportHistory> InventoryImportHistories { get; set; } = new List<InventoryImportHistory>();
-
-    public virtual ICollection<InventoryImport> InventoryImports { get; set; } = new List<InventoryImport>();
-
-    public virtual ICollection<InventoryTransactionHistory> InventoryTransactionHistories { get; set; } = new List<InventoryTransactionHistory>();
-
-    public virtual ICollection<InventoryTransaction> InventoryTransactions { get; set; } = new List<InventoryTransaction>();
+    public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
-    public virtual ICollection<OrderHistory> OrderHistories { get; set; } = new List<OrderHistory>();
-
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
-
-    public virtual ICollection<PaymentHistory> PaymentHistories { get; set; } = new List<PaymentHistory>();
 
     public virtual ICollection<ReplyFeedback> ReplyFeedbacks { get; set; } = new List<ReplyFeedback>();
 
@@ -64,8 +56,4 @@ public partial class Account
     public virtual ICollection<ShoppingCart> ShoppingCarts { get; set; } = new List<ShoppingCart>();
 
     public virtual ICollection<StaffDetail> StaffDetails { get; set; } = new List<StaffDetail>();
-
-    public virtual ICollection<Store> Stores { get; set; } = new List<Store>();
-
-    public virtual ICollection<WishList> WishLists { get; set; } = new List<WishList>();
 }

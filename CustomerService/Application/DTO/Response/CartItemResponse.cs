@@ -15,5 +15,7 @@ namespace Application.DTO.Response
         public int Quantity { get; set; }
         public string? ImagePath { get; set; } = string.Empty;
         public decimal Price { get; set; }
+        public decimal DiscountedPrice { get; set; } // Giá sau khi áp dụng khuyến mãi
+        public string? PromotionTitle { get; set; } // Tên khuyến mãi nếu có
     }
 }

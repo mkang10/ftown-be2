@@ -2,10 +2,12 @@
 
 using Application.Interfaces;
 using Application.UseCases;
-using Domain.Entities;
 using Domain.Interfaces;
-using Infrastructure;
 using Infrastructure.Clients;
+using Infrastructure.DBContext;
+using Infrastructure.HelperServices;
+using Infrastructure.Repositories;
+using Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.AppStarts
@@ -26,7 +28,7 @@ namespace API.AppStarts
             });
 
             //Inject Services
-
+            
             services.AddHttpClient<ICustomerServiceClient, CustomerServiceClient>(client =>
             {
                 client.BaseAddress = new Uri("https://localhost:7264/api/");
@@ -34,6 +36,10 @@ namespace API.AppStarts
             services.AddHttpClient<IInventoryServiceClient, InventoryServiceClient>(client =>
             {
                 client.BaseAddress = new Uri("https://localhost:7265/api/");
+            });
+            services.AddHttpClient<INotificationClient, NotificationServiceClient>(client =>
+            {
+                client.BaseAddress = new Uri("https://localhost:7270/api/");
             });
             services.AddHttpClient<IPayOSService, PayOSService>(client =>
             {
@@ -49,22 +55,36 @@ namespace API.AppStarts
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddSingleton<IRedisCacheService, RedisCacheService>();
+            services.AddScoped<IOrderProcessingHelper, OrderProcessingHelper>();
             //Repository
 
             services.AddScoped<IOrderRepository, OrderRepository>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IShippingAddressRepository, ShippingAddressRepository>();
-            services.AddScoped<IOrderHistoryRepository, OrderHistoryRepository>();
+            services.AddScoped<IReturnOrderRepository, ReturnOrderRepository>();
+            services.AddScoped<IRedisRepository, RedisRepository>();
+            services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             //Handler
 
             services.AddScoped<CreateOrderHandler>();
-            services.AddScoped<ProcessPaymentHandler>();
-            services.AddScoped<AutoSelectStoreHandler>();
             services.AddScoped<GetShippingAddressHandler>();
-            services.AddScoped<GetOrderHistoryHandler>();
             services.AddScoped<GetOrdersByStatusHandler>();
+            services.AddScoped<GetSelectedCartItemsHandler>();
+            services.AddScoped<CheckOutHandler>();
+            services.AddScoped<ShippingCostHandler>();
+            services.AddScoped<GetOrderDetailHandler>();
+            services.AddScoped<UpdateOrderStatusHandler>();
+            services.AddScoped<GetOrderItemsHandler>();
+            services.AddScoped<GetReturnableOrdersHandler>();
+            services.AddScoped<GetOrderItemsForReturnHandler>();
+            services.AddScoped<ProcessReturnCheckoutHandler>(); 
+            services.AddScoped<SubmitReturnRequestHandler>();
+            services.AddScoped<RedisHandler>();
+            services.AddScoped<AuditLogHandler>();
 
-            
+            //GHN
+            services.AddScoped<GHNLogHandler>();
+            services.AddScoped<IGHNLogRepository, GHNLogRepository>();
 
 
 

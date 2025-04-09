@@ -9,6 +9,11 @@ namespace API.AppStarts
     {
         public AutoMapperConfig()
         {
+            //Exxcel
+            CreateMap<Product, ProductExcelRequestDTO>().ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.Category.Name));
+            CreateMap<Product, CreateProductDTORequest>().ReverseMap();
+
+
             CreateMap<Product, ProductListResponse>()
                 .ForMember(dest => dest.CategoryName,
                            opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : "Uncategorized"))
@@ -16,14 +21,15 @@ namespace API.AppStarts
                    opt => opt.MapFrom(src => src.ProductVariants.Any()
                        ? src.ProductVariants.First().Price
                        : 0))
-                .ForMember(dest => dest.Colors,
-                           opt => opt.MapFrom(src => src.ProductVariants.Select(v => v.Color).Distinct().ToList()))
+                
                 .ForMember(dest => dest.ImagePath,
                opt => opt.MapFrom(src => src.ProductImages
                                           .Where(pi => pi.IsMain)
                                           .Select(pi => pi.ImagePath)
                                           .FirstOrDefault()));
-
+            CreateMap<CreateProductRequest, Product>()
+            .ForMember(dest => dest.ProductImages, opt => opt.Ignore())  // Vì sẽ xử lý upload ảnh riêng
+            .ForMember(dest => dest.Status, opt => opt.Ignore());
             // Mapping từ Product -> ProductDetailResponse (Chi tiết sản phẩm)
             CreateMap<Product, ProductDetailResponse>()
                  .ForMember(dest => dest.CategoryName,
@@ -35,17 +41,26 @@ namespace API.AppStarts
                                                        .Where(i => i.IsMain)
                                                        .Select(i => i.ImagePath)
                                                        .FirstOrDefault()))
+                 
                  .ForMember(dest => dest.ImagePaths, // Danh sách ảnh
                             opt => opt.MapFrom(src => src.ProductImages
                                                        .Select(i => i.ImagePath)
                                                        .ToList()));
+
             // Mapping từ ProductVariant -> ProductVariantResponse
             CreateMap<ProductVariant, ProductVariantResponse>()
-            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name));
-            CreateMap<Store, StoreResponse>();
+            .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Product.ProductId))
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+            .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.Size != null ? src.Size.SizeName : null))
+            .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.Color != null ? src.Color.ColorCode : null))
+            .ForMember(dest => dest.StockQuantity, opt => opt.MapFrom(src =>
+                src.WareHousesStocks
+                    .Where(ws => ws.WarehouseId == 2) // ✅ Lọc WarehouseId = 2
+                    .Sum(ws => ws.StockQuantity))); // ✅ Tính tổng số lượng;
+            CreateMap<Warehouse, WarehouseResponse>();
 
-            CreateMap<StoreRequest, Store>()
-                .ForMember(dest => dest.StoreId, opt => opt.Ignore()) // Ignore vì StoreId do DB sinh
+            CreateMap<WarehouseRequest, Warehouse>()
+                .ForMember(dest => dest.WarehouseId, opt => opt.Ignore()) 
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore());
             CreateMap<ProductVariantRequest, ProductVariant>().ReverseMap();
         }

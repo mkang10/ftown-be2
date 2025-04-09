@@ -1,8 +1,9 @@
 using API.AppStarts;
+using Application.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
-
+builder.Services.AddSignalR(); // ??ng ký SignalR
 // Add services to the container.
 
 // Add depen
@@ -24,7 +25,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
-
+app.MapHub<NotificationHub>("/notificationHub");
 app.MapControllers();
 
 app.Run();

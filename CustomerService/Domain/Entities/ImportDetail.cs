@@ -1,0 +1,19 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace Domain.Entities;
+
+public partial class ImportDetail
+{
+    public int ImportDetailId { get; set; }
+
+    public int ImportId { get; set; }
+
+    public int ProductVariantOfflineId { get; set; }
+
+    public int Quantity { get; set; }
+
+    public virtual Import Import { get; set; } = null!;
+
+    public virtual ICollection<ImportStoreDetail> ImportStoreDetails { get; set; } = new List<ImportStoreDetail>();
+}

@@ -1,10 +1,36 @@
 using API.AppStarts;
+using Application.Interfaces;
+using CloudinaryDotNet;
+using Infrastructure.HelperServices;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
-// Add services to the container.
+// ??ng ký c?u hình CloudinarySettings
+builder.Services.Configure<CloudinarySettings>(
+    builder.Configuration.GetSection("CloudinarySettings")
+);
+
+// ??ng ký Cloudinary d??i d?ng Singleton, s? d?ng IOptions ?? l?y c?u hình
+builder.Services.AddSingleton(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<CloudinarySettings>>().Value;
+    if (string.IsNullOrEmpty(settings.CloudName) ||
+        string.IsNullOrEmpty(settings.ApiKey) ||
+        string.IsNullOrEmpty(settings.ApiSecret))
+    {
+        throw new ArgumentException("CloudinarySettings không ???c c?u hình ?úng trong appsettings.json");
+    }
+
+    var account = new Account(settings.CloudName, settings.ApiKey, settings.ApiSecret);
+    return new Cloudinary(account);
+});
+
+// ??ng ký CloudinaryService
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+
 var redisConfig = builder.Configuration.GetSection("Redis");
 string redisConnectionString = $"{redisConfig["Host"]}:{redisConfig["Port"]},password={redisConfig["Password"]}";
 builder.Services.AddStackExchangeRedisCache(options =>

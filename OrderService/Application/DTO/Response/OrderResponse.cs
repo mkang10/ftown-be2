@@ -14,7 +14,7 @@ namespace Application.DTO.Response
         public decimal ShippingCost { get; set; }
         public string PaymentMethod { get; set; } = null!;
         public string? PaymentUrl { get; set; } // Nếu là PAYOS, URL để thanh toán
-        public int StoreId { get; set; }
+        public DateTime? DeliveredDate { get; set; }
         public List<OrderItemResponse> Items { get; set; } = new();
     }
 }

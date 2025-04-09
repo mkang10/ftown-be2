@@ -25,6 +25,8 @@ public partial class Product
 
     public string? Material { get; set; }
 
+    public string? Status { get; set; }
+
     public virtual Category? Category { get; set; }
 
     public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();

@@ -1,5 +1,6 @@
 ﻿using Application.DTO.Request;
 using Application.DTO.Response;
+using Application.Interfaces;
 using AutoMapper;
 using Domain.Interfaces;
 using System;
@@ -10,51 +11,43 @@ using System.Threading.Tasks;
 
 namespace Application.UseCases
 {
-    public class EditProfileHandler
-    {
-        private readonly IEditProfileRepository _editProfileRepository;
-        private readonly IMapper _mapper;
+	public class EditProfileHandler
+	{
+		private readonly ICustomerProfileDataService _customerProfileDataService;
+		private readonly IProfileRepository _profileRepository;
+		private readonly IMapper _mapper;
 
-        public EditProfileHandler(IEditProfileRepository editProfileRepository, IMapper mapper)
-        {
-            _editProfileRepository = editProfileRepository;
-            _mapper = mapper;
-        }
+		public EditProfileHandler(
+			ICustomerProfileDataService customerProfileDataService,
+			IProfileRepository profileRepository,
+			IMapper mapper)
+		{
+			_customerProfileDataService = customerProfileDataService;
+			_profileRepository = profileRepository;
+			_mapper = mapper;
+		}
 
-        public async Task<EditProfileResponse> EditProfile(int accountId, EditProfileRequest request)
-        {
-            var account = await _editProfileRepository.GetAccountByIdAsync(accountId);
-            if (account == null)
-            {
-                return new EditProfileResponse { Success = false, Message = "Account not found" };
-            }
+		public async Task<EditProfileResponse> EditProfile(int accountId, EditProfileRequest request)
+		{
+			var (account, customerDetail) = await _customerProfileDataService.GetAccountAndDetailAsync(accountId);
+			if (account == null)
+			{
+				return new EditProfileResponse { Success = false, Message = "Account not found" };
+			}
+			if (customerDetail == null)
+			{
+				return new EditProfileResponse { Success = false, Message = "Customer details not found" };
+			}
 
-            var customerDetail = await _editProfileRepository.GetCustomerDetailByAccountIdAsync(accountId);
-            if (customerDetail == null)
-            {
-                return new EditProfileResponse { Success = false, Message = "Customer details not found" };
-            }
+			_mapper.Map(request, account);
+			_mapper.Map(request, customerDetail);
 
-            // Cập nhật Account
-            account.FullName = request.FullName;
-            account.Email = request.Email;
-            account.PhoneNumber = request.PhoneNumber;
-            account.Address = request.Address;
-            account.ImagePath = request.ImagePath;
+			await _profileRepository.UpdateAccountAsync(account);
+			await _profileRepository.UpdateCustomerDetailAsync(customerDetail);
 
-            // Cập nhật CustomerDetail
-            customerDetail.LoyaltyPoints = request.LoyaltyPoints;
-            customerDetail.MembershipLevel = request.MembershipLevel;
-            customerDetail.DateOfBirth = request.DateOfBirth;
-            customerDetail.Gender = request.Gender;
-            customerDetail.CustomerType = request.CustomerType;
-            customerDetail.PreferredPaymentMethod = request.PreferredPaymentMethod;
+			return new EditProfileResponse { Success = true, Message = "Profile updated successfully" };
+		}
+	}
 
-            // Lưu vào database
-            await _editProfileRepository.UpdateAccountAsync(account);
-            await _editProfileRepository.UpdateCustomerDetailAsync(customerDetail);
 
-            return new EditProfileResponse { Success = true, Message = "Profile updated successfully" };
-        }
-    }
 }

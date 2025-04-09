@@ -47,30 +47,16 @@ namespace Infrastructure.Clients
             }
         }
 
-        public async Task ClearCartAfterOrderAsync(int accountId)
+        public async Task<bool> ClearCartAfterOrderAsync(int accountId, List<int> selectedProductVariantIds)
         {
-            try
-            {
-                // Gọi endpoint xóa giỏ hàng sau khi tạo đơn hàng: POST cart/{accountId}/clear-after-order
-                var response = await _httpClient.PostAsync($"cart/{accountId}/clear-after-order", null);
-                if (!response.IsSuccessStatusCode)
-                {
-                    Console.WriteLine($"[ERROR] Không thể xóa giỏ hàng sau khi tạo đơn hàng. Mã lỗi: {response.StatusCode}");
-                }
-                else
-                {
-                    // Nếu cần đọc phản hồi từ API theo kiểu DTO
-                    var result = await response.Content.ReadFromJsonAsync<ResponseDTO<bool>>(new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-                    Console.WriteLine($"[DEBUG] Kết quả xóa giỏ hàng: {result?.Message}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[ERROR] Lỗi khi xóa giỏ hàng sau khi tạo đơn hàng: {ex.Message}");
-            }
+            // ✅ Gửi trực tiếp `selectedProductVariantIds`, không bọc trong một object ẩn danh
+            var response = await _httpClient.PostAsJsonAsync(
+                $"cart/{accountId}/clear-after-order",
+                selectedProductVariantIds // ✅ Gửi đúng kiểu List<int>
+            );
+
+            return response.IsSuccessStatusCode;
         }
+
     }
 }

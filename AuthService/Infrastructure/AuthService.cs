@@ -10,6 +10,8 @@ using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using Domain.DTO.Response;
 using Domain.DTO.Request;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Services
 {
@@ -24,9 +26,9 @@ namespace Infrastructure.Services
             _configuration = configuration;
         }
 
-        public async Task<LoginResponse> AuthenticateAsync(string username, string password)
+        public async Task<LoginResponse> AuthenticateAsync(string email, string password)
         {
-            var account = await _accountRepos.GetUserByUsernameAsync(username);
+            var account = await _accountRepos.GetUserByUsernameAsync(email);
 
             if (account != null && VerifyPassword(password, account.PasswordHash))
             {
@@ -48,6 +50,9 @@ namespace Infrastructure.Services
                     };
                 }
 
+                // Lấy thông tin chi tiết dựa theo RoleId
+                object? roleDetails = await _accountRepos.GetRoleDetailsAsync(account);
+
                 return new LoginResponse
                 {
                     Token = token,
@@ -57,13 +62,16 @@ namespace Infrastructure.Services
                         FullName = account.FullName,
                         RoleId = account.RoleId,
                         IsActive = account.IsActive,
-                        Email = account.Email
+                        Email = account.Email,
+                        RoleDetails = roleDetails // Chứa thông tin chi tiết theo vai trò
                     }
                 };
             }
 
             return null;
         }
+
+       
 
         public async Task<TokenResponse> RegisterAsync(RegisterReq registerDTO)
         {
@@ -72,16 +80,34 @@ namespace Infrastructure.Services
             if (existingUser != null)
                 return new TokenResponse { Token = null };
 
+            // Tạo tài khoản mới
             var account = new Account
             {
                 FullName = registerDTO.Username,
                 PasswordHash = HashPassword(registerDTO.Password),
                 Email = registerDTO.Email,
-                RoleId = registerDTO.RoleId
+                RoleId = 1,
+                // Các trường khác nếu có
             };
 
+            // Thêm tài khoản vào database
             await _accountRepos.AddUserAsync(account);
 
+           
+            var customerDetail = new CustomerDetail
+            {
+                AccountId = account.AccountId,
+                        LoyaltyPoints = 0,                       // Mặc định là 0 điểm
+                        MembershipLevel = "Basic",               // Mức thành viên mặc định
+                        DateOfBirth = null,
+                        Gender = null,
+                        CustomerType = null,
+                        PreferredPaymentMethod = null
+                    };
+                    await _accountRepos.AddCustomerAsync(customerDetail);
+                    
+
+            // Tạo JWT token cho tài khoản mới
             string token = GenerateJwtToken(account.FullName, "user", account.AccountId, account.Email);
 
             return new TokenResponse { Token = token };

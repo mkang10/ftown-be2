@@ -29,6 +29,15 @@ namespace API.AppStarts
                 .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender))
                 .ForMember(dest => dest.CustomerType, opt => opt.MapFrom(src => src.CustomerType))
                 .ForMember(dest => dest.PreferredPaymentMethod, opt => opt.MapFrom(src => src.PreferredPaymentMethod));
+            // Map từ EditProfileRequest -> Account
+            CreateMap<EditProfileRequest, Account>()
+                .ForMember(dest => dest.AccountId, opt => opt.Ignore()); // Tránh ghi đè ID
+
+            // Map từ EditProfileRequest -> CustomerDetail
+            CreateMap<EditProfileRequest, CustomerDetail>()
+                .ForMember(dest => dest.AccountId, opt => opt.Ignore()) // Tránh ghi đè ID
+                .ForMember(dest => dest.LoyaltyPoints, opt => opt.Ignore()) // Nếu LoyaltyPoints không cập nhật
+                .ForMember(dest => dest.MembershipLevel, opt => opt.Ignore()); // Nếu MembershipLevel không cập nhật
             // Chuyển đổi Entity → DTO
             CreateMap<CartItem, CartItemResponse>()
                 .ForMember(dest => dest.Price, opt => opt.Ignore()); // Lấy giá từ DB sau
@@ -37,6 +46,23 @@ namespace API.AppStarts
 
             // Chuyển đổi DTO → Entity
             CreateMap<AddToCartRequest, CartItem>();
+
+            //mapping feedback 
+            CreateMap<CreateFeedBackRequestDTO, Feedback>()
+           .ForMember(dest => dest.FeedbackId, opt => opt.Ignore());
+            //update feedback
+            CreateMap<UpdateFeedbackRequestDTO, Feedback>()
+           .ForMember(dest => dest.ProductId, opt => opt.Ignore());
+            //feedback reverse
+            CreateMap<Feedback, CreateFeedBackRequestDTO>();
+            CreateMap<Feedback, FeedbackRequestDTO>().ReverseMap();
+
+            //mapping Reply request
+            CreateMap<ReplyFeedback, ReplyRequestDTO>().ReverseMap();
+            CreateMap<ReplyFeedback, CreateReplyRequestDTO>().ReverseMap();
+            CreateMap<ReplyFeedback, UpdateReplyRequestDTO>().ReverseMap();
+
+
         }
     }
 }

@@ -11,14 +11,26 @@ namespace API.Controllers
     {
         private readonly CreateOrderHandler _createOrderHandler;
         private readonly ILogger<OrderController> _logger;
-        private readonly GetOrderHistoryHandler _getOrderHistoryHandler;
+        private readonly UpdateOrderStatusHandler _updateOrderStatusHandler;
         private readonly GetOrdersByStatusHandler _getOrdersByStatusHandler;
-        public OrderController(CreateOrderHandler createOrderHandler, ILogger<OrderController> logger, GetOrderHistoryHandler getOrderHistoryHandler, GetOrdersByStatusHandler getOrdersByStatusHandler)
+        private readonly GetOrderDetailHandler _getOrderDetailHandler;
+        private readonly GetOrderItemsHandler _getOrderItemsHandler;
+        private readonly GetReturnableOrdersHandler _getReturnableOrdersHandler;
+        public OrderController(CreateOrderHandler createOrderHandler, 
+                               ILogger<OrderController> logger, 
+                               GetOrdersByStatusHandler getOrdersByStatusHandler, 
+                               GetOrderDetailHandler getOrderDetailHandler, 
+                               GetOrderItemsHandler getOrderItemsHandler, 
+                               UpdateOrderStatusHandler updateOrderStatusHandler,
+                               GetReturnableOrdersHandler getReturnableOrdersHandler)
         {
             _createOrderHandler = createOrderHandler;
             _logger = logger;
-            _getOrderHistoryHandler = getOrderHistoryHandler;
+            _updateOrderStatusHandler = updateOrderStatusHandler;
             _getOrdersByStatusHandler = getOrdersByStatusHandler;
+            _getOrderDetailHandler = getOrderDetailHandler;
+            _getOrderItemsHandler = getOrderItemsHandler;
+            _getReturnableOrdersHandler = getReturnableOrdersHandler;
         }
 
         /// <summary>
@@ -55,18 +67,60 @@ namespace API.Controllers
                 return StatusCode(500, new ResponseDTO<OrderResponse>(null, false, "Có lỗi xảy ra trong quá trình tạo đơn hàng."));
             }
         }
-        [HttpGet("{orderId}/history")]
-        public async Task<ActionResult<ResponseDTO<List<OrderHistoryResponse>>>> GetOrderHistory(int orderId)
-        {
-            var history = await _getOrderHistoryHandler.HandleAsync(orderId);
-            return Ok(new ResponseDTO<List<OrderHistoryResponse>>(history, true, "Lịch sử đơn hàng được lấy thành công."));
-        }
+        
         [HttpGet]
-        public async Task<ActionResult<ResponseDTO<List<OrderResponse>>>> GetOrdersByStatus([FromQuery] string status)
+        public async Task<ActionResult<ResponseDTO<List<OrderResponse>>>> GetOrdersByStatus(
+                [FromQuery] string? status,
+                [FromQuery] int? accountId = null) 
         {
-            var orders = await _getOrdersByStatusHandler.HandleAsync(status);
-            return Ok(new ResponseDTO<List<OrderResponse>>(orders, true, $"Danh sách đơn hàng với trạng thái {status} được lấy thành công."));
+            var orders = await _getOrdersByStatusHandler.HandleAsync(status, accountId);
+            return Ok(new ResponseDTO<List<OrderResponse>>(orders, true, $"Danh sách đơn hàng với trạng thái {status} {(accountId.HasValue ? $"và accountId {accountId}" : "")} được lấy thành công."));
         }
+        [HttpGet("returnable")]
+        public async Task<ActionResult<ResponseDTO<List<OrderResponse>>>> GetReturnableOrders([FromQuery] int accountId)
+        {
+            var orders = await _getReturnableOrdersHandler.HandleAsync(accountId);
+            return Ok(new ResponseDTO<List<OrderResponse>>(orders, true, "Danh sách đơn hàng có thể hoàn trả được lấy thành công."));
+        }
+
+        [HttpGet("{orderId}/details")]
+        public async Task<IActionResult> GetOrderDetails(int orderId)
+        {
+            var orderDetailResponse = await _getOrderDetailHandler.HandleAsync(orderId);
+            if (orderDetailResponse == null)
+            {
+                return NotFound(new ResponseDTO<OrderDetailResponseWrapper>(null, false, "Không tìm thấy đơn hàng."));
+            }
+
+            return Ok(new ResponseDTO<OrderDetailResponseWrapper>(orderDetailResponse, true, "Lấy chi tiết đơn hàng thành công!"));
+        }
+
+        [HttpGet("{orderId}/items")]
+        public async Task<IActionResult> GetOrderItemsById(int orderId)
+        {
+            var result = await _getOrderItemsHandler.HandleAsync(orderId);
+
+            if (result == null || !result.Any())
+            {
+                return NotFound(new { message = "Không tìm thấy sản phẩm trong đơn hàng." });
+            }
+
+            return Ok(result);
+        }
+
+        [HttpPut("{orderId}/status")]
+        public async Task<IActionResult> UpdateOrderStatus(int orderId, [FromBody] UpdateOrderStatusRequest request)
+        {
+            var success = await _updateOrderStatusHandler.HandleAsync(orderId, request.NewStatus, request.ChangedBy, request.Comment);
+
+            if (!success)
+            {
+                return NotFound(new ResponseDTO(false, "Không tìm thấy đơn hàng."));
+            }
+
+            return Ok(new ResponseDTO(true, "Cập nhật trạng thái thành công!"));
+        }
+
 
     }
 }
