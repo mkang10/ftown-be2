@@ -3,8 +3,11 @@ using Application.DTO.Response;
 using Application.UseCases;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace API.Controllers
@@ -27,27 +30,57 @@ namespace API.Controllers
             _logHandler = logHandler;
         }
 
-        [HttpPost("create-order")]
-        public async Task<IActionResult> CreateOrder([FromBody] OrderRequest orderRequest)
+        [HttpPost("create-order/{id}")]
+        public async Task<IActionResult> CreateOrder(int id)
         {
-            var requestJson = Newtonsoft.Json.JsonConvert.SerializeObject(orderRequest);
-            var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
-
-            content.Headers.Add("ShopId", shopid);
-            content.Headers.Add("Token", token);
-
-            var response = await _httpClient.PostAsync(_url, content);
-
-            if (response.IsSuccessStatusCode)
+            try
             {
-                var responseData = await response.Content.ReadAsStringAsync();
-                // luu thong tin o day
-                //=====here===========
-                //====================
-                return Ok(responseData);
-            }
+                var data = await _logHandler.AutoCreateOrderGHN(id);
+                // Newtonsoft.Json.JsonConvert.SerializeObject(data) vẫn giữ lại kiểu viết việt nam để kh bị lỗi fomat khi lên GHN api
+                var requestJson = Newtonsoft.Json.JsonConvert.SerializeObject(data);
 
-            return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+                var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
+
+                content.Headers.Add("ShopId", shopid);
+                content.Headers.Add("Token", token);
+
+                var response = await _httpClient.PostAsync(_url, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseData = await response.Content.ReadAsStringAsync();
+                    
+                    var jsonResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(responseData);
+
+                    if (jsonResponse != null && jsonResponse.ContainsKey("data"))
+                    {
+                        // tách data ra
+                        var dataDict = jsonResponse["data"] as Newtonsoft.Json.Linq.JObject;
+                        // sử dụng linq để truy xuất từ data trong dataDict để lấy ra giá trị "order_code"
+                        var orderCode = dataDict?["order_code"]?.ToString();
+
+                        var success = await _logHandler.AddGHNIdToOrderTableHandler(id, new UpdateGHNIdDTO { GHNId = orderCode }); // xuất GHNId vô
+
+                        if (success)
+                        {
+                            return Ok(responseData);
+                        }
+                        else
+                        {
+                            return StatusCode(500, "Failed to save GHN ID");
+                        }
+                    }
+                    else
+                    {
+                        return StatusCode(500, "Invalid response format");
+                    }
+                }
+
+                return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+            }catch(Exception ex) 
+            {
+                throw new Exception("An error occurred: " + ex.Message);
+            }
         }
 
         [HttpPost("order-status-list")]
@@ -177,7 +210,7 @@ namespace API.Controllers
                     LatestStatuses = latestStatuses
                 };
 
-                return Ok(new { OrderDetail = orderDetail });
+                return Ok(new { OrderDetail = orderDetail, responseData });
             }
 
             var errorResponseData = await response.Content.ReadAsStringAsync();

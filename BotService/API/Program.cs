@@ -1,5 +1,6 @@
 ﻿using API.AppStarts;
-using Domain.Interfaces;
+using API.Chathub;
+using Application.Interfaces;
 using Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,17 @@ builder.Services.AddScoped<IChatServices>(provider =>
 builder.Services.InstallService(builder.Configuration);
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin",
+        builder => builder.WithOrigins("http://127.0.0.1:5500") // Specify the allowed origin
+                          .AllowAnyMethod()
+                          .AllowAnyHeader()
+                          .AllowCredentials()); // Allow credentials
+});
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -33,10 +45,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors("AllowSpecificOrigin"); // Use the specific origin policy
+app.UseRouting();
+
 
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+    endpoints.MapHub<ChatHub>("/chathub");
+});
 
 app.MapControllers();
 

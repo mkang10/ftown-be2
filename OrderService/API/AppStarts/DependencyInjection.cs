@@ -49,6 +49,7 @@ namespace API.AppStarts
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddSingleton<IRedisCacheService, RedisCacheService>();
+            //GHN
             services.AddScoped<GHNLogHandler>();
             services.AddScoped<IGHNLogRepository, GHNLogRepository>();
 

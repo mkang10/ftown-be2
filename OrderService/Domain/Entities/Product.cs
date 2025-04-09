@@ -25,11 +25,17 @@ public partial class Product
 
     public string? Material { get; set; }
 
+    public string Status { get; set; } = null!;
+
     public virtual Category? Category { get; set; }
+
+    public virtual ICollection<FavoriteProduct> FavoriteProducts { get; set; } = new List<FavoriteProduct>();
 
     public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
 
     public virtual ICollection<ProductImage> ProductImages { get; set; } = new List<ProductImage>();
+
+    public virtual ICollection<ProductStyle> ProductStyles { get; set; } = new List<ProductStyle>();
 
     public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
 }

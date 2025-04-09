@@ -35,6 +35,8 @@ public partial class Account
 
     public virtual ICollection<CustomerDetail> CustomerDetails { get; set; } = new List<CustomerDetail>();
 
+    public virtual ICollection<FavoriteProduct> FavoriteProducts { get; set; } = new List<FavoriteProduct>();
+
     public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
 
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();

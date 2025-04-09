@@ -9,7 +9,7 @@ public partial class Order
 
     public int AccountId { get; set; }
 
-    public int? WareHouseId { get; set; }
+    public int WareHouseId { get; set; }
 
     public int? ShippingAddressId { get; set; }
 
@@ -38,6 +38,10 @@ public partial class Order
     public string? Country { get; set; }
 
     public string? Province { get; set; }
+    public string? GHNID { get; set; }
+
+    public string? IsFeedback { get; set; }
+
 
     public virtual Account Account { get; set; } = null!;
 
@@ -53,5 +57,5 @@ public partial class Order
 
     public virtual ShippingAddress? ShippingAddress { get; set; }
 
-    public virtual Warehouse? WareHouse { get; set; }
+    public virtual Warehouse WareHouse { get; set; } = null!;
 }
