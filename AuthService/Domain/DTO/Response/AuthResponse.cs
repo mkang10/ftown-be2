@@ -29,5 +29,9 @@ namespace Domain.DTO.Response
         public int RoleId { get; set; }
 
         public string? ImagePath { get; set; }
+
+      
+        public object? RoleDetails { get; set; } // Chứa thông tin chi tiết theo từng role
+       
     }
 }

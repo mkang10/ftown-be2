@@ -1,48 +1,60 @@
 using API.AppStarts;
 using StackExchange.Redis;
 
-
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
-// Add services to the container.
-var redisConfig = builder.Configuration.GetSection("Redis");
-var redisConnection = $"{redisConfig["Host"]}:{redisConfig["Port"]},password={redisConfig["Password"]}";
+// Cấu hình CORS cho phép các nguồn được chỉ định
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigins", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5000") // Thêm nguồn mới
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
+// Cấu hình Redis từ file cấu hình
+var redisSection = builder.Configuration.GetSection("Redis");
+var redisConnection = $"{redisSection["Host"]}:{redisSection["Port"]},password={redisSection["Password"]}";
+
+// Thêm StackExchange.Redis Cache
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = redisConnection;
-    options.InstanceName = redisConfig["InstanceName"];
+    options.InstanceName = redisSection["InstanceName"];
 });
 
+// Thêm IConnectionMultiplexer làm Singleton
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
     var redisConfig = builder.Configuration.GetSection("Redis");
-    var redisConnection = $"{redisConfig["Host"]}:{redisConfig["Port"]},password={redisConfig["Password"]}";
-
-    var configuration = ConfigurationOptions.Parse(redisConnection, true);
-    return ConnectionMultiplexer.Connect(configuration);
+    var redisConn = $"{redisConfig["Host"]}:{redisConfig["Port"]},password={redisConfig["Password"]}";
+    var configurationOptions = ConfigurationOptions.Parse(redisConn, true);
+    return ConnectionMultiplexer.Connect(configurationOptions);
 });
-// Add depen
+
+// Cài đặt các dịch vụ phụ thuộc từ API.AppStarts
 builder.Services.InstallService(builder.Configuration);
+
+// Thêm dịch vụ Controller và Swagger/OpenAPI
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Cấu hình pipeline HTTP request
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+app.UseCors("AllowSpecificOrigins");
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

@@ -22,6 +22,7 @@ namespace Application.DTO.Request
         public string to_phone { get; set; }
         public string to_address { get; set; }
         public string to_ward_name { get; set; }
+        public string to_ward_code { get; set; }
         public string to_district_name { get; set; }
         public string to_province_name { get; set; }
         public int cod_amount { get; set; }
@@ -34,6 +35,9 @@ namespace Application.DTO.Request
         public int pick_station_id { get; set; }
         public int? deliver_station_id { get; set; }
         public int insurance_value { get; set; }
+        public int service_id
+        { get; set; }
+
         public int service_type_id { get; set; }
         public string coupon { get; set; }
         public long pickup_time { get; set; }
@@ -50,7 +54,7 @@ namespace Application.DTO.Request
         public int width { get; set; }
         public int height { get; set; }
         public int weight { get; set; }
-        public Category category { get; set; }
+        public CategoryGHNDTO categorydto { get; set; }
     }
     public class ErrorResponse
     {
@@ -80,7 +84,7 @@ namespace Application.DTO.Request
         public string ExpectedDeliveryTime { get; set; }
         public string OperationPartner { get; set; }  // Add this if it exists in the JSON
     }
-    public class Category
+    public class CategoryGHNDTO
     {
         public string level1 { get; set; }
     }

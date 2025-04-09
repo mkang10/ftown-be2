@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Domain.Entities;
@@ -39,3 +39,4 @@ public partial class Product
 
     public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
 }
+

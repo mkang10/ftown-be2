@@ -1,4 +1,4 @@
-﻿
+
 using Application.Interfaces;
 using Application.UseCases;
 using Domain.Interfaces;
@@ -27,12 +27,29 @@ namespace API.AppStarts
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 
-            //services.AddScoped<IOrderRepository, OrderRepository>();
-            services.AddScoped<IUserManagementService, GetAccountHandler>();
+            services.AddScoped<IImportRepos, InventoryImportRepository>();
+            services.AddScoped<IAuditLogRepos, AuditLogRepository>();
+            services.AddScoped<IDispatchRepos, DispatchRepos>();
+            services.AddScoped<IImportStoreRepos, ImportStoreRepos>();
+            services.AddScoped<IStoreExportRepos, StoreExportRepos>();
+            services.AddScoped<ITransferRepos, TransferRepos>();
+
+            services.AddScoped<ApproveHandler>();
+            services.AddScoped<RejectHandler>();
+            services.AddScoped<GetAllImportHandler>();
+            services.AddScoped<GetImportDetailHandler>();
+  services.AddScoped<IUserManagementService, GetAccountHandler>();
             services.AddScoped<IRoleService, GetRoleHandler>();
+            services.AddScoped<CreateImportHandler>();
+            services.AddScoped<GetWareHouseHandler>();
+            services.AddScoped<TransferHandler>();
+            services.AddScoped<GetAllTransferHandler>();
+
 
 
             services.AddScoped<IUserManagementRepository, UserManagementRepository>();
+
+
             // auto mapper
             services.AddAutoMapper(typeof(AutoMapperConfig).Assembly);
 
@@ -45,3 +62,4 @@ namespace API.AppStarts
 
     }
 }
+

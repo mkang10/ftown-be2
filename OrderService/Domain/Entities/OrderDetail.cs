@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
 
 namespace Domain.Entities;
 
@@ -17,9 +18,8 @@ public partial class OrderDetail
 
     public decimal? DiscountApplied { get; set; }
 
-    public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
-
     public virtual Order Order { get; set; } = null!;
 
     public virtual ProductVariant ProductVariant { get; set; } = null!;
 }
+

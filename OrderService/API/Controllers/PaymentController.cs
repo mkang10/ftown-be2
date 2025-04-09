@@ -79,7 +79,7 @@ namespace API.Controllers
 
 				var orderDetails = order.OrderDetails.ToList();
 
-				var updateStockSuccess = await _inventoryServiceClient.UpdateStockAfterOrderAsync(order.WareHouseId, orderDetails);
+				var updateStockSuccess = await _inventoryServiceClient.UpdateStockAfterOrderAsync((int)order.WareHouseId, orderDetails);
 				if (!updateStockSuccess)
 				{
 					_logger.LogError("Cập nhật tồn kho thất bại cho OrderId: {OrderId}", orderId);
