@@ -7,7 +7,14 @@ using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigins",
+        policy => policy
+            .WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-client-prod.vercel.app/") // Thêm ngu?n m?i
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
 // ??ng ký c?u hình CloudinarySettings
 builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection("CloudinarySettings")
@@ -52,17 +59,25 @@ builder.Services.InstallService(builder.Configuration);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "OrderService API",
+        Version = "v1"
+    });
+});
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "OrderService API v1");
+    c.RoutePrefix = "swagger"; // ho?c "" n?u mu?n swagger ? root
+});
+app.UseCors("AllowSpecificOrigins");
 app.UseHttpsRedirection();
 
 app.UseAuthorization();

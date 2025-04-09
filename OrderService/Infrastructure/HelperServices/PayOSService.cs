@@ -42,23 +42,17 @@ namespace Infrastructure.HelperServices
         public async Task<string?> CreatePayment(int orderId, decimal amount, string paymentMethod)
         {
             var items = new List<ItemData> {
-<<<<<<< HEAD
             new ItemData("Đơn hàng #" + orderId, 1, Convert.ToInt32(amount))
-
-        };
-=======
-    new ItemData("Đơn hàng #" + orderId, 1, Convert.ToInt32(amount))
-
 };
->>>>>>> 3c1520e953ad2c030841dc3a3548245a9687a1f4
-            long orderCode = long.Parse($"{orderId}{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() % 1000000}");
+            //long orderCode = long.Parse($"{orderId}{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() % 1000000}");
+
             var paymentData = new PaymentData(
-                orderCode: orderCode,
+                orderCode: orderId,
                 amount: (int)amount,
                 description: $"Thanh toán đơn hàng {orderId}",
                 items: items,
                 cancelUrl: "http://localhost:7266/api/payment/cancel",
-                returnUrl: $"http://localhost:3000/profile/order"
+                returnUrl: $"https://ftown-client-prod.vercel.app/profile/order"
             );
 
             var createPayment = await _payOS.createPaymentLink(paymentData);
