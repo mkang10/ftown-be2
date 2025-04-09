@@ -1,3 +1,4 @@
+
 ﻿using System;
 using System.Collections.Generic;
 
@@ -61,3 +62,4 @@ public partial class Account
 
     public virtual ICollection<WishList> WishLists { get; set; } = new List<WishList>();
 }
+

@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Application.SignalR;
 using Application.DTO.Request;
+using Microsoft.Extensions.Logging;
 
 namespace Application.UseCases
 {
@@ -15,10 +16,12 @@ namespace Application.UseCases
     {
         private readonly INotificationRepository _notificationRepository;
         private readonly IHubContext<NotificationHub> _hubContext;
-        public SendNotificationHandler(INotificationRepository notificationRepository, IHubContext<NotificationHub> hubContext)
+        private readonly ILogger<SendNotificationHandler> _logger;
+        public SendNotificationHandler(INotificationRepository notificationRepository, IHubContext<NotificationHub> hubContext, ILogger<SendNotificationHandler> logger)
         {
             _notificationRepository = notificationRepository;
             _hubContext = hubContext;
+            _logger = logger;
         }
 
         public async Task<Notification> Handle(SendNotificationRequest request)
@@ -37,9 +40,10 @@ namespace Application.UseCases
 
             await _notificationRepository.AddNotificationAsync(notification);
 
-            // Gửi thông báo real-time qua SignalR
+            _logger.LogInformation("📤 Gửi noti đến userId={AccountId} | title={Title}", request.AccountId, request.Title);
             await _hubContext.Clients.User(request.AccountId.ToString())
                 .SendAsync("ReceiveNotification", request.Title, request.Message);
+
 
             return notification;
         }

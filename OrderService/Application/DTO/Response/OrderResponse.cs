@@ -10,7 +10,7 @@ namespace Application.DTO.Response
     {
         public int OrderId { get; set; }
         public string Status { get; set; } = "Pending";
-        public decimal OrderTotal { get; set; }
+        public decimal SubTotal { get; set; }
         public decimal ShippingCost { get; set; }
         public string PaymentMethod { get; set; } = null!;
         public string? PaymentUrl { get; set; } // Nếu là PAYOS, URL để thanh toán

@@ -1,6 +1,6 @@
+
 ﻿using System;
 using System.Collections.Generic;
-
 namespace Domain.Entities;
 
 public partial class Order
@@ -59,3 +59,4 @@ public partial class Order
 
     public virtual Warehouse? WareHouse { get; set; }
 }
+

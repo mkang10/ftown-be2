@@ -10,7 +10,7 @@ namespace Application.DTO.Response
     public class CheckOutResponse
     {
         public string CheckOutSessionId { get; set; } = null!;
-        public decimal OrderTotal { get; set; }
+        public decimal SubTotal { get; set; }
         public decimal ShippingCost { get; set; }
     
         public List<string> AvailablePaymentMethods { get; set; } = new();
