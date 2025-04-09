@@ -8,11 +8,12 @@ var configuration = builder.Configuration;
 //Add CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigins",
-        policy => policy
-            .WithOrigins("http://localhost:3000", "http://localhost:5000") // Thêm nguồn mới
-            .AllowAnyMethod()
-            .AllowAnyHeader());
+    options.AddPolicy("AllowSpecificOrigins", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-admin.vercel.app/") // Thêm nguồn mới
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
 });
 
 // Add depen
