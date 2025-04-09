@@ -9,7 +9,7 @@ public partial class ShopManagerDetail
 
     public int AccountId { get; set; }
 
-    public int StoreId { get; set; }
+    public int WarehouseId { get; set; }
 
     public DateTime? ManagedDate { get; set; }
 

@@ -37,16 +37,20 @@ namespace Infrastructure.HelperServices
             }
 
         }
-
-        public async Task<string?> CreatePayment(int orderId, decimal amount, string paymentMethod)
+        public class PaymentCreationResult
+        {
+            public string? CheckoutUrl { get; set; }
+            public long OrderCode { get; set; }
+        }
+        public async Task<PaymentCreationResult?> CreatePayment(int orderId, decimal amount, string paymentMethod)
         {
             var items = new List<ItemData> {
             new ItemData("Đơn hàng #" + orderId, 1, Convert.ToInt32(amount))
 
         };
-
+            long orderCode = long.Parse($"{orderId}{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() % 1000000}");
             var paymentData = new PaymentData(
-                orderCode: orderId,
+                orderCode: orderCode,
                 amount: (int)amount,
                 description: $"Thanh toán đơn hàng {orderId}",
                 items: items,
@@ -55,7 +59,13 @@ namespace Infrastructure.HelperServices
             );
 
             var createPayment = await _payOS.createPaymentLink(paymentData);
-            return createPayment?.checkoutUrl;
+            if (createPayment == null) return null;
+
+            return new PaymentCreationResult
+            {
+                CheckoutUrl = createPayment.checkoutUrl,
+                OrderCode = orderCode
+            };
         }
 
         public async Task<PaymentLinkInformation?> GetPaymentStatus(int orderId)

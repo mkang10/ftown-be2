@@ -16,16 +16,18 @@ namespace Application.UseCases
 		private readonly ICustomerProfileDataService _customerProfileDataService;
 		private readonly IProfileRepository _profileRepository;
 		private readonly IMapper _mapper;
-
-		public EditProfileHandler(
+        private readonly ICloudinaryService _cloudinaryService;
+        public EditProfileHandler(
 			ICustomerProfileDataService customerProfileDataService,
 			IProfileRepository profileRepository,
-			IMapper mapper)
+			IMapper mapper,
+            ICloudinaryService cloudinaryService)
 		{
 			_customerProfileDataService = customerProfileDataService;
 			_profileRepository = profileRepository;
 			_mapper = mapper;
-		}
+            _cloudinaryService = cloudinaryService;
+        }
 
 		public async Task<EditProfileResponse> EditProfile(int accountId, EditProfileRequest request)
 		{

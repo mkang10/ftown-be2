@@ -39,6 +39,8 @@ public partial class Order
 
     public string? Province { get; set; }
 
+    public string? Ghnid { get; set; }
+
     public virtual Account Account { get; set; } = null!;
 
     public virtual ICollection<DeliveryTracking> DeliveryTrackings { get; set; } = new List<DeliveryTracking>();
@@ -53,5 +55,5 @@ public partial class Order
 
     public virtual ShippingAddress? ShippingAddress { get; set; }
 
-    public virtual Warehouse? WareHouse { get; set; }
+    public virtual Warehouse WareHouse { get; set; } = null!;
 }

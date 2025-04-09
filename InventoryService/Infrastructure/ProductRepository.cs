@@ -90,7 +90,7 @@ namespace Infrastructure
                 .ToListAsync();
         }
 
-        // Cập nhật truy vấn lấy tồn kho từ StoreStock
+        
         public async Task<Dictionary<int, int>> GetProductVariantsStockAsync(List<int> variantIds)
         {
             return await _context.WareHousesStocks
@@ -184,6 +184,19 @@ namespace Infrastructure
 				.ToListAsync();
 		}
 
+        public async Task<List<Product>> GetProductsByCategoryNameAsync(string categoryName)
+        {
+            return await _context.Products
+                .Where(p =>
+                    (p.Status == ProductStatus.ActiveOnline.ToString() ||
+                     p.Status == ProductStatus.ActiveBoth.ToString()) &&
+                    p.Category.Name.ToLower() == categoryName.ToLower())
+                .Include(p => p.Category)
+                .Include(p => p.ProductVariants)
+                .Include(p => p.ProductImages)
+                .ToListAsync();
+        }
 
-	}
+
+    }
 }

@@ -9,7 +9,7 @@ namespace API.AppStarts
         public AutoMapperConfig()
         {
             CreateMap<Order, OrderResponse>()
-            .ForMember(dest => dest.OrderTotal, opt => opt.MapFrom(src => src.OrderTotal ?? 0))
+            .ForMember(dest => dest.SubTotal, opt => opt.MapFrom(src => src.OrderTotal ?? 0))
             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.OrderDetails));
 
             CreateMap<OrderDetail, OrderItemResponse>()
@@ -31,9 +31,6 @@ namespace API.AppStarts
 
             CreateMap<OrderItemResponse, ReturnItemResponse>()
             .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.PriceAtPurchase)); // Map giá lúc mua
-            //.ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.PriceAtPurchase * src.Quantity)) // Tổng giá tiền
-            //.ForMember(dest => dest.ReturnReason, opt => opt.Ignore()) // Không có sẵn trong OrderItemResponse
-            //.ForMember(dest => dest.ReturnOption, opt => opt.Ignore()); // Không có sẵn trong OrderItemResponse
         }
     }
 }

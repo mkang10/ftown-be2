@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure
+namespace Infrastructure.HelperServices
 {
     public class CloudinaryService : ICloudinaryService
     {
@@ -43,7 +43,7 @@ namespace Infrastructure
                 var uploadParams = new ImageUploadParams
                 {
                     File = new FileDescription(file.FileName, stream),
-                    Folder = "Product_Images"
+                    Folder = "Images"
                 };
                 uploadResult = await _cloudinary.UploadAsync(uploadParams);
             }
@@ -52,7 +52,7 @@ namespace Infrastructure
                 var uploadParams = new VideoUploadParams
                 {
                     File = new FileDescription(file.FileName, stream),
-                    Folder = "Product_Images"
+                    Folder = "Images"
                 };
                 uploadResult = await _cloudinary.UploadAsync(uploadParams);
             }
@@ -61,7 +61,7 @@ namespace Infrastructure
                 var uploadParams = new RawUploadParams
                 {
                     File = new FileDescription(file.FileName, stream),
-                    Folder = "Product_Images"
+                    Folder = "Images"
                 };
                 uploadResult = await _cloudinary.UploadAsync(uploadParams);
             }
