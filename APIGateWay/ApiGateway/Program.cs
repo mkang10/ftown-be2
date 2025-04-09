@@ -11,11 +11,15 @@ var builder = WebApplication.CreateBuilder(args);
 // ??c c?u hình t? ocelot.json
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowLocalhost",
-        builder => builder.WithOrigins("http://localhost:3000" , "http://10.87.12.203:8081")
-                          .AllowAnyMethod()
-                          .AllowAnyHeader());
-});
+    options.AddPolicy("AllowSpecificOrigins", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-client-prod.vercel.app")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials(); // N?u dùng cookie ho?c auth header
+    });
+}); 
 builder.Configuration.SetBasePath(builder.Environment.ContentRootPath)
                      .AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
 builder.Services.AddOcelot();
@@ -26,7 +30,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 app.UseRouting();
-
+app.UseCors("AllowSpecificOrigins");
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapGet("/", async context =>
@@ -42,7 +46,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseCors("AllowLocalhost");
+
 
 await app.UseOcelot();
 
