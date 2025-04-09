@@ -1,4 +1,6 @@
-﻿using Application.DTO.Response;
+﻿using Application.DTO.Request;
+using Application.DTO.Response;
+using Application.Enums;
 using Application.Interfaces;
 using Application.UseCases;
 using AutoMapper;
@@ -21,13 +23,15 @@ namespace Infrastructure.HelperServices
 		private readonly IMapper _mapper;
 		private readonly ILogger<OrderProcessingHelper> _logger;
 		private readonly AuditLogHandler _auditLogHandler;
-		public OrderProcessingHelper(
+        private readonly INotificationClient _notificationClient;
+        public OrderProcessingHelper(
 			IPaymentRepository paymentRepository,
 			IOrderRepository orderRepository,
 			ICustomerServiceClient customerServiceClient,
 			IMapper mapper,
 			ILogger<OrderProcessingHelper> logger,
-			AuditLogHandler auditLogHandler)
+			AuditLogHandler auditLogHandler,
+            INotificationClient notificationClient)
 		{
 			_paymentRepository = paymentRepository;
 			_orderRepository = orderRepository;
@@ -35,7 +39,8 @@ namespace Infrastructure.HelperServices
 			_mapper = mapper;
 			_logger = logger;
 			_auditLogHandler = auditLogHandler;
-		}
+            _notificationClient = notificationClient;
+        }
 
 		public async Task SavePaymentAndOrderDetailsAsync(Order order, List<OrderDetail> orderDetails, string paymentMethod, decimal totalAmount, decimal shippingCost)
 		{
@@ -61,23 +66,79 @@ namespace Infrastructure.HelperServices
 				_logger.LogWarning("Không thể xóa sản phẩm khỏi giỏ hàng sau khi đặt hàng. AccountId: {AccountId}", accountId);
 			}
 		}
-		public async Task LogPendingConfirmedStatusAsync(int orderId, int accountId)
-		{
-			await _auditLogHandler.LogOrderStatusChangeAsync(
-				orderId,
-				"Pending Confirmed",
-				accountId,
-				"Đơn hàng đang chờ xác nhận."
-			);
-		}
+        public async Task LogPendingConfirmedStatusAsync(int orderId, int accountId)
+        {
+            await _auditLogHandler.LogOrderActionAsync(
+                orderId,
+                AuditOperation.CreateOrder,
+                new
+                {
+                    InitialStatus = OrderStatus.PendingConfirmed.ToString()
+                },
+                accountId,
+                "Đặt hàng thành công và đang đợi xác nhận ."
+            );
+        }
+        public async Task LogPendingPaymentStatusAsync(int orderId, int accountId)
+        {
+            await _auditLogHandler.LogOrderActionAsync(
+                orderId,
+                AuditOperation.CreateOrder,
+                new
+                {
+                    InitialStatus = OrderStatus.PendingPayment.ToString()
+                },
+                accountId,
+                "Đặt hàng thành công và đang đợi thanh toán."
+            );
+        }
 
-		public OrderResponse BuildOrderResponse(Order order, string paymentMethod, string? paymentUrl = null)
+        public OrderResponse BuildOrderResponse(Order order, string paymentMethod, string? paymentUrl = null)
 		{
 			var response = _mapper.Map<OrderResponse>(order);
 			response.PaymentMethod = paymentMethod;
 			response.PaymentUrl = paymentUrl;
 			return response;
 		}
-	}
+        public async Task AssignOrderToManagerAsync(int orderId, int assignedBy)
+        {
+            const int DefaultShopManagerId = 2;
+
+            var assignment = new OrderAssignment
+            {
+                OrderId = orderId,
+                ShopManagerId = DefaultShopManagerId,
+                AssignmentDate = DateTime.UtcNow,
+                Comments = "Tự động phân công đơn hàng khi tạo."
+            };
+
+            await _orderRepository.CreateAssignmentAsync(assignment);
+
+            await _auditLogHandler.LogOrderActionAsync(
+                orderId,
+                AuditOperation.AssignToManager,
+                new { ShopManagerID = DefaultShopManagerId },
+                assignedBy,
+                "Đơn hàng được phân công cho Shop Manager mặc định."
+            );
+        }
+
+        public async Task SendOrderNotificationAsync(int accountId, int orderId, string title, string message)
+        {
+            var notificationRequest = new SendNotificationRequest
+            {
+                AccountId = accountId,
+                Title = title,
+                Message = message,
+                NotificationType = "Order",
+                TargetId = orderId,
+                TargetType = "Order"
+            };
+
+            await _notificationClient.SendNotificationAsync(notificationRequest);
+        }
+
+
+    }
 
 }

@@ -68,7 +68,7 @@ namespace Infrastructure
             await _context.SaveChangesAsync();
         }
 
-        // Xóa một sản phẩm khỏi giỏ hàng (DB)
+        // Xóa hoàn toàn một sản phẩm khỏi giỏ hàng (DB)
         public async Task RemoveFromCartAsync(int accountId, int productVariantId)
         {
             var shoppingCart = await _context.ShoppingCarts
@@ -82,15 +82,7 @@ namespace Infrastructure
 
             if (cartItem == null) return;
 
-            if (cartItem.Quantity > 1)
-            {
-                cartItem.Quantity--;
-                _context.CartItems.Update(cartItem);
-            }
-            else
-            {
-                _context.CartItems.Remove(cartItem);
-            }
+            _context.CartItems.Remove(cartItem);
 
             await _context.SaveChangesAsync();
         }
@@ -162,6 +154,21 @@ namespace Infrastructure
             // ❌ Không xóa ShoppingCart (Không cần kiểm tra giỏ hàng trống)
         }
 
+        public async Task UpdateCartItemQuantityAsync(int accountId, int productVariantId, int newQuantity)
+        {
+            var cart = await _context.ShoppingCarts
+                .Include(c => c.CartItems)
+                .FirstOrDefaultAsync(c => c.AccountId == accountId);
+
+            if (cart == null) return;
+
+            var item = cart.CartItems.FirstOrDefault(ci => ci.ProductVariantId == productVariantId);
+            if (item != null)
+            {
+                item.Quantity = newQuantity;
+                await _context.SaveChangesAsync();
+            }
+        }
 
     }
 }

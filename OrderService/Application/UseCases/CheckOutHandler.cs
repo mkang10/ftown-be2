@@ -59,8 +59,8 @@ namespace Application.UseCases
             if (orderItems == null || !orderItems.Any()) return null;
 
             // Tính tổng tiền sản phẩm
-            var totalAmount = orderItems.Sum(item => item.DiscountedPrice * item.Quantity);
-            if (totalAmount <= 0) return null;
+            var subTotal = orderItems.Sum(item => item.DiscountedPrice * item.Quantity);
+            if (subTotal <= 0) return null;
 
             // Tính phí vận chuyển nếu có địa chỉ mặc định, ngược lại gán = 0
             decimal shippingCost = 0;
@@ -78,7 +78,7 @@ namespace Application.UseCases
             var checkOutData = new CheckOutData
             {
                 AccountId = request.AccountId,
-                OrderTotal = totalAmount,
+                SubTotal = subTotal,
                 ShippingCost = shippingCost,
                 ShippingAddressId = shippingAddressId,
                 Items = orderItems
@@ -94,7 +94,7 @@ namespace Application.UseCases
             return new CheckOutResponse
             {
                 CheckOutSessionId = checkOutSessionId,
-                OrderTotal = totalAmount,
+                SubTotal = subTotal,
                 ShippingCost = shippingCost,
                 AvailablePaymentMethods = availablePaymentMethods,
                 ShippingAddress = defaultAddress, // Có thể null

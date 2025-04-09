@@ -68,9 +68,7 @@ namespace API.Controllers
 
 				await _orderRepository.UpdateOrderStatusAsync(orderId, "Paid");
 				_logger.LogInformation("Cập nhật trạng thái đơn hàng {OrderId} thành Paid thành công.", orderId);
-				payment.PaymentStatus = "Paid";
-				await _paymentRepository.UpdatePaymentAsync(payment);
-				await _orderRepository.UpdateOrderStatusAsync(orderId, "Paid");
+				
 
 				var order = await _orderRepository.GetOrderByIdAsync(orderId);
 				if (order == null)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Domain.Entities;
@@ -27,3 +27,4 @@ public partial class ShopManagerDetail
 
     public virtual ICollection<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
 }
+
