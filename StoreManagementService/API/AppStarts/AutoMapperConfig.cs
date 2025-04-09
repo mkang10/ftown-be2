@@ -4,6 +4,9 @@ using Domain.DTO.Request;
 using Domain.DTO.Response;
 using Domain.DTO.Response.Application.Imports.Dto;
 using Domain.Entities;
+using static Domain.DTO.Response.OrderAssigmentRes;
+using static Domain.DTO.Response.OrderDoneRes;
+using static Domain.DTO.Response.OrderDTO;
 
 namespace API.AppStarts
 {
@@ -96,9 +99,19 @@ namespace API.AppStarts
             .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.StaffDetail != null ? src.StaffDetail.Account.FullName : null))
             .ForMember(dest => dest.DispatchId, opt => opt.MapFrom(src => src.DispatchDetail != null ? src.DispatchDetail.DispatchId : 0))
 ;
+            CreateMap<Order, OrderDTO>();
+            CreateMap<OrderAssignment, OrderAssignmentDTO>();
 
-        
+            CreateMap<AssignStaffDTO, OrderAssignment>()
+            .ForMember(dest => dest.StaffId, opt => opt.MapFrom(src => src.StaffId))
+            .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.Comments));
+
+            CreateMap<OrderAssignment, OrderAssignmentResponseDTO>();
+            CreateMap<Order, OrderResponseDTO>();
+
         }
+
+
 
 
 

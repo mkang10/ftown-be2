@@ -32,6 +32,7 @@ namespace API.AppStarts
             services.AddScoped<IAuditLogRepos, AuditLogRepos>();
             services.AddScoped<IWareHouseStockRepos, WareHouseStockRepos>();
             services.AddScoped<IDispatchRepos, DispatchRepos>();
+            services.AddScoped<IOrderRepository, OrderRepository>();
 
 
             services.AddScoped<CreateImportHandler>();
@@ -49,6 +50,8 @@ namespace API.AppStarts
 
             services.AddScoped<GetAllStaffImportHandler>();
             services.AddScoped<GetWarehouseStockHandler>();
+            services.AddScoped<GetOrderHandler>();
+            services.AddScoped<CompletedOrderHandler>();
 
 
 

@@ -1,4 +1,6 @@
-﻿using Domain.DTO.Response;
+﻿using AutoMapper;
+using Domain.DTO.Request;
+using Domain.DTO.Response;
 using Domain.DTO.Response.Domain.DTO.Response;
 using Domain.Interfaces;
 using System;
@@ -6,6 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Domain.DTO.Response.OrderAssigmentRes;
+using static Domain.DTO.Response.OrderDTO;
 
 namespace Application.UseCases
 {
@@ -14,13 +18,17 @@ namespace Application.UseCases
         private readonly IImportRepos _invenRepos;
         private readonly IStaffDetailRepository _staffDetailRepos;
         private readonly IDispatchRepos _dispatchRepos;
+        private readonly IOrderRepository _orderRepository;
+        private readonly IMapper _mapper;
 
-        public AssignStaffHandler(IImportRepos invenRepos,
+        public AssignStaffHandler(IMapper mapper, IOrderRepository orderRepository ,IImportRepos invenRepos,
                                       IStaffDetailRepository staffDetailRepos, IDispatchRepos dispatchRepos)
         {
             _invenRepos = invenRepos;
             _staffDetailRepos = staffDetailRepos;
             _dispatchRepos = dispatchRepos;
+            _orderRepository = orderRepository;
+            _mapper = mapper;
         }
 
 
@@ -88,6 +96,33 @@ namespace Application.UseCases
             await _dispatchRepos.UpdateAsync(dispatch);
             return new ResponseDTO<bool>(true, true, "Staff assigned and statuses updated successfully");
         }
+
+        public async Task<ResponseDTO<OrderAssignmentResponseDTO>> AssignStaffAsync(AssignStaffDTO dto)
+        {
+            var assignment = await _orderRepository.GetByOrderIdAsync(dto.OrderId);
+            if (assignment == null)
+            {
+                return new ResponseDTO<OrderAssignmentResponseDTO>(
+                    null!,
+                    false,
+                    $"Không tìm thấy phân công nào cho OrderId = {dto.OrderId}"
+                );
+            }
+
+            _mapper.Map(dto, assignment);
+            assignment.Order.Status = "Confirmed";
+
+            await _orderRepository.SaveChangesAsync();
+
+            var responseDto = _mapper.Map<OrderAssignmentResponseDTO>(assignment);
+            return new ResponseDTO<OrderAssignmentResponseDTO>(
+                responseDto,
+                true,
+                "Gán nhân viên thành công."
+            );
+        }
+
+        
 
     }
 }

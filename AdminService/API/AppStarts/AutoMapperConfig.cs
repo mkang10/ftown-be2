@@ -1,3 +1,4 @@
+using Application.DTO.Request;
 using AutoMapper;
 using Domain.DTO.Request;
 using Domain.DTO.Response;
@@ -38,13 +39,20 @@ namespace API.AppStarts
 
             // Mapping từ entity ImportStoreDetail sang InventoryImportStoreDetailDto
             CreateMap<ImportStoreDetail, InventoryImportStoreDetailDto>()
-                .ForMember(dest => dest.StoreId,
-                           opt => opt.MapFrom(src => src.Warehouse.WarehouseId))
-                .ForMember(dest => dest.StoreName,
-                           opt => opt.MapFrom(src => src.Warehouse.WarehouseName))
-                .ForMember(dest => dest.StaffName,
-                           opt => opt.MapFrom(src => src.StaffDetail != null ? src.StaffDetail.Account.FullName : null));
-                            //CreateMap<Account, AccountDTO>();
+    .ForMember(dest => dest.StoreId,
+               opt => opt.MapFrom(src => src.Warehouse.WarehouseId))
+    .ForMember(dest => dest.StoreName,
+               opt => opt.MapFrom(src => src.Warehouse.WarehouseName))
+    .ForMember(dest => dest.StaffName,
+               opt => opt.MapFrom(src => src.StaffDetail != null ? src.StaffDetail.Account.FullName : null))
+             .ForMember(dest => dest.ActualQuantity,
+               opt => opt.MapFrom(src => src.ActualReceivedQuantity));
+
+
+
+            //opt => opt.MapFrom(src => src.StaffDetail != null ? src.StaffDetail.Account.FullName : null))
+            //    .ForMember(dest => dest.ActualQuantity,
+            //               opt => opt.MapFrom(src => src.ActualReceivedQuantity));
             CreateMap<Account, UserRequestDTO>().ReverseMap();
             CreateMap<Account, BanUserRequestDTO>().ReverseMap();
             CreateMap<Account, CreateUserRequestWithPasswordDTO>().ReverseMap();
@@ -52,11 +60,6 @@ namespace API.AppStarts
 
             CreateMap<Role, RoleRequestDTO>().ReverseMap();
             CreateMap<Role, RoleCreateRequestDTO>().ReverseMap();
-
-                           opt => opt.MapFrom(src => src.StaffDetail != null ? src.StaffDetail.Account.FullName : null))
-                .ForMember(dest => dest.ActualQuantity,
-                           opt => opt.MapFrom(src => src.ActualReceivedQuantity));
-
             CreateMap<AuditLog, AuditLogRes>();
 
             // --- Mapping từ Request DTO sang Entity ---
@@ -86,7 +89,7 @@ namespace API.AppStarts
              .ForMember(dest => dest.TotalCost, opt => opt.Ignore())
              .ForMember(dest => dest.ApprovedDate, opt => opt.Ignore())
              .ForMember(dest => dest.CompletedDate, opt => opt.Ignore())
-             .ForMember(dest => dest.ImportDetails, opt => opt.MapFrom(src => src.ImportDetails))
+             .ForMember(dest => dest.ImportDetails, opt => opt.MapFrom(src => src.ImportDetails))   
              .ForMember(dest => dest.OriginalImportId, opt => opt.MapFrom(src => src.OriginalImportId));
 
             CreateMap<SupplementImportDetailDto, ImportDetail>()
