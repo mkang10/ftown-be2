@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+
+using Domain.Entities;
 
 namespace Infrastructure.DBContext;
 using System;
@@ -1171,3 +1172,4 @@ public partial class FtownContext : DbContext
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
+
