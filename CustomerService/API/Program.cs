@@ -28,7 +28,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 builder.Services.InstallService(builder.Configuration);
 builder.Services.AddHttpClient<IInventoryServiceClient, InventoryServiceClient>(client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7265/api/");
+    client.BaseAddress = new Uri("https://inventoryservice123.azurewebsites.net/api/");
 });
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -39,11 +39,11 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseHttpsRedirection();
 
