@@ -45,5 +45,10 @@ namespace Infrastructure.Repositories
                 .Select(p => p.PaymentMethod)
                 .FirstOrDefaultAsync();
         }
+        public async Task<Payment?> GetPaymentByOrderCodeAsync(long orderCode)
+        {
+            return await _context.Payments
+                .FirstOrDefaultAsync(p => p.OrderCode == orderCode);
+        }
     }
 }

@@ -9,6 +9,6 @@ namespace Application.Interfaces
 {
     public interface IPayOSService
     {
-        Task<string?> CreatePayment(int orderId, decimal amount, string paymentMethod);
+        Task<CreatePaymentResponse?> CreatePayment(int orderId, decimal amount, string paymentMethod);
     }
 }

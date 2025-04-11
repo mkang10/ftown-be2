@@ -42,23 +42,31 @@ namespace Infrastructure.HelperServices
             _notificationClient = notificationClient;
         }
 
-		public async Task SavePaymentAndOrderDetailsAsync(Order order, List<OrderDetail> orderDetails, string paymentMethod, decimal totalAmount, decimal shippingCost)
-		{
-			var payment = new Payment
-			{
-				OrderId = order.OrderId,
-				PaymentMethod = paymentMethod,
-				PaymentStatus = "Pending",
-				Amount = totalAmount + shippingCost,
-				TransactionDate = DateTime.UtcNow
-			};
+        public async Task SavePaymentAndOrderDetailsAsync(
+                                                            Order order,
+                                                            List<OrderDetail> orderDetails,
+                                                            string paymentMethod,
+                                                            decimal totalAmount,
+                                                            decimal shippingCost,
+                                                            long? orderCode = null
+                                                        )
+        {
+            var payment = new Payment
+            {
+                OrderId = order.OrderId,
+                PaymentMethod = paymentMethod,
+                PaymentStatus = "Pending",
+                Amount = totalAmount + shippingCost,
+                TransactionDate = DateTime.UtcNow,
+                OrderCode = orderCode 
+            };
 
-			await _paymentRepository.SavePaymentAsync(payment);
-			await _orderRepository.SaveOrderDetailsAsync(orderDetails);
-			order.OrderDetails = orderDetails;
-		}
+            await _paymentRepository.SavePaymentAsync(payment);
+            await _orderRepository.SaveOrderDetailsAsync(orderDetails);
+            order.OrderDetails = orderDetails;
+        }
 
-		public async Task ClearCartAsync(int accountId, List<int> productVariantIds)
+        public async Task ClearCartAsync(int accountId, List<int> productVariantIds)
 		{
 			var success = await _customerServiceClient.ClearCartAfterOrderAsync(accountId, productVariantIds);
 			if (!success)
@@ -102,7 +110,7 @@ namespace Infrastructure.HelperServices
 		}
         public async Task AssignOrderToManagerAsync(int orderId, int assignedBy)
         {
-            const int DefaultShopManagerId = 2;
+            const int DefaultShopManagerId = 1;
 
             var assignment = new OrderAssignment
             {
