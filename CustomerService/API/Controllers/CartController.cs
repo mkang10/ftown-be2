@@ -46,18 +46,30 @@ namespace API.Controllers
 
         // Xóa/bớt sản phẩm khỏi giỏ hàng theo productVariantId
         [HttpDelete("{accountId}/remove/{productVariantId}")]
-        public async Task<IActionResult> RemoveCartItem(int accountId, int productVariantId)
+        public async Task<ActionResult<ResponseDTO<bool>>> RemoveCartItem(int accountId, int productVariantId)
         {
-            await _cartHandler.RemoveCartItem(accountId, productVariantId);
-            return Ok(new { message = "Đã xóa/giảm số lượng sản phẩm khỏi giỏ hàng thành công." });
+            var response = await _cartHandler.RemoveCartItem(accountId, productVariantId);
+
+            if (!response.Status)
+            {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
         }
 
         // Xóa toàn bộ giỏ hàng của tài khoản
         [HttpDelete("{accountId}/clear")]
-        public async Task<IActionResult> ClearCart(int accountId)
+        public async Task<ActionResult<ResponseDTO<bool>>> ClearCart(int accountId)
         {
-            await _cartHandler.ClearCart(accountId);
-            return Ok(new { message = "Giỏ hàng đã được xóa thành công." });
+            var response = await _cartHandler.ClearCart(accountId);
+
+            if (!response.Status)
+            {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
         }
 
         // Đồng bộ giỏ hàng (trên Redis) sang Database

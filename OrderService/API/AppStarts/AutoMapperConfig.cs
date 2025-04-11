@@ -2,6 +2,7 @@
 using Application.DTO.Response;
 using AutoMapper;
 using Domain.Entities;
+using Infrastructure.HelperServices.Models;
 
 namespace API.AppStarts
 {
@@ -28,7 +29,7 @@ namespace API.AppStarts
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.RecipientName))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.RecipientPhone));
-
+            CreateMap<PayOSCreateResult, CreatePaymentResponse>();
 
             CreateMap<OrderItemResponse, ReturnItemResponse>()
             .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.PriceAtPurchase)); // Map giá lúc mua

@@ -136,22 +136,38 @@ namespace Application.UseCases
         }
 
         // --- Remove Cart Item ---
-        public async Task RemoveCartItem(int accountId, int productVariantId)
+        public async Task<ResponseDTO<bool>> RemoveCartItem(int accountId, int productVariantId)
         {
-            // Cập nhật DB
-            await _cartRepository.RemoveFromCartAsync(accountId, productVariantId);
-            // Xóa cache hoặc cập nhật lại cache nếu cần
-            await _redisCacheService.RemoveCacheAsync(GetCartKey(accountId));
+            try
+            {
+                await _cartRepository.RemoveFromCartAsync(accountId, productVariantId);
+                await _redisCacheService.RemoveCacheAsync(GetCartKey(accountId));
+
+                return new ResponseDTO<bool>(true, true, "Xóa sản phẩm khỏi giỏ hàng thành công.");
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO<bool>(false, false, $"Đã xảy ra lỗi khi xóa sản phẩm: {ex.Message}");
+            }
         }
 
+
         // --- Clear Cart ---
-        public async Task ClearCart(int accountId)
+        public async Task<ResponseDTO<bool>> ClearCart(int accountId)
         {
-            // Xóa giỏ hàng trong DB
-            await _cartRepository.ClearCartInDatabase(accountId);
-            // Xóa cache
-            await _redisCacheService.RemoveCacheAsync(GetCartKey(accountId));
+            try
+            {
+                await _cartRepository.ClearCartInDatabase(accountId);
+                await _redisCacheService.RemoveCacheAsync(GetCartKey(accountId));
+
+                return new ResponseDTO<bool>(true, true, "Đã xóa toàn bộ giỏ hàng.");
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO<bool>(false, false, $"Đã xảy ra lỗi khi xóa giỏ hàng: {ex.Message}");
+            }
         }
+
 
         // --- Sync Cart to Database ---
         public async Task SyncCartToDatabase(int accountId)

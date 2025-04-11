@@ -10,12 +10,16 @@ var configuration = builder.Configuration;
 //Add CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigins",
-        policy => policy
-            .WithOrigins("http://localhost:3000", "http://localhost:5000") // Thêm nguồn mới
+    options.AddPolicy("AllowSpecificOrigins", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-client-product.vercel.app", "https://ftown-admin.vercel.app", "https://ftown-admin-dhww.vercel.app")
             .AllowAnyMethod()
-            .AllowAnyHeader());
+            .AllowAnyHeader()
+            .AllowCredentials(); // N?u dùng cookie ho?c auth header
+    });
 });
+
 
 builder.Services.AddHttpClient(); 
 
@@ -26,7 +30,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Demo API", Version = "v1" });
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "AuthService API", Version = "v1" });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -63,11 +67,12 @@ builder.Services.AddSwaggerGen(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "AuthService API v1");
+    c.RoutePrefix = "swagger";
+});
 app.UseCors("AllowSpecificOrigins");
 
 
