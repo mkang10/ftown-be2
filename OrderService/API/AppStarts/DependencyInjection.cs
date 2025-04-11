@@ -31,11 +31,11 @@ namespace API.AppStarts
             
             services.AddHttpClient<ICustomerServiceClient, CustomerServiceClient>(client =>
             {
-                client.BaseAddress = new Uri("https://customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net/api/");
+                client.BaseAddress = new Uri("https://localhost:7264/api/");
             });
             services.AddHttpClient<IInventoryServiceClient, InventoryServiceClient>(client =>
             {
-                client.BaseAddress = new Uri("https://inventoryservice123.azurewebsites.net/api/");
+                client.BaseAddress = new Uri("https://localhost:7265/api/");
             });
             services.AddHttpClient<INotificationClient, NotificationServiceClient>(client =>
             {

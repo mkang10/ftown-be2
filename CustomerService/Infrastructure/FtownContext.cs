@@ -112,17 +112,9 @@ public partial class FtownContext : DbContext
     public virtual DbSet<WishListItem> WishListItems { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-<<<<<<< HEAD
 
-    
-        => optionsBuilder.UseSqlServer("Server=funkytown.database.windows.net;Database=Ftown;User Id=funkytown;Password=Tuongvy2112;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("Server=DESKTOP-B4F7PCV\\SQLEXPRESS_2022;Database=Ftown;User Id=sa;Password=12345;TrustServerCertificate=True;");
 
-=======
-    
-        => optionsBuilder.UseSqlServer("Server=funkytown.database.windows.net;Database=Ftown;User Id=funkytown;Password=Tuongvy2112;TrustServerCertificate=True;");
-
->>>>>>> b950644363947e1736f586cf2f15f9bb3533f722
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Account>(entity =>

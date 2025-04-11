@@ -36,14 +36,14 @@ namespace Application.UseCases
             }
 
             // Cập nhật trạng thái
-            order.Status = "Completed";
+            order.Status = "completed";
 
             // Lưu vào DB
             await _orderRepo.SaveChangesAsync();
 
             // Gọi API GHN sau khi cập nhật thành công
             using var httpClient = new HttpClient();
-            var apiUrl = $"http://localhost:5098/api/ghn/create-order/{orderId}";
+            var apiUrl = $"https://ftorderservicewebapi.azurewebsites.net/api/ghn/create-order/{orderId}";
 
             try
             {

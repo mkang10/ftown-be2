@@ -5,7 +5,17 @@ using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigins", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-client-product.vercel.app")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials(); // N?u dùng cookie ho?c auth header
+    });
+});
 // Add services to the container.
 var redisConfig = builder.Configuration.GetSection("Redis");
 var redisConnection = $"{redisConfig["Host"]}:{redisConfig["Port"]},password={redisConfig["Password"]}";
@@ -28,7 +38,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 builder.Services.InstallService(builder.Configuration);
 builder.Services.AddHttpClient<IInventoryServiceClient, InventoryServiceClient>(client =>
 {
-    client.BaseAddress = new Uri("https://inventoryservice123.azurewebsites.net/api/");
+    client.BaseAddress = new Uri("https://localhost:7265/api/");
 });
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -44,6 +54,8 @@ var app = builder.Build();
     app.UseSwagger();
     app.UseSwaggerUI();
 //}
+app.UseCors("AllowSpecificOrigins");
+
 
 app.UseHttpsRedirection();
 
