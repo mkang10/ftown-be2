@@ -15,6 +15,8 @@ builder.Services.AddCors(options =>
             .AllowCredentials(); // N?u dùng cookie ho?c auth header
     });
 });
+var connStr = builder.Configuration.GetConnectionString("DBDefault");
+Console.WriteLine(">> ?ang dùng connection string: " + connStr);
 // Add services to the container
 var redisConfig = builder.Configuration.GetSection("Redis");
 string redisConnectionString = $"{redisConfig["Host"]}:{redisConfig["Port"]},password={redisConfig["Password"]}";

@@ -125,10 +125,10 @@
       "DownstreamPathTemplate": "/api/products/view-all",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
-        {
-          "Host": "inventoryservice123.azurewebsites.net",
-          "Port": 443
-        },
+        //{
+        //  "Host": "inventoryservice123.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7265
@@ -161,10 +161,10 @@
       "DownstreamPathTemplate": "/api/products/{productId}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
-        {
-          "Host": "inventoryservice123.azurewebsites.net",
-          "Port": 443
-        },
+        //{
+        //  "Host": "inventoryservice123.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7265
@@ -473,6 +473,55 @@
       "UpstreamPathTemplate": "/notificationHub",
       "UpstreamHttpMethod": [ "Get", "Post" ]
     },
+    {
+      "DownstreamPathTemplate": "/api/cart/{accountId}/remove/{productVariantId}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7264
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7264
+        }
+      ],
+      "UpstreamPathTemplate": "/cart/{accountId}/remove/{productVariantId}",
+      "UpstreamHttpMethod": [ "Delete" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/cart/{accountId}/clear",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7264
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7264
+        }
+      ],
+      "UpstreamPathTemplate": "/cart/{accountId}/clear",
+      "UpstreamHttpMethod": [ "Delete" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/cart/{accountId}/change-quantity",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7264
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7264
+        }
+      ],
+      "UpstreamPathTemplate": "/cart/{accountId}/change-quantity",
+      "UpstreamHttpMethod": [ "Post" ]
+    },
+
 
     {
       "DownstreamPathTemplate": "/api/order/{everything}",
