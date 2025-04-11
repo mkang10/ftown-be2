@@ -154,15 +154,19 @@ namespace Application.UseCases
                 if (request.PaymentMethod == "PAYOS")
                 {
                     // Gọi PayOS tạo link thanh toán
-                    var paymentUrl = await _payOSService.CreatePayment(newOrder.OrderId, subTotal + shippingCost, request.PaymentMethod);
-                    if (string.IsNullOrEmpty(paymentUrl))
+                    // Gọi PayOS tạo link thanh toán
+                    var payosInfraResult = await _payOSService.CreatePayment(newOrder.OrderId, subTotal + shippingCost, request.PaymentMethod);
+                    if (payosInfraResult == null || string.IsNullOrEmpty(payosInfraResult.CheckoutUrl))
                     {
                         await _unitOfWork.RollbackAsync();
                         return null;
                     }
 
+                    // Map sang CreatePaymentResult bằng AutoMapper
+                    var paymentResult = _mapper.Map<CreatePaymentResponse>(payosInfraResult);
+
                     // Tạo đối tượng Payment (chưa commit)
-                    await _orderHelper.SavePaymentAndOrderDetailsAsync(newOrder, orderDetails, request.PaymentMethod, subTotal, shippingCost);
+                    await _orderHelper.SavePaymentAndOrderDetailsAsync(newOrder, orderDetails, request.PaymentMethod, subTotal, shippingCost, paymentResult.OrderCode);
 
                     // Sau khi đặt hàng thành công, xóa sản phẩm khỏi giỏ hàng
                     await _orderHelper.ClearCartAsync(request.AccountId, orderItems.Select(i => i.ProductVariantId).ToList());
@@ -179,7 +183,7 @@ namespace Application.UseCases
                     // Commit transaction
                     await _unitOfWork.CommitAsync();
 
-                    return _orderHelper.BuildOrderResponse(newOrder, request.PaymentMethod, paymentUrl);
+                    return _orderHelper.BuildOrderResponse(newOrder, request.PaymentMethod, paymentResult.CheckoutUrl);
                 }
                 else if (request.PaymentMethod == "COD")
                 {

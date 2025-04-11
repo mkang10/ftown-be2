@@ -14,5 +14,6 @@ namespace Domain.Interfaces
         Task UpdatePaymentAsync(Payment payment);
         Task<Payment?> GetPaymentByOrderIdAsync(long orderId);
         Task<string?> GetPaymentMethodByOrderIdAsync(int orderId);
+        Task<Payment?> GetPaymentByOrderCodeAsync(long orderCode);
     }
 }

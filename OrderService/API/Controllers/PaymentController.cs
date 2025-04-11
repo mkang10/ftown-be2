@@ -51,19 +51,20 @@ namespace API.Controllers
 				callbackData.data != null &&
 				callbackData.data.desc == "success")
 			{
-				// 4. Lấy mã đơn hàng từ callback
-				int orderId = callbackData.data.orderCode;
+                // 4. Lấy mã đơn hàng từ callback
+                long orderCode = callbackData.data.orderCode;
 
-				// 5. Tìm Payment/Order tương ứng trong DB
-				var payment = await _paymentRepository.GetPaymentByOrderIdAsync(orderId);
-				if (payment == null)
-				{
-					_logger.LogError("Không tìm thấy Payment cho OrderId: {OrderId}", orderId);
-					return NotFound();
-				}
+                // 5. Tìm Payment/Order tương ứng trong DB
+                var payment = await _paymentRepository.GetPaymentByOrderCodeAsync(orderCode);
+                if (payment == null)
+                {
+                    _logger.LogError("Không tìm thấy Payment với OrderCode: {OrderCode}", orderCode);
+                    return NotFound();
+                }
+                int orderId = payment.OrderId;
 
-				// 6. Cập nhật trạng thái Payment và Order
-				payment.PaymentStatus = "Paid";
+                // 6. Cập nhật trạng thái Payment và Order
+                payment.PaymentStatus = "Paid";
 				await _paymentRepository.UpdatePaymentAsync(payment);
 
 				await _orderRepository.UpdateOrderStatusAsync(orderId, "Paid");
@@ -86,8 +87,9 @@ namespace API.Controllers
 					return StatusCode(500, "Lỗi cập nhật tồn kho.");
 				}
 				await _orderProcessingHelper.LogPendingConfirmedStatusAsync(orderId, order.AccountId);
+                await _orderProcessingHelper.AssignOrderToManagerAsync(orderId, order.AccountId);
 
-			}
+            }
 			else
 			{
 				// Trường hợp giao dịch không thành công hoặc status khác

@@ -10,7 +10,7 @@ namespace Application.Interfaces
 {
 	public interface IOrderProcessingHelper
 	{
-		Task SavePaymentAndOrderDetailsAsync(Order order, List<OrderDetail> orderDetails, string paymentMethod, decimal totalAmount, decimal shippingCost);
+		Task SavePaymentAndOrderDetailsAsync(Order order, List<OrderDetail> orderDetails, string paymentMethod, decimal totalAmount, decimal shippingCost, long? orderCode = null);
 		Task ClearCartAsync(int accountId, List<int> productVariantIds);
 		Task LogPendingConfirmedStatusAsync(int orderId, int accountId);
 		Task LogPendingPaymentStatusAsync(int orderId, int accountId);
