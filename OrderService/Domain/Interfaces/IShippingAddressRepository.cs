@@ -15,5 +15,6 @@ namespace Domain.Interfaces
         Task<List<ShippingAddress>> GetShippingAddressesByAccountIdAsync(int accountId);
         Task UpdateAsync(ShippingAddress address);
         Task DeleteAsync(ShippingAddress address);
+        Task<ShippingAddress?> GetDefaultAddressByAccountIdAsync(int accountId);
     }
 }

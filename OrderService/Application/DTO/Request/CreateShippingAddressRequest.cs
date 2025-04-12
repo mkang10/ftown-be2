@@ -9,36 +9,35 @@ namespace Application.DTO.Request
 {
     public class CreateShippingAddressRequest
     {
+        [Required]
         public int AccountId { get; set; }
 
-        // Thông tin địa chỉ chi tiết
-        [Required]
+        [Required(ErrorMessage = "Địa chỉ không được để trống")]
+        [StringLength(255, ErrorMessage = "Địa chỉ không được vượt quá 255 ký tự")]
         public string Address { get; set; } = null!;
 
-        [Required]
         public string City { get; set; } = null!;
 
-        [Required]
-        public string Province { get; set; } = null!; // Tỉnh
+        public string Province { get; set; } = null!;
 
-        [Required]
-        public string District { get; set; } = null!; // Huyện
+        public string District { get; set; } = null!;
 
-        [Required]
         public string Country { get; set; } = null!;
 
-        public string? PostalCode { get; set; }
-
-        // Thông tin người nhận
-        [Required]
+        [Required(ErrorMessage = "Tên người nhận không được để trống")]
+        [StringLength(100, ErrorMessage = "Tên người nhận không được vượt quá 100 ký tự")]
         public string RecipientName { get; set; } = null!;
 
-        [Required]
+        [Required(ErrorMessage = "Số điện thoại không được để trống")]
+        [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
+        [StringLength(15, MinimumLength = 9, ErrorMessage = "Số điện thoại phải từ 9 đến 15 số")]
         public string RecipientPhone { get; set; } = null!;
-        [Required]
+
+        [Required(ErrorMessage = "Email không được để trống")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+        [StringLength(100, ErrorMessage = "Email không được vượt quá 100 ký tự")]
         public string Email { get; set; } = null!;
 
-        // Có thể có IsDefault nếu muốn đánh dấu địa chỉ mặc định
         public bool? IsDefault { get; set; }
     }
 
