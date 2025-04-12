@@ -38,7 +38,8 @@ namespace API.AppStarts
             CreateMap<UpdateShippingAddressRequest, ShippingAddress>()
                 .ForMember(dest => dest.AddressId, opt => opt.Ignore())
                 .ForMember(dest => dest.AccountId, opt => opt.Ignore());
-
+            CreateMap<CreateShippingAddressRequest, ShippingAddress>();
+            CreateMap<ShippingAddress, ShippingAddressResponse>();
 
         }
     }

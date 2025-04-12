@@ -1,5 +1,9 @@
-﻿using Domain.Entities;
+﻿using Application.DTO.Request;
+using Application.DTO.Response;
+using AutoMapper;
+using Domain.Entities;
 using Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,13 +16,21 @@ namespace Application.UseCases
     {
         private readonly IShippingAddressRepository _shippingAddressRepository;
         private readonly IRedisCacheService _redisCacheService;
-
+        private readonly IMapper _mapper;
+        private readonly IOrderRepository _orderRepository;
+        private readonly ILogger<GetShippingAddressHandler> _logger;
         public GetShippingAddressHandler(
             IShippingAddressRepository shippingAddressRepository,
-            IRedisCacheService redisCacheService)
+            IRedisCacheService redisCacheService,
+            IMapper mapper,
+            IOrderRepository orderRepository,
+            ILogger<GetShippingAddressHandler> logger)
         {
             _shippingAddressRepository = shippingAddressRepository;
             _redisCacheService = redisCacheService;
+            _mapper = mapper;
+            _orderRepository = orderRepository;
+            _logger = logger;
         }
 
         // Hàm tạo key cho cache dựa trên ShippingAddressId
@@ -80,6 +92,89 @@ namespace Application.UseCases
             }
 
             return addresses ?? new List<ShippingAddress>();
+        }
+
+
+        public async Task<ResponseDTO<ShippingAddressResponse>> CreateShippingAddressHandler(CreateShippingAddressRequest request)
+        {
+            // Nếu địa chỉ mới được đánh dấu là mặc định
+            if (request.IsDefault == true)
+            {
+                await EnsureOnlyOneDefaultAddressAsync(request.AccountId, null); // vì chưa có AddressId
+            }
+
+            var newAddress = _mapper.Map<ShippingAddress>(request);
+            newAddress.IsDefault = request.IsDefault ?? false;
+
+            await _shippingAddressRepository.CreateAsync(newAddress);
+
+            var responseDto = _mapper.Map<ShippingAddressResponse>(newAddress);
+            return new ResponseDTO<ShippingAddressResponse>(
+                data: responseDto,
+                status: true,
+                message: "Created successfully"
+            );
+        }
+        public async Task<ResponseDTO<ShippingAddress>> UpdateShippingAddressHandler(int id, UpdateShippingAddressRequest request)
+        {
+            var existing = await _shippingAddressRepository.GetByIdAsync(id);
+            if (existing == null)
+            {
+                return new ResponseDTO<ShippingAddress>(null, true, "Không có địa chỉ đó tồn tại");
+            }
+
+            // Nếu request yêu cầu đặt làm mặc định
+            if (request.IsDefault == true)
+            {
+                await EnsureOnlyOneDefaultAddressAsync(existing.AccountId, existing.AddressId);
+            }
+
+            // Cập nhật dữ liệu từ request → entity
+            _mapper.Map(request, existing);
+
+            await _shippingAddressRepository.UpdateAsync(existing);
+
+            return new ResponseDTO<ShippingAddress>(existing, true, "Cập nhật địa chỉ thành công");
+        }
+
+        public async Task<ResponseDTO> DeleteShippingAddressHandler(int shippingAddressId)
+        {
+            var existing = await _shippingAddressRepository.GetByIdAsync(shippingAddressId);
+            if (existing == null)
+            {
+                return new ResponseDTO(true, "Không có địa chỉ đó tồn tại");
+            }
+
+            // Tìm các đơn hàng đang dùng địa chỉ
+            var relatedOrders = await _orderRepository.GetOrdersByShippingAddressId(shippingAddressId);
+
+            foreach (var order in relatedOrders)
+            {
+                order.ShippingAddressId = null;
+            }
+
+            await _orderRepository.UpdateRangeAsync(relatedOrders);
+
+            // Xóa địa chỉ
+            await _shippingAddressRepository.DeleteAsync(existing);
+
+            _logger.LogInformation("Đã xóa địa chỉ ID {ShippingAddressId} và cập nhật {Count} đơn hàng", shippingAddressId, relatedOrders.Count);
+
+            return new ResponseDTO(true, "Xóa địa chỉ thành công và cập nhật các đơn hàng liên quan.");
+        }
+        /// <summary>
+        /// Hủy trạng thái mặc định của địa chỉ cũ nếu tồn tại
+        /// </summary>
+        private async Task EnsureOnlyOneDefaultAddressAsync(int accountId, int? currentAddressId)
+        {
+            var existingDefault = await _shippingAddressRepository.GetDefaultAddressByAccountIdAsync(accountId);
+
+            // Chỉ bỏ mặc định nếu địa chỉ mặc định hiện tại không phải là địa chỉ đang cập nhật
+            if (existingDefault != null && existingDefault.AddressId != currentAddressId)
+            {
+                existingDefault.IsDefault = false;
+                await _shippingAddressRepository.UpdateAsync(existingDefault);
+            }
         }
     }
 }

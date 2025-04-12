@@ -56,6 +56,10 @@ namespace Infrastructure.Repositories
             _context.ShippingAddresses.Remove(address);
             await _context.SaveChangesAsync();
         }
-
+        public async Task<ShippingAddress?> GetDefaultAddressByAccountIdAsync(int accountId)
+        {
+            return await _context.ShippingAddresses
+                .FirstOrDefaultAsync(x => x.AccountId == accountId && x.IsDefault == true);
+        }
     }
 }
