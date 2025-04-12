@@ -54,18 +54,11 @@ namespace Application.UseCases
             {
                 variantDetailsDict = await _inventoryServiceClient.GetAllProductVariantsByIdsAsync(variantIds);
 
-                //if (order.StoreId.HasValue)
-                //{
-                //    storeDetails = await _inventoryServiceClient.GetStoreByIdAsync(order.StoreId.Value);
-                //    //_logger.LogInformation($"Fetched store details: {JsonSerializer.Serialize(storeDetails)}");
-                //}
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Error fetching product/store details: {ex.Message}");
             }
-
-            // Lấy tồn kho từ StoreStock
 
             // Ánh xạ thông tin sản phẩm
             foreach (var detail in orderitemsResponses)
@@ -86,7 +79,6 @@ namespace Application.UseCases
                     detail.ImageUrl = "Không xác định";
                 }
 
-                // Lấy số lượng tồn kho từ StoreStock
             }
 
             // Lấy phương thức thanh toán từ bảng Payment
@@ -106,7 +98,9 @@ namespace Application.UseCases
                 PaymentMethod = paymentMethod,
                 OrderTotal = order.OrderTotal ?? 0,
                 ShippingCost = order.ShippingCost ?? 0,
-                OrderItems = orderitemsResponses
+                OrderItems = orderitemsResponses,
+                Status = order.Status,                         // ➕ Trường trạng thái đơn hàng
+                CreatedDate = order.CreatedDate
             };
         }
     }

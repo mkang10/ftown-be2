@@ -128,5 +128,18 @@ namespace Infrastructure.Repositories
             _context.OrderAssignments.Add(assignment);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<Order>> GetOrdersByShippingAddressId(int shippingAddressId)
+        {
+            return await _context.Orders
+                .Where(o => o.ShippingAddressId == shippingAddressId)
+                .ToListAsync();
+        }
+
+        public async Task UpdateRangeAsync(IEnumerable<Order> orders)
+        {
+            _context.Orders.UpdateRange(orders);
+            await _context.SaveChangesAsync();
+        }
     }
 }
