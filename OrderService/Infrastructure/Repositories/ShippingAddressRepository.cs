@@ -44,5 +44,18 @@ namespace Infrastructure.Repositories
             _context.ShippingAddresses.Add(address);
             await _context.SaveChangesAsync();
         }
+
+        public async Task UpdateAsync(ShippingAddress address)
+        {
+            _context.ShippingAddresses.Update(address);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteAsync(ShippingAddress address)
+        {
+            _context.ShippingAddresses.Remove(address);
+            await _context.SaveChangesAsync();
+        }
+
     }
 }

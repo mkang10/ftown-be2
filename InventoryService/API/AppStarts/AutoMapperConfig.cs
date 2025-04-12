@@ -63,6 +63,7 @@ namespace API.AppStarts
                 .ForMember(dest => dest.WarehouseId, opt => opt.Ignore()) 
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore());
             CreateMap<ProductVariantRequest, ProductVariant>().ReverseMap();
+
         }
     }
 }
