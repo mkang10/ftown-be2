@@ -29,21 +29,31 @@ namespace API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ResponseDTO<ShippingAddressResponse>>> CreateShippingAddress([FromBody] CreateShippingAddressRequest request)
+        public async Task<ActionResult<ResponseDTO<ShippingAddressResponse>>> CreateShippingAddress(
+                                                                        [FromBody] CreateShippingAddressRequest request)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new ResponseDTO(false, "Invalid request"));
+                var errors = ModelState
+                    .Where(ms => ms.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
+
+                var errorResponse = new ResponseDTO<Dictionary<string, string[]>>(errors, false, "Dữ liệu không hợp lệ");
+                return BadRequest(errorResponse);
             }
 
             var response = await _shippingAddressHandler.CreateShippingAddressHandler(request);
 
             return CreatedAtAction(
-                nameof(GetShippingAddressById), // bạn cần định nghĩa thêm phương thức này để dùng với CreatedAtAction
+                nameof(GetShippingAddressById),
                 new { id = response.Data.AddressId },
                 response
             );
         }
+
 
         [HttpGet("{id}")]
         public async Task<ActionResult<ResponseDTO<ShippingAddress>>> GetShippingAddressById(int id)
@@ -100,25 +110,27 @@ namespace API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<ResponseDTO<ShippingAddressResponse>>> UpdateShippingAddress(int id,
-                                                                                    [FromBody] UpdateShippingAddressRequest request)
+        public async Task<ActionResult<ResponseDTO<ShippingAddressResponse>>> UpdateShippingAddress(
+                                                                    int id, [FromBody] UpdateShippingAddressRequest request)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new ResponseDTO(false, "Invalid request"));
+                var errors = ModelState
+                    .Where(ms => ms.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
+
+                return BadRequest(new ResponseDTO<Dictionary<string, string[]>>(errors, false, "Dữ liệu không hợp lệ"));
             }
 
-            var response = await _shippingAddressHandler.UpdateShippingAddressHandler(id, request);
-
-            if (response.Data == null)
-            {
-                return NotFound(response); // Trả về 404 nếu không tìm thấy địa chỉ
-            }
-
-            return Ok(response); // Trả về 200 OK với DTO dạng chuẩn
+            var result = await _shippingAddressHandler.UpdateShippingAddressHandler(id, request);
+            return Ok(result);
         }
 
 
+        
         [HttpDelete("{id}")]
         public async Task<ActionResult<ResponseDTO>> DeleteShippingAddress(int id)
         {

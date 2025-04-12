@@ -23,5 +23,8 @@ namespace Domain.Interfaces
         Task CreateAssignmentAsync(OrderAssignment assignment);
         Task<List<Order>> GetOrdersByShippingAddressId(int shippingAddressId);
         Task UpdateRangeAsync(IEnumerable<Order> orders);
+        Task<List<Order>> GetCompletedOrdersAsync(DateTime? from, DateTime? to);
+        Task<List<Order>> GetCompletedOrdersWithDetailsAsync(DateTime? from, DateTime? to);
+
     }
 }

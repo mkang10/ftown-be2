@@ -2,6 +2,7 @@ using API.AppStarts;
 using Application.Interfaces;
 using CloudinaryDotNet;
 using Infrastructure.HelperServices;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
@@ -20,7 +21,11 @@ builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection("CloudinarySettings")
 );
 
-// ??ng ký Cloudinary d??i d?ng Singleton, s? d?ng IOptions ?? l?y c?u hình
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+});
+
 builder.Services.AddSingleton(sp =>
 {
     var settings = sp.GetRequiredService<IOptions<CloudinarySettings>>().Value;
