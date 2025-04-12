@@ -113,7 +113,7 @@ public partial class FtownContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 
-        => optionsBuilder.UseSqlServer("Server=DESKTOP-B4F7PCV\\SQLEXPRESS_2022;Database=Ftown;User Id=sa;Password=12345;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("Server=DESKTOP-T0VARJ7;Database=Ftown;User Id=sa;Password=sa123456;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -15,55 +15,35 @@ namespace API.Controllers
         private readonly IShippingAddressRepository _shippingAddressRepository;
         private readonly ILogger<ShippingAddressController> _logger;
         private readonly ShippingCostHandler _shippingCostHandler;
-        private readonly UpdateShippingAddressHandler _updateShippingAddressHandler;
-        private readonly DeleteShippingAddressHandler _deleteShippingAddressHandler;
+        private readonly GetShippingAddressHandler _shippingAddressHandler;
+        
         public ShippingAddressController(IShippingAddressRepository shippingAddressRepository,
                                          ILogger<ShippingAddressController> logger,
                                          ShippingCostHandler shippingCostHandler,
-                                         UpdateShippingAddressHandler updateShippingAddressHandler,
-                                         DeleteShippingAddressHandler deleteShippingAddressHandler)
+                                         GetShippingAddressHandler shippingAddressHandler)
         {
             _shippingAddressRepository = shippingAddressRepository;
             _logger = logger;
             _shippingCostHandler = shippingCostHandler;
-            _updateShippingAddressHandler = updateShippingAddressHandler;
-            _deleteShippingAddressHandler = deleteShippingAddressHandler;
+            _shippingAddressHandler = shippingAddressHandler;
         }
 
         [HttpPost]
-        public async Task<ActionResult<ResponseDTO<ShippingAddress>>> CreateShippingAddress([FromBody] CreateShippingAddressRequest request)
+        public async Task<ActionResult<ResponseDTO<ShippingAddressResponse>>> CreateShippingAddress([FromBody] CreateShippingAddressRequest request)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(new ResponseDTO(false, "Invalid request"));
             }
 
-            var newAddress = new ShippingAddress
-            {
-                AccountId = request.AccountId,
-                Address = request.Address,
-                City = request.City,
-                Province = request.Province,
-                District = request.District,
-                Country = request.Country,
-                PostalCode = request.PostalCode,
-                RecipientName = request.RecipientName,
-                RecipientPhone = request.RecipientPhone,
-                Email = request.Email,
-                IsDefault = request.IsDefault ?? false
-            };
+            var response = await _shippingAddressHandler.CreateShippingAddressHandler(request);
 
-            await _shippingAddressRepository.CreateAsync(newAddress);
-
-            var response = new ResponseDTO<ShippingAddress>(
-                data: newAddress,
-                status: true,
-                message: "Created successfully"
+            return CreatedAtAction(
+                nameof(GetShippingAddressById), // bạn cần định nghĩa thêm phương thức này để dùng với CreatedAtAction
+                new { id = response.Data.AddressId },
+                response
             );
-
-            return CreatedAtAction(nameof(GetShippingAddressById), new { id = newAddress.AddressId }, response);
         }
-
 
         [HttpGet("{id}")]
         public async Task<ActionResult<ResponseDTO<ShippingAddress>>> GetShippingAddressById(int id)
@@ -73,18 +53,19 @@ namespace API.Controllers
             if (address == null)
             {
                 return Ok(new ResponseDTO<ShippingAddress>(
-                    data: null,
-                    status: true,
-                    message: "Địa chỉ không tồn tại"
+                    null,
+                    true,
+                    "Địa chỉ không tồn tại"
                 ));
             }
 
             return Ok(new ResponseDTO<ShippingAddress>(
-                data: address,
-                status: true,
-                message: "Lấy địa chỉ thành công"
+                address,
+                true,
+                "Lấy địa chỉ thành công"
             ));
         }
+
 
 
         [HttpGet("account/{accountId}")]
@@ -94,19 +75,21 @@ namespace API.Controllers
 
             if (addresses == null || !addresses.Any())
             {
+                // Trả về danh sách rỗng, status true, message rõ ràng
                 return Ok(new ResponseDTO<List<ShippingAddress>>(
-                    data: new List<ShippingAddress>(),
-                    status: true,
-                    message: "Chưa có địa chỉ nào"
+                    new List<ShippingAddress>(),
+                    true,
+                    "Chưa có địa chỉ nào"
                 ));
             }
 
             return Ok(new ResponseDTO<List<ShippingAddress>>(
-                data: addresses,
-                status: true,
-                message: "Lấy danh sách địa chỉ thành công"
+                addresses,
+                true,
+                "Lấy danh sách địa chỉ thành công"
             ));
         }
+
 
 
         [HttpGet("cost")]
@@ -117,23 +100,33 @@ namespace API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<ResponseDTO<ShippingAddress>>> UpdateShippingAddress(int id,[FromBody] UpdateShippingAddressRequest request)
+        public async Task<ActionResult<ResponseDTO<ShippingAddressResponse>>> UpdateShippingAddress(int id,
+                                                                                    [FromBody] UpdateShippingAddressRequest request)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(new ResponseDTO(false, "Invalid request"));
             }
 
-            var result = await _updateShippingAddressHandler.Handle(id, request);
-            return Ok(result);
+            var response = await _shippingAddressHandler.UpdateShippingAddressHandler(id, request);
+
+            if (response.Data == null)
+            {
+                return NotFound(response); // Trả về 404 nếu không tìm thấy địa chỉ
+            }
+
+            return Ok(response); // Trả về 200 OK với DTO dạng chuẩn
         }
+
 
         [HttpDelete("{id}")]
         public async Task<ActionResult<ResponseDTO>> DeleteShippingAddress(int id)
         {
-            var result = await _deleteShippingAddressHandler.Handle(id);
-            return Ok(result);
+            var result = await _shippingAddressHandler.DeleteShippingAddressHandler(id);
+
+            return Ok(new ResponseDTO(true, result.Message));
         }
+
 
     }
 
