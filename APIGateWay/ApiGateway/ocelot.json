@@ -122,7 +122,7 @@
       "UpstreamHttpMethod": [ "Get" ]
     },
     {
-      "DownstreamPathTemplate": "/api/stores",
+      "DownstreamPathTemplate": "/api/products/filter-by-category",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
@@ -130,7 +130,7 @@
           "Port": 7265
         }
       ],
-      "UpstreamPathTemplate": "/stores",
+      "UpstreamPathTemplate": "/products/filter-by-category",
       "UpstreamHttpMethod": [ "Get" ]
     },
     {
@@ -309,6 +309,19 @@
       "UpstreamPathTemplate": "/shippingaddresses",
       "UpstreamHttpMethod": [ "Post" ]
     },
+    {
+      "DownstreamPathTemplate": "/api/shippingaddresses/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/shippingaddresses/{id}",
+      "UpstreamHttpMethod": [ "Put" ]
+    },
+
     {
       "DownstreamPathTemplate": "/api/shippingaddresses/account/{accountId}",
       "DownstreamScheme": "https",
