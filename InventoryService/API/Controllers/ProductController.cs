@@ -22,6 +22,7 @@ namespace API.Controllers
         private readonly CreateProductHandler _createProductHandler;
         private readonly ElasticsearchService _elasticsearchService;
         private readonly FilterProductHandler _filterProductHandler;
+        private readonly GetTopSellingProductHandler _getTopSellingProductHandler;
         public ProductController(
             GetAllProductsHandler getAllProductsHandler,
             GetProductDetailHandler getProductDetailHandler,
@@ -30,7 +31,8 @@ namespace API.Controllers
             GetProductVariantByDetailsHandler getAllProductVariantByDetailsHandler,
             CreateProductHandler createProductHandler,
             ElasticsearchService elasticsearchService,
-            FilterProductHandler filterProductHandler)
+            FilterProductHandler filterProductHandler,
+            GetTopSellingProductHandler getTopSellingProductHandler)
         {
             _getAllProductsHandler = getAllProductsHandler;
             _getProductDetailHandler = getProductDetailHandler;
@@ -40,6 +42,7 @@ namespace API.Controllers
             _createProductHandler = createProductHandler;
             _elasticsearchService = elasticsearchService;
             _filterProductHandler = filterProductHandler;
+            _getTopSellingProductHandler = getTopSellingProductHandler;
         }
 
         [HttpGet("view-all")]
@@ -109,22 +112,6 @@ namespace API.Controllers
             return Ok(new ResponseDTO<ProductVariantResponse>(variant, true, "Lấy biến thể sản phẩm thành công!"));
         }
 
-        //[HttpPost("create")]
-        //public async Task<IActionResult> Create([FromForm] CreateProductRequest request)
-        //{
-        //    try
-        //    {
-        //        var productDetail = await _createProductHandler.CreateProductAsync(request);
-        //        var response = new ResponseDTO<ProductDetailResponse>(productDetail, true, "Tạo sản phẩm thành công");
-        //        return Ok(response);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        var errorResponse = new ResponseDTO(false, $"Lỗi: {ex.Message}");
-        //        return BadRequest(errorResponse);
-        //    }
-        //}
-
         // Endpoint tạo nhiều sản phẩm cùng lúc
         [HttpPost("create")]
         [ApiExplorerSettings(IgnoreApi = true)]
@@ -142,6 +129,15 @@ namespace API.Controllers
             {
                 return BadRequest(new ResponseDTO(false, $"Lỗi: {ex.Message}"));
             }
+        }
+        [HttpGet("top-selling-products")]
+        public async Task<ActionResult<ResponseDTO<List<TopSellingProductResponse>>>> GetTopSellingProducts(
+                                        [FromQuery] DateTime? from,
+                                        [FromQuery] DateTime? to,
+                                        [FromQuery] int top = 10)
+        {
+            var result = await _getTopSellingProductHandler.GetTopSellingProductsAsync(from, to, top);
+            return Ok(result);
         }
 
 

@@ -134,6 +134,18 @@
       "UpstreamHttpMethod": [ "Get" ]
     },
     {
+      "DownstreamPathTemplate": "/api/products/top-selling-products",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7265
+        }
+      ],
+      "UpstreamPathTemplate": "/products/top-selling-products",
+      "UpstreamHttpMethod": [ "Get" ]
+    },
+    {
       "DownstreamPathTemplate": "/api/products/{productId}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
@@ -176,6 +188,22 @@
       ],
       "UpstreamPathTemplate": "/orders",
       "UpstreamHttpMethod": [ "Post" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/orders/{orderId}/status",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7266
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/orders/{orderId}/status",
+      "UpstreamHttpMethod": [ "Put" ]
     },
     {
       "DownstreamPathTemplate": "/api/orders",
@@ -320,6 +348,18 @@
       ],
       "UpstreamPathTemplate": "/shippingaddresses/{id}",
       "UpstreamHttpMethod": [ "Put" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/shippingaddresses/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/shippingaddresses/{id}",
+      "UpstreamHttpMethod": [ "Delete" ]
     },
 
     {
