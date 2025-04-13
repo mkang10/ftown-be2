@@ -23,7 +23,5 @@ public partial class Payment
 
     public string? PaymentNotes { get; set; }
 
-    public long? OrderCode { get; set; }
-
     public virtual Order Order { get; set; } = null!;
 }

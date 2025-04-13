@@ -1,4 +1,5 @@
-﻿using Application.UseCases;
+﻿using Application.DTO.Response;
+using Application.UseCases;
 using Domain.DTO.Request;
 using Domain.DTO.Response;
 using Microsoft.AspNetCore.Http;
@@ -55,5 +56,26 @@ public class TransferController : ControllerBase
             return BadRequest(result);
 
         return Ok(result);
+    }
+
+    [HttpGet("transfer/{id}")]
+    public async Task<IActionResult> GetJSONTransferByIdController(int id)
+    {
+        try
+        {
+            var result = await _transferHandler.GetJSONTransferById(id);
+            if (result == null)
+            {
+                var notFoundResponse = new MessageRespondDTO<JSONTransferDispatchImportGet>(null, false, "Transfer not found!");
+                return NotFound(notFoundResponse);
+            }
+            var successResponse = new MessageRespondDTO<JSONTransferDispatchImportGet>(result, true, "Success!");
+            return Ok(successResponse);
+        }
+        catch (Exception ex)
+        {
+            var errorResponse = new MessageRespondDTO<object>(null, false, "An error occurred: " + ex.Message);
+            return BadRequest(errorResponse);
+        }
     }
 }

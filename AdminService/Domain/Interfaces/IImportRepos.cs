@@ -29,6 +29,11 @@ namespace Domain.Interfaces
 
         Task<Warehouse> GetWareHouseByIdAsync(int id);
 
+
+        // ======Duc Anh=======
+        Task<ImportStoreDetail> GetImportStoreDetail(int importId);
+
+
     }
 }
 

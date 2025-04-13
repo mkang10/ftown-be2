@@ -9,7 +9,7 @@ public partial class Feedback
 
     public int AccountId { get; set; }
 
-    public int ProductId { get; set; }
+    public int ProductId { get; set; }  
 
     public string? Title { get; set; }
 

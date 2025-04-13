@@ -1,6 +1,8 @@
 ﻿using Application.DTO.Request;
 using Application.Interfaces;
 using AutoMapper;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Domain.Commons;
 using Domain.Entities;
 using Domain.Interfaces;
@@ -9,6 +11,7 @@ using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,21 +23,24 @@ namespace Application.UseCases
     {
         private readonly ICommentRepository _commentRepository;
         private readonly IOrderDetailRepository _orderDetailRepository;
+        private readonly Cloudinary _cloudinary;
+
 
         private const string CacheKey = "Data";
         private readonly IMapper _mapper;
         private readonly IConnectionMultiplexer _redis;
         private readonly HttpClient _httpClient;
 
-
-        public FeedbackHandler(HttpClient httpClient, ICommentRepository commentRepository, IOrderDetailRepository orderDetailRepository , IMapper mapper, IConnectionMultiplexer redis)
+        public FeedbackHandler(ICommentRepository commentRepository,
+            IOrderDetailRepository orderDetailRepository, Cloudinary cloudinary,
+            IMapper mapper, IConnectionMultiplexer redis, HttpClient httpClient)
         {
             _commentRepository = commentRepository;
+            _orderDetailRepository = orderDetailRepository;
+            _cloudinary = cloudinary;
             _mapper = mapper;
             _redis = redis;
             _httpClient = httpClient;
-            _orderDetailRepository = orderDetailRepository;
-
         }
 
         public async Task<List<CreateFeedBackRequestDTO>> CreateMultiple(List<CreateFeedBackRequestDTO> feedbackRequests)
@@ -53,6 +59,24 @@ namespace Application.UseCases
                 // Kiểm tra đơn hàng có trạng thái "completed"
                 if (orderDetail?.Order?.Status?.Equals("completed", StringComparison.OrdinalIgnoreCase) != true)
                     continue; // Bỏ qua nếu đơn hàng chưa hoàn thành
+                if (request.ImgFile != null && request.ImgFile.Length > 0)
+                {
+                    var uploadParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(request.ImgFile.FileName, request.ImgFile.OpenReadStream()),
+                        UseFilename = true,
+                        UniqueFilename = true,
+                        Overwrite = true
+                    };
+
+                    var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+                    if (uploadResult.StatusCode != HttpStatusCode.OK)
+                    {
+                        throw new Exception("Error Picture!");
+                    }
+                    request.ImagePath = uploadResult.SecureUrl.ToString();
+                }
 
                 // Map DTO sang entity và lưu vào database
                 var feedbackEntity = _mapper.Map<Feedback>(request);
@@ -215,7 +239,7 @@ namespace Application.UseCases
                 await db.KeyDeleteAsync("Data");
                 var paginationParameter = new PaginationParameter();
                 // call and wite new cache to redis
-                var updatedUsers = await _commentRepository.GettAllFeedbackByProductId(user.ProductId ,paginationParameter);
+                var updatedUsers = await _commentRepository.GettAllFeedbackByProductId(user.ProductId, paginationParameter);
                 await db.StringSetAsync("Data", JsonConvert.SerializeObject(updatedUsers), TimeSpan.FromMinutes(300));
 
                 return true;

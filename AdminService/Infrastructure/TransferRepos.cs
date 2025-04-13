@@ -75,6 +75,23 @@ namespace Infrastructure
 
             return new PaginatedResponseDTO<TransferDto>(data, total, page, pageSize);
         }
+        // Duc Anh
+        public Task<Transfer> GetJSONTransferOrderById(int id)
+        {
+            var data = _context.Transfers.
+                Include(o => o.TransferDetails).
+                Include(o => o.Import).
+                    ThenInclude(od => od.ImportDetails).
+                    ThenInclude(oc => oc.ImportStoreDetails).
+                Include(O => O.Dispatch).
+                    ThenInclude(od => od.DispatchDetails).
+                    ThenInclude(oc => oc.StoreExportStoreDetails).
+
+                    FirstOrDefaultAsync(a => a.TransferOrderId == id);
+            return data;
+        }
+
+        
     }
 
 

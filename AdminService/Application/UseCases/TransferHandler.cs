@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using Application.Enum;
+using AutoMapper;
 using Domain.DTO.Request;
 using Domain.DTO.Response;
 using Domain.Entities;
@@ -248,5 +249,33 @@ namespace Application.UseCases
         }
 
         #endregion
+
+        //Duc Anh
+
+        public async Task<JSONTransferDispatchImportGet> GetJSONTransferById(int id)
+        {
+            var data = await _transferRepos.GetJSONTransferOrderById(id);
+            var data2 = await _dispatchRepos.GetJSONDispatchById(id);
+
+            if (data == null)
+            {
+                throw new Exception("Transfer does not exsist!");
+            }
+            var jsonTransfer = _mapper.Map<JSONTransferOrderDTO>(data);
+            var jsonImport = _mapper.Map<JSONImportDTO>(data.Import); 
+            var jsonDispatch = _mapper.Map<JSONDispatchDTO>(data2);
+
+            var audit = await _auditLogRepos.GetAuditLogsByTableAndRecordIdAsync(TableEnumEXE.Transfer.ToString(), id.ToString());
+            var jsonAuditLogs = _mapper.Map<List<AuditLogRes>>(audit);
+
+            return new JSONTransferDispatchImportGet
+            {
+                JSONTransfer = jsonTransfer,
+                JSONImport = jsonImport,
+                JSONDispatch = jsonDispatch,
+                AuditLogs = jsonAuditLogs
+            };
+        }
+
     }
 }

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,7 +23,8 @@ namespace Application.DTO.Request
         public string? Comment { get; set; }
 
         public DateTime? CreatedDate { get; set; }
-
+        public IFormFile ImgFile { get; set; }
+        [JsonIgnore]
         public string? ImagePath { get; set; }
 
     }

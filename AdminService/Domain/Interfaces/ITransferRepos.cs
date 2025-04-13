@@ -20,6 +20,11 @@ namespace Domain.Interfaces
            CancellationToken cancellationToken = default
        );
 
+        //Duc Anh
+        public Task<Transfer> GetJSONTransferOrderById(int id);
+        //public Task<Import> GetJSONTransferOrderWithImportById(int id);
+        //public Task<Dispatch> GetJSONTransferOrderWithDispatchById(int id);
+
     }
 
 

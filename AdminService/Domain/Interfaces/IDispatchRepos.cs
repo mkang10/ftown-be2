@@ -10,5 +10,12 @@ namespace Domain.Interfaces
     public interface IDispatchRepos { 
         void Add(Dispatch dispatch);
         Task SaveChangesAsync();
+
+        // duc anh
+        public Task<Dispatch> GetJSONDispatchById(int id);
+
+        Task<StoreExportStoreDetail> GetStoreExportStoreDetailById(int importId);
+        //====
+
     }
 }

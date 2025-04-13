@@ -33,6 +33,7 @@ namespace API.AppStarts
             services.AddScoped<IImportStoreRepos, ImportStoreRepos>();
             services.AddScoped<IStoreExportRepos, StoreExportRepos>();
             services.AddScoped<ITransferRepos, TransferRepos>();
+            services.AddScoped<IDispatchRepos, DispatchRepos>();
 
             services.AddScoped<ApproveHandler>();
             services.AddScoped<RejectHandler>();
@@ -44,6 +45,8 @@ namespace API.AppStarts
             services.AddScoped<GetWareHouseHandler>();
             services.AddScoped<TransferHandler>();
             services.AddScoped<GetAllTransferHandler>();
+            services.AddScoped<DispatchHandler>();
+            services.AddScoped<ImportStoreDetailHandler>();
 
 
 

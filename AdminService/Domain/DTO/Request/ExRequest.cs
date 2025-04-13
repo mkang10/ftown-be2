@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.DTO.Request
+namespace Domain.DTO.Request
 {
     internal class ExRequest
     {
