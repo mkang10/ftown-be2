@@ -1,6 +1,7 @@
 ﻿using Application.DTO.Request;
 using Application.Interfaces;
 using AutoMapper;
+using Azure.Core;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Domain.Commons;
@@ -248,6 +249,38 @@ namespace Application.UseCases
             {
                 throw new Exception("An error occurred: " + ex.Message);
             }
+        }
+
+        public async Task<CreateFeedBackRequestDTO> Create(CreateFeedBackRequestDTO feedbackRequests)
+        {
+            
+
+            var orderDetail = await _orderDetailRepository.GetOrderDetailById(feedbackRequests.orderDetailId.Value);
+
+            if (feedbackRequests.ImgFile != null && feedbackRequests.ImgFile.Length > 0)
+            {
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(feedbackRequests.ImgFile.FileName, feedbackRequests.ImgFile.OpenReadStream()),
+                    UseFilename = true,
+                    UniqueFilename = true,
+                    Overwrite = true
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+                if (uploadResult.StatusCode != HttpStatusCode.OK)
+                {
+                    throw new Exception("Error Picture!");
+                }
+                feedbackRequests.ImagePath = uploadResult.SecureUrl.ToString();
+            }
+
+            // Map DTO sang entity và lưu vào database
+            var feedbackEntity = _mapper.Map<Feedback>(feedbackRequests);
+            var createdFeedback = await _commentRepository.CreateFeedback(feedbackEntity);
+            var result = _mapper.Map<CreateFeedBackRequestDTO>(createdFeedback);
+            return result;
         }
     }
 }

@@ -10,9 +10,9 @@ namespace Application.DTO.Request
     {
         public int FeedbackId { get; set; }
 
-        public int AccountId { get; set; }
+        public string Account { get; set; }
 
-        public int ProductId { get; set; }
+        public string Product { get; set; }
 
         public string? Title { get; set; }
 
@@ -33,7 +33,7 @@ namespace Application.DTO.Request
 
         public int FeedbackId { get; set; }
 
-        public int AccountId { get; set; }
+        public string Account { get; set; }
 
         public string ReplyText { get; set; } = null!;
 

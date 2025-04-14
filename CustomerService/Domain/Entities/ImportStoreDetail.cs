@@ -5,9 +5,7 @@ namespace Domain.Entities;
 
 public partial class ImportStoreDetail
 {
-    public int ImportDetailId { get; set; }
-
-    public int WareHouseId { get; set; }
+    public int? ActualReceivedQuantity { get; set; }
 
     public int AllocatedQuantity { get; set; }
 
@@ -17,9 +15,19 @@ public partial class ImportStoreDetail
 
     public int? StaffDetailId { get; set; }
 
-    public int StoreImportStoreId { get; set; }
+    public int ImportDetailId { get; set; }
+
+    public int ImportStoreId { get; set; }
+
+    public int? WarehouseId { get; set; }
+
+    public int? HandleBy { get; set; }
+
+    public virtual ShopManagerDetail? HandleByNavigation { get; set; }
 
     public virtual ImportDetail ImportDetail { get; set; } = null!;
 
-    public virtual Warehouse WareHouse { get; set; } = null!;
+    public virtual StaffDetail? StaffDetail { get; set; }
+
+    public virtual Warehouse? Warehouse { get; set; }
 }

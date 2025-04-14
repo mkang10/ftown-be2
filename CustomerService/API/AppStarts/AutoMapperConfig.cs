@@ -55,10 +55,13 @@ namespace API.AppStarts
            .ForMember(dest => dest.ProductId, opt => opt.Ignore());
             //feedback reverse
             CreateMap<Feedback, CreateFeedBackRequestDTO>();
-            CreateMap<Feedback, FeedbackRequestDTO>().ReverseMap();
+            CreateMap<Feedback, FeedbackRequestDTO>()
+                     .ForMember(dest => dest.Product, opt => opt.MapFrom(src => src.Product.Name))
+                     .ForMember(dest => dest.Account, opt => opt.MapFrom(src => src.Account.FullName)).ReverseMap();
 
             //mapping Reply request
-            CreateMap<ReplyFeedback, ReplyRequestDTO>().ReverseMap();
+            CreateMap<ReplyFeedback, ReplyRequestDTO>()
+                .ForMember(dest => dest.Account, opt => opt.MapFrom(src => src.Account.FullName)).ReverseMap();
             CreateMap<ReplyFeedback, CreateReplyRequestDTO>().ReverseMap();
             CreateMap<ReplyFeedback, UpdateReplyRequestDTO>().ReverseMap();
 

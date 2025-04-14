@@ -120,7 +120,30 @@ namespace API.Controllers
                 return BadRequest(new MessageRespondDTO<string>(null, false, ex.Message));
             }
         }
+        [HttpPost("create")]
+        public async Task<IActionResult> Create([FromForm] CreateFeedBackRequestDTO feedbackRequest)
+        {
+            try
+            {
+                if (feedbackRequest == null )
+                {
+                    return BadRequest(new MessageRespondDTO<string>(null, false, "Danh sách feedback không được để trống."));
+                }
 
+                var createdFeedbacks = await _service.Create(feedbackRequest);
+
+                if (createdFeedbacks == null )
+                {
+                    return BadRequest(new MessageRespondDTO<string>(null, false, "Không thể tạo feedback."));
+                }
+
+                return Ok(new MessageRespondDTO<CreateFeedBackRequestDTO>(createdFeedbacks, true, StatusSuccess.Success.ToString()));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new MessageRespondDTO<string>(null, false, ex.Message));
+            }
+        }
 
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteFeedback(int id)

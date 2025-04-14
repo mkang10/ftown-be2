@@ -50,13 +50,18 @@ namespace Infrastructure.Repositories
 
         public async Task<Feedback> GetFeedBackById(int id)
         {
-            var data = await _context.Feedbacks.SingleOrDefaultAsync(x => x.FeedbackId.Equals(id));
+            var data = await _context.Feedbacks.
+                Include(o => o.Account)
+                .Include(o => o.Product)
+                .SingleOrDefaultAsync(x => x.FeedbackId.Equals(id));
             return data;
         }
 
         public async Task<ReplyFeedback> GetReplyFeedBackById(int id)
         {
-            var data = await _context.ReplyFeedbacks.SingleOrDefaultAsync(x => x.ReplyId.Equals(id));
+            var data = await _context.ReplyFeedbacks
+                .Include(o => o.Account)
+                .SingleOrDefaultAsync(x => x.ReplyId.Equals(id));
             return data;
         }
 
@@ -64,10 +69,14 @@ namespace Infrastructure.Repositories
         {
             // Lấy các feedback của tài khoản theo id
             var query = await _context.Feedbacks
+                .Include(o => o.Account)
+                .Include(o => o.Product)
                                 .Where(f => f.AccountId == id).CountAsync();
 
             // Thêm mệnh đề OrderBy để đảm bảo thứ tự trước khi sử dụng Skip/Take.
             var items = await _context.Feedbacks
+                .Include(o => o.Account)
+                .Include(o => o.Product)
                                        .Where(f => f.AccountId == id)
                                        .Skip((paginationParameter.PageIndex - 1) * paginationParameter.PageSize)
                                        .Take(paginationParameter.PageSize)
@@ -82,11 +91,12 @@ namespace Infrastructure.Repositories
         public async Task<Pagination<Feedback>> GettAllFeedbackByProductId(int id, PaginationParameter paginationParameter)
         {
             var itemCount = await _context.Feedbacks
-                                           .Where(f => f.ProductId == id) 
+                                           .Where(f => f.ProductId == id)
                                            .CountAsync();
 
-            var items = await _context.Feedbacks
-                                       .Where(f => f.ProductId == id) 
+            var items = await _context.Feedbacks.Include(o => o.Account)
+                .Include(o => o.Product)
+                                       .Where(f => f.ProductId == id)
                                        .Skip((paginationParameter.PageIndex - 1) * paginationParameter.PageSize)
                                        .Take(paginationParameter.PageSize)
                                        .AsNoTracking()
@@ -102,7 +112,7 @@ namespace Infrastructure.Repositories
                                                                    .Where(f => f.FeedbackId == id)
                                                                    .CountAsync();
 
-            var items = await _context.ReplyFeedbacks
+            var items = await _context.ReplyFeedbacks.Include(o => o.Account)
                                        .Where(f => f.FeedbackId == id)
                                        .Skip((paginationParameter.PageIndex - 1) * paginationParameter.PageSize)
                                        .Take(paginationParameter.PageSize)

@@ -15,6 +15,8 @@ namespace Application.Interfaces
         public Task<Pagination<FeedbackRequestDTO>> GettAllFeedbackByAccountId(int id, PaginationParameter paginationParameter);
 
         public Task<List<CreateFeedBackRequestDTO>> CreateMultiple(List<CreateFeedBackRequestDTO> feedbackRequests);
+        public Task<CreateFeedBackRequestDTO> Create(CreateFeedBackRequestDTO feedbackRequests);
+
         public Task<bool> Delete(int id);
         public Task<bool> Update(int id, UpdateFeedbackRequestDTO user);
         public Task<FeedbackRequestDTO> GetById(int id);
