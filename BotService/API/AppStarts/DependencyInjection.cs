@@ -5,6 +5,7 @@ using Application.UseCases;
 using Domain.Interfaces;
 using Infrastructure;
 using Infrastructure.Repositories;
+using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.AppStarts
@@ -30,6 +31,16 @@ namespace API.AppStarts
 
             services.AddScoped<IConversationService, ConversationHandler>();
             services.AddScoped<IMessageService, MessageHandler>();
+            services.AddScoped<IConversationBotRepository, ConversationBotRepository>();
+            services.AddScoped<IMessageBotRepository, MessageBotRepository>();
+            services.AddScoped<IChatBotRepository, ChatBotRepository>();
+            services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<IOutfitRecommendationService, OutfitRecommendationService>();
+
+            services.AddHttpClient<IChatServices, DeepSeekService>();
+            services.AddScoped<ChatAppService>();
+
+
 
             // auto mapper
             services.AddAutoMapper(typeof(AutoMapperConfig).Assembly);

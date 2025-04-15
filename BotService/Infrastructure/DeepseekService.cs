@@ -1,5 +1,4 @@
-﻿using Application.DTO.Request;
-using Domain.Models;
+﻿using Domain.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,87 +7,120 @@ using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Domain.Interfaces;
-
-namespace Infrastructure
+using System.Net.Http.Headers;
+using Application.DTO.Response;
+using Domain.DTO.Request;
+using Domain.DTO.Response;
+namespace Infrastructure.Services
 {
     public class DeepSeekService : IChatServices
     {
         private readonly HttpClient _httpClient;
-        private readonly string _baseUrl;
-        private readonly string _apiKey;
+        private readonly IChatBotRepository _botRepo;
+        private readonly JsonSerializerOptions _opts = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
 
-        public DeepSeekService(HttpClient httpClient, string baseUrl, string apiKey)
+        public DeepSeekService(HttpClient httpClient, IChatBotRepository botRepo)
         {
             _httpClient = httpClient;
-            _baseUrl = baseUrl;
-            _apiKey = apiKey;
+            _botRepo = botRepo;
         }
 
-        public async Task StreamChatAsync(string userInput, Func<string, Task> onChunkReceived, CancellationToken cancellationToken)
+        public async Task<ChatCompletionResponse> CreateChatCompletionWithFunctionsAsync(
+    List<ChatMessage> history,
+    List<FunctionDefinition> functions,
+    CancellationToken ct = default)
         {
-            var requestObj = new ChatCompletionRequest
+            var req = new ChatCompletionRequest
             {
-                Model = "deepseekr1",
+                Model = "deepseek-chat",
+                Stream = false,
+                Messages = history,
+                Functions = functions,
+                FunctionCall = "auto"
+            };
+            var json = JsonSerializer.Serialize(req, _opts);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var resp = await _httpClient.PostAsync("/chat/completions", content, ct);
+            resp.EnsureSuccessStatusCode();
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            return JsonSerializer.Deserialize<ChatCompletionResponse>(body, _opts)!;
+        }
+
+        public async Task StreamChatAsync(
+            List<ChatMessage> history,
+            Func<string, Task> onChunk,
+            CancellationToken ct = default)
+        {
+            var bot = await _botRepo.GetDefaultAsync(ct)
+                      ?? throw new InvalidOperationException("ChatBot config missing");
+            // set base URL + API key
+            _httpClient.BaseAddress = new Uri(bot.BaseUrl!);
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", bot.Key);
+
+            var req = new ChatCompletionRequest
+            {
+                Model = "deepseek-chat",
                 Stream = true,
-                Messages = new List<ChatMessage>
-                {
-                    new ChatMessage { Role = "user", Content = userInput }
-                }
+                Messages = history
             };
+            var json = JsonSerializer.Serialize(req, _opts);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var options = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            };
+            using var resp = await _httpClient.PostAsync("/chat/completions", content, ct);
+            resp.EnsureSuccessStatusCode();
 
-            var jsonRequest = JsonSerializer.Serialize(requestObj, options);
-            using var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // Nếu API yêu cầu xác thực, bạn có thể thêm header tương ứng, ví dụ:
-            // _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
-
-            var url = $"{_baseUrl}/chat/completions";
-
-            using var response = await _httpClient.PostAsync(url, content, cancellationToken);
-            response.EnsureSuccessStatusCode();
-
-            using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var stream = await resp.Content.ReadAsStreamAsync(ct);
             using var reader = new StreamReader(stream);
-
-            while (!reader.EndOfStream && !cancellationToken.IsCancellationRequested)
+            while (!reader.EndOfStream && !ct.IsCancellationRequested)
             {
                 var line = await reader.ReadLineAsync();
-                if (string.IsNullOrWhiteSpace(line))
-                    continue;
+                if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data: ")) continue;
+                var payload = line["data: ".Length..].Trim();
+                if (payload == "[DONE]") break;
 
-                // API trả về theo định dạng "data: {json}"
-                if (line.StartsWith("data: "))
-                {
-                    var jsonData = line.Substring("data: ".Length).Trim();
-
-                    // Nếu nhận được "[DONE]", kết thúc stream
-                    if (jsonData == "[DONE]")
-                        break;
-
-                    try
-                    {
-                        var chunk = JsonSerializer.Deserialize<ChatCompletionChunk>(jsonData, options);
-                        if (chunk?.Choices != null && chunk.Choices.Count > 0)
-                        {
-                            var contentDelta = chunk.Choices[0].Delta?.Content;
-                            if (!string.IsNullOrEmpty(contentDelta))
-                            {
-                                await onChunkReceived(contentDelta);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.Error.WriteLine($"Lỗi khi parse dữ liệu chunk: {ex.Message}");
-                    }
-                }
+                var chunkObj = JsonSerializer.Deserialize<ChatCompletionChunk>(payload, _opts);
+                var delta = chunkObj?.Choices?.FirstOrDefault()?.Delta?.Content;
+                if (!string.IsNullOrEmpty(delta))
+                    await onChunk(delta);
             }
         }
+
+        public async Task<string> GetFullChatReplyAsync(
+            List<ChatMessage> history,
+            CancellationToken ct = default)
+        {
+            var bot = await _botRepo.GetDefaultAsync(ct)
+                      ?? throw new InvalidOperationException("ChatBot config missing");
+            _httpClient.BaseAddress = new Uri(bot.BaseUrl!);
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", bot.Key);
+
+            var req = new ChatCompletionRequest
+            {
+                Model = "deepseek-chat",
+                Stream = false,
+                Messages = history
+            };
+            var json = JsonSerializer.Serialize(req, _opts);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var resp = await _httpClient.PostAsync("/chat/completions", content, ct);
+            resp.EnsureSuccessStatusCode();
+
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            var result = JsonSerializer.Deserialize<ChatCompletionResponse>(body, _opts)
+                         ?? throw new InvalidOperationException("Empty response");
+
+            return result.Choices?.FirstOrDefault()?.Message?.Content
+                   ?? throw new InvalidOperationException("No reply");
+        }
+
+       
     }
 }
+
