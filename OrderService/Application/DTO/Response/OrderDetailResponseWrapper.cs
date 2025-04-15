@@ -25,7 +25,7 @@ namespace Application.DTO.Response
         public decimal ShippingCost { get; set; }
         public string Status { get; set; } = null!;          
         public DateTime? CreatedDate { get; set; }
-
+        public string? Ghnid { get; set; }
         public List<OrderItemResponse> OrderItems { get; set; } = new();
     }
 

@@ -99,8 +99,9 @@ namespace Application.UseCases
                 OrderTotal = order.OrderTotal ?? 0,
                 ShippingCost = order.ShippingCost ?? 0,
                 OrderItems = orderitemsResponses,
-                Status = order.Status,                         // ➕ Trường trạng thái đơn hàng
-                CreatedDate = order.CreatedDate
+                Status = order.Status,                         
+                CreatedDate = order.CreatedDate,
+                Ghnid = order.Ghnid
             };
         }
     }
