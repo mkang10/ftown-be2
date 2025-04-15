@@ -37,6 +37,10 @@ namespace Domain.DTO.Response
         public string ProductVariantName { get; set; }
 
         public int Quantity { get; set; }
+        public decimal? CostPrice { get; set; }
+        public decimal PriceProductVariant { get; set; }
+
+
         public List<JSONImportStoreDetailGetDTO> StoreImportDetail { get; set; } = new();
 
     }
@@ -91,6 +95,8 @@ namespace Domain.DTO.Response
         public string? HandleBy { get; set; }
 
         public string? ReferenceNumber { get; set; }
+        public decimal? CostPrice { get; set; }
+
 
         public List<AuditLogRes> AuditLogs { get; set; } = new List<AuditLogRes>();
 

@@ -85,7 +85,7 @@ namespace API.Controllers
         }
 
         [HttpPost("order-status-list")]
-        public async Task<IActionResult> GetOrderStatusListl([FromBody] OrderDetailRequest orderDetailRequest)
+        public async Task<IActionResult> GetOrderStatusListl([FromBody] OrderDetailWithUpdateRequest orderDetailRequest)
         {
             if (orderDetailRequest == null || string.IsNullOrEmpty(orderDetailRequest.order_code))
             {
@@ -94,32 +94,34 @@ namespace API.Controllers
 
             var requestJson = Newtonsoft.Json.JsonConvert.SerializeObject(orderDetailRequest);
             var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
-            // add token
+            // Thêm token
             content.Headers.Add("Token", token);
             var response = await _httpClient.PostAsync("https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/detail", content);
 
             if (response.IsSuccessStatusCode)
             {
                 var responseData = await response.Content.ReadAsStringAsync();
-
-                // Parse cái Jison ra , giải mã nó
                 var jsonResponse = JObject.Parse(responseData);
 
                 // Lấy danh sách log
-                var logs = jsonResponse["data"]["log"].ToObject<List<Application.DTO.Response.LogEntry>>();
+                var logs = jsonResponse["data"]["log"].ToObject<List<Application.DTO.Request.LogEntry>>();
 
                 // Lấy trạng thái mới nhất theo thời gian
                 var latestStatuses = logs
-                    .GroupBy(log => log.Status) // Nhóm theo trạng thái
-                    .Select(g => g.OrderByDescending(log => log.UpdatedDate).First()) // Lấy log mới nhất trong mỗi nhóm
-                    .Select(log => new { log.Status, log.UpdatedDate }) // Chọn trạng thái và ngày cập nhật
-                    .ToList();
-                if (latestStatuses == null)
+                        .OrderByDescending(log => log.updated_date) // sắp xếp toàn bộ theo thời gian giảm dần
+                        .GroupBy(log => log.status) // group theo trạng thái
+                        .Select(g => g.First()) // Lấy log đầu tiên trong mỗi nhóm (log mới nhất)
+                        .Select(log => new
+                        {
+                            log.status,
+                            UpdatedDate = log.updated_date.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") // Định dạng DATE TIME
+                        })
+                        .ToList();
+                if (latestStatuses.Any(s => s.status == "delivered"))
                 {
-                    return BadRequest();
-
+                    // Gọi hàm cập nhật nếu trạng thái là "delivered"
+                    var update = await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "completed", orderDetailRequest.create_by);
                 }
-
                 return Ok(new { latestStatuses });
             }
 
@@ -129,7 +131,7 @@ namespace API.Controllers
 
 
         [HttpPost("order-status-newest")]
-        public async Task<IActionResult> GetOrderStatusNewest([FromBody] OrderDetailRequest orderDetailRequest)
+        public async Task<IActionResult> GetOrderStatusNewest([FromBody] OrderDetailWithUpdateRequest orderDetailRequest)
         {
             if (orderDetailRequest == null || string.IsNullOrEmpty(orderDetailRequest.order_code))
             {
@@ -146,18 +148,22 @@ namespace API.Controllers
             {
                 var responseData = await response.Content.ReadAsStringAsync();
                 var jsonResponse = JObject.Parse(responseData);
-                var logs = jsonResponse["data"]["log"].ToObject<List<Application.DTO.Response.LogEntry>>();
+                var logs = jsonResponse["data"]["log"].ToObject<List<Application.DTO.Request.LogEntry>>();
 
                 // Lấy trạng thái mới nhất
                 var latestStatus = logs
-                    .OrderByDescending(log => log.UpdatedDate)
+                    .OrderByDescending(log => log.updated_date)
                     .Select(log => new
                     {
-                        log.Status,
-                        log.UpdatedDate
-                    })
+                        log.status,
+                        UpdatedDate = log.updated_date.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+                    }) // Định dạng DATE TIME                    
                     .FirstOrDefault(); // Lấy trạng thái mới nhất
-
+                if (latestStatus != null && latestStatus.status == "delivered")
+                {
+                    // Gọi hàm cập nhật nếu trạng thái là "delivered"
+                    var update = await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "completed", orderDetailRequest.create_by);
+                }
                 return Ok(latestStatus);
             }
 
@@ -185,16 +191,16 @@ namespace API.Controllers
                 var jsonResponse = JObject.Parse(responseData);
 
                 // truy vấn từ data xuống mảng log status
-                var logs = jsonResponse["data"]["log"].ToObject<List<Application.DTO.Response.LogEntry>>();
+                var logs = jsonResponse["data"]["log"].ToObject<List<Application.DTO.Request.LogEntry>>();
 
                 // Lấy trạng thái mới nhất theo thời gian và sắp xếp
                 var latestStatuses = logs
-                    .GroupBy(log => log.Status)
-                    .Select(g => g.OrderByDescending(log => log.UpdatedDate).First())
+                    .GroupBy(log => log.status)
+                    .Select(g => g.OrderByDescending(log => log.updated_date).First())
                     .Select(log => new Application.DTO.Response.LogEntry // gán giá trị vào log entry
                     {
-                        Status = log.Status,
-                        UpdatedDate = log.UpdatedDate
+                       status= log.status,
+                       updated_date = log.updated_date
                     })
                     .ToList();
 

@@ -11,6 +11,8 @@ namespace Domain.Interfaces
     {
         Task<Order> CreateOrderAsync(Order order);
         Task<Order?> GetOrderByIdAsync(int orderId);
+        Task<Order?> GetOrderByIdGHNAsync(string orderId);
+
         Task<List<Order>> GetOrderHistoryByAccountIdAsync(int accountId);
         Task UpdateOrderAsync(Order order);  
         Task<Order?> GetOrderWithDetailsAsync(int orderId); 
@@ -20,6 +22,8 @@ namespace Domain.Interfaces
         Task<Order> GetOrderItemsWithOrderIdAsync(int orderId);
         Task<List<Order>> GetReturnableOrdersAsync(int accountId);
         Task UpdateOrderStatusAsync(int orderId, string newStatus);
+        Task UpdateOrderStatusGHNIdAsync(string orderId, string newStatus);
+
         Task CreateAssignmentAsync(OrderAssignment assignment);
     }
 }

@@ -128,5 +128,20 @@ namespace Infrastructure.Repositories
             _context.OrderAssignments.Add(assignment);
             await _context.SaveChangesAsync();
         }
+
+        public async Task UpdateOrderStatusGHNIdAsync(string orderId, string newStatus)
+        {
+            var order = await _context.Orders.SingleOrDefaultAsync(o=>o.Ghnid == orderId);
+            if (order == null) return;
+
+            order.Status = newStatus;
+            _context.Orders.Update(order);
+            await _context.SaveChangesAsync();
+        }
+
+        public Task<Order?> GetOrderByIdGHNAsync(string orderId)
+        {
+            var data = _context.Orders.SingleOrDefaultAsync(o => o.Ghnid == orderId);
+                return data; }
     }
 }

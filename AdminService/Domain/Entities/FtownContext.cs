@@ -457,6 +457,7 @@ public partial class FtownContext : DbContext
             entity.HasKey(e => e.ImportDetailId).HasName("PK__ImportDe__CDFBBA514D262171");
 
             entity.Property(e => e.ImportDetailId).HasColumnName("ImportDetailID");
+            entity.Property(e => e.CostPrice).HasColumnType("decimal(18, 0)");
             entity.Property(e => e.ImportId).HasColumnName("ImportID");
             entity.Property(e => e.ProductVariantId).HasColumnName("ProductVariantID");
 

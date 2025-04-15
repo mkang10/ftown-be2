@@ -38,6 +38,8 @@ namespace Domain.DTO.Response
         public string VariantName { get; set; }
 
         public int Quantity { get; set; }
+        public decimal PriceProductVariant { get; set; }
+
         public List<JSONStoreExportDetailDTO> StoreExportDetail { get; set; } = new();
 
     }

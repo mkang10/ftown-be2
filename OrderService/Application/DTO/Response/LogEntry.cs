@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,7 +37,7 @@ namespace Application.DTO.Response
     }
     public class LogEntry
     {
-        public string Status { get; set; }
-        public DateTime UpdatedDate { get; set; }
+        public string status { get; set; }
+        public DateTime updated_date { get; set; }
     }
 }
