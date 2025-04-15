@@ -1,12 +1,12 @@
-﻿using Application.DTO.Request;
-using Application.DTO.Response;
-using Application.Enum;
+﻿using Application.Enum;
 using Application.Interfaces;
 using Domain.Commons;
+using Domain.DTO.Request;
+using Domain.DTO.Response;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using static Application.DTO.Response.MessageRespondDTO<T>;
+using static Domain.DTO.Response.MessageRespondDTO<T>;
 
 internal class T
 {

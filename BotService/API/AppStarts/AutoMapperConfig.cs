@@ -1,5 +1,5 @@
-﻿using Application.DTO.Request;
-using AutoMapper;
+﻿using AutoMapper;
+using Domain.DTO.Request;
 using Domain.Entities;
 
 namespace API.AppStarts
