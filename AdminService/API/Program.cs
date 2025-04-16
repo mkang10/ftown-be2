@@ -1,5 +1,12 @@
 using API.AppStarts;
+using CloudinaryDotNet;
+using Domain.DTO.Models;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
+using Application.Interfaces;
+using Application.Services;
+using Application.UseCases;
+using Application.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -9,9 +16,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-admin.vercel.app/") // Thêm nguồn mới
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-admin.vercel.app/")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .WithExposedHeaders("Content-Disposition");
+
     });
 });
 
@@ -42,6 +51,26 @@ builder.Services.InstallService(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Đọc thông tin cấu hình Cloudinary từ key "CloudinarySettings"
+var cloudName = builder.Configuration["CloudinarySettings:CloudName"];
+var apiKey = builder.Configuration["CloudinarySettings:ApiKey"];
+var apiSecret = builder.Configuration["CloudinarySettings:ApiSecret"];
+
+// Kiểm tra cấu hình Cloudinary
+if (string.IsNullOrWhiteSpace(cloudName) ||
+    string.IsNullOrWhiteSpace(apiKey) ||
+    string.IsNullOrWhiteSpace(apiSecret))
+{
+    throw new ArgumentException("Cloudinary configuration is incomplete. Please check CloudName, ApiKey, and ApiSecret in CloudinarySettings.");
+}
+
+// Khởi tạo Account và Cloudinary
+var account = new Account(cloudName, apiKey, apiSecret);
+var cloudinary = new Cloudinary(account);
+
+// Đăng ký Cloudinary dưới dạng Singleton (chỉ một lần)
+builder.Services.AddSingleton(cloudinary);
 
 var app = builder.Build();
 

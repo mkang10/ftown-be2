@@ -18,6 +18,22 @@ namespace Infrastructure
             _context = context;
         }
 
+        public async Task<Transfer?> GetByIdWithDetailsAsync(int transferId)
+        {
+            return await _context.Transfers
+                .Include(t => t.TransferDetails)
+                    .ThenInclude(td => td.Variant)
+                        .ThenInclude(v => v.Product)
+                .Include(t => t.TransferDetails)
+                    .ThenInclude(td => td.Variant)
+                        .ThenInclude(v => v.Color)
+                .Include(t => t.TransferDetails)
+                    .ThenInclude(td => td.Variant)
+                        .ThenInclude(v => v.Size)
+                .FirstOrDefaultAsync(t => t.TransferOrderId == transferId);
+        }
+
+
         public void Add(Transfer transfer)
         {
             _context.Transfers.Add(transfer);
