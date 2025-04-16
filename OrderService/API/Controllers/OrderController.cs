@@ -111,7 +111,24 @@ namespace API.Controllers
         [HttpPut("{orderId}/status")]
         public async Task<IActionResult> UpdateOrderStatus(int orderId, [FromBody] UpdateOrderStatusRequest request)
         {
-            var success = await _updateOrderStatusHandler.HandleAsync(orderId, request.NewStatus, request.ChangedBy, request.Comment);
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .Where(ms => ms.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
+
+                return BadRequest(new ResponseDTO<Dictionary<string, string[]>>(errors, false, "Dữ liệu không hợp lệ"));
+            }
+
+            var success = await _updateOrderStatusHandler.HandleAsync(
+                orderId,
+                request.NewStatus,
+                request.ChangedBy,
+                request.Comment
+            );
 
             if (!success)
             {
@@ -120,6 +137,7 @@ namespace API.Controllers
 
             return Ok(new ResponseDTO(true, "Cập nhật trạng thái thành công!"));
         }
+
 
 
     }

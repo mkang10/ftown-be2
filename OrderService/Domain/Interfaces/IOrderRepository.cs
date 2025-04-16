@@ -21,5 +21,10 @@ namespace Domain.Interfaces
         Task<List<Order>> GetReturnableOrdersAsync(int accountId);
         Task UpdateOrderStatusAsync(int orderId, string newStatus);
         Task CreateAssignmentAsync(OrderAssignment assignment);
+        Task<List<Order>> GetOrdersByShippingAddressId(int shippingAddressId);
+        Task UpdateRangeAsync(IEnumerable<Order> orders);
+        Task<List<Order>> GetCompletedOrdersAsync(DateTime? from, DateTime? to);
+        Task<List<Order>> GetCompletedOrdersWithDetailsAsync(DateTime? from, DateTime? to);
+
     }
 }

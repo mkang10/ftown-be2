@@ -22,6 +22,7 @@ namespace API.Controllers
         private readonly CreateProductHandler _createProductHandler;
         private readonly ElasticsearchService _elasticsearchService;
         private readonly FilterProductHandler _filterProductHandler;
+        private readonly GetTopSellingProductHandler _getTopSellingProductHandler;
         public ProductController(
             GetAllProductsHandler getAllProductsHandler,
             GetProductDetailHandler getProductDetailHandler,
@@ -30,7 +31,8 @@ namespace API.Controllers
             GetProductVariantByDetailsHandler getAllProductVariantByDetailsHandler,
             CreateProductHandler createProductHandler,
             ElasticsearchService elasticsearchService,
-            FilterProductHandler filterProductHandler)
+            FilterProductHandler filterProductHandler,
+            GetTopSellingProductHandler getTopSellingProductHandler)
         {
             _getAllProductsHandler = getAllProductsHandler;
             _getProductDetailHandler = getProductDetailHandler;
@@ -40,6 +42,7 @@ namespace API.Controllers
             _createProductHandler = createProductHandler;
             _elasticsearchService = elasticsearchService;
             _filterProductHandler = filterProductHandler;
+            _getTopSellingProductHandler = getTopSellingProductHandler;
         }
 
         [HttpGet("view-all")]
@@ -109,68 +112,34 @@ namespace API.Controllers
             return Ok(new ResponseDTO<ProductVariantResponse>(variant, true, "Lấy biến thể sản phẩm thành công!"));
         }
 
-        //[HttpPost("create")]
-        //public async Task<IActionResult> Create([FromForm] CreateProductRequest request)
-        //{
-        //    try
-        //    {
-        //        var productDetail = await _createProductHandler.CreateProductAsync(request);
-        //        var response = new ResponseDTO<ProductDetailResponse>(productDetail, true, "Tạo sản phẩm thành công");
-        //        return Ok(response);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        var errorResponse = new ResponseDTO(false, $"Lỗi: {ex.Message}");
-        //        return BadRequest(errorResponse);
-        //    }
-        //}
-
         // Endpoint tạo nhiều sản phẩm cùng lúc
-        //[HttpPost("create-multiple")]
-        //public async Task<IActionResult> CreateMultiple([FromForm] List<CreateProductRequest> requests)
-        //{
-        //    if (requests == null || !requests.Any())
-        //        return BadRequest(new ResponseDTO(false, "Không có sản phẩm nào được gửi lên"));
+        [HttpPost("create")]
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public async Task<IActionResult> Create([FromForm] CreateMultipleProductsRequest model)
+        {
+            if (model.Requests == null || !model.Requests.Any())
+                return BadRequest(new ResponseDTO(false, "Không có dữ liệu sản phẩm"));
 
-        //    try
-        //    {
-        //        var productDetails = await _createProductHandler.CreateMultipleProductsAsync(requests);
-        //        var response = new ResponseDTO<List<ProductDetailResponse>>(
-        //            productDetails,
-        //            true,
-        //            $"Tạo thành công {productDetails.Count} sản phẩm"
-        //        );
-        //        return Ok(response);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        var errorResponse = new ResponseDTO(false, $"Lỗi: {ex.Message}");
-        //        return BadRequest(errorResponse);
-        //    }
-        //}
-        
+            try
+            {
+                var result = await _createProductHandler.CreateMultipleProductsAsync(model.Requests);
+                return Ok(new ResponseDTO<List<ProductDetailResponse>>(result, true, $"Tạo thành công {result.Count} sản phẩm"));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDTO(false, $"Lỗi: {ex.Message}"));
+            }
+        }
+        [HttpGet("top-selling-products")]
+        public async Task<ActionResult<ResponseDTO<List<TopSellingProductResponse>>>> GetTopSellingProducts(
+                                        [FromQuery] DateTime? from,
+                                        [FromQuery] DateTime? to,
+                                        [FromQuery] int top = 10)
+        {
+            var result = await _getTopSellingProductHandler.GetTopSellingProductsAsync(from, to, top);
+            return Ok(result);
+        }
 
-        //[HttpGet("search")]
-        //public async Task<ActionResult<List<ProductListResponse>>> SearchProducts([FromQuery] string query)
-        //{
-        //    if (string.IsNullOrEmpty(query))
-        //        return BadRequest("Query không được để trống.");
-
-        //    string cacheKey = $"search:{query}";
-
-        //    // Kiểm tra cache trước khi tìm kiếm trong Elasticsearch
-        //    var cachedResults = await _redisCacheService.GetCacheAsync<List<ProductListResponse>>(cacheKey);
-        //    if (cachedResults != null)
-        //        return Ok(cachedResults);
-
-        //    // Nếu không có cache, tìm kiếm trong Elasticsearch
-        //    var results = await _elasticsearchService.SearchProductsAsync(query);
-
-        //    // Lưu kết quả vào Redis với TTL 5 phút
-        //    await _redisCacheService.SetCacheAsync(cacheKey, results, TimeSpan.FromMinutes(5));
-
-        //    return Ok(results);
-        //}
 
     }
 }

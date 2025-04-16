@@ -128,5 +128,66 @@ namespace Infrastructure.Repositories
             _context.OrderAssignments.Add(assignment);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<Order>> GetOrdersByShippingAddressId(int shippingAddressId)
+        {
+            return await _context.Orders
+                .Where(o => o.ShippingAddressId == shippingAddressId)
+                .ToListAsync();
+        }
+
+        public async Task UpdateRangeAsync(IEnumerable<Order> orders)
+        {
+            _context.Orders.UpdateRange(orders);
+            await _context.SaveChangesAsync();
+        }
+        public async Task<List<Order>> GetCompletedOrdersAsync(DateTime? from, DateTime? to)
+        {
+            var query = _context.Orders
+                .Where(o => o.Status == "completed" && o.CreatedDate.HasValue)
+                .Include(o => o.OrderDetails)
+                .AsQueryable();
+
+            if (from.HasValue)
+            {
+                var fromDate = from.Value.Date;
+                query = query.Where(o => o.CreatedDate.HasValue && o.CreatedDate.Value.Date >= fromDate);
+            }
+
+            if (to.HasValue)
+            {
+                var toDate = to.Value.Date;
+                query = query.Where(o => o.CreatedDate.HasValue && o.CreatedDate.Value.Date <= toDate);
+            }
+
+            return await query.ToListAsync();
+        }
+        public async Task<List<Order>> GetCompletedOrdersWithDetailsAsync(DateTime? from, DateTime? to)
+        {
+            var query = _context.Orders
+                .Where(o => o.Status == "completed" && o.CreatedDate.HasValue)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.ProductVariant)
+                        .ThenInclude(pv => pv.Product)
+                            .ThenInclude(p => p.Category)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.ProductVariant)
+                        .ThenInclude(pv => pv.Size)      // ✅ THÊM dòng này
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.ProductVariant)
+                        .ThenInclude(pv => pv.Color)     // ✅ THÊM dòng này
+                .AsQueryable();
+
+            if (from.HasValue)
+                query = query.Where(o => o.CreatedDate.Value.Date >= from.Value.Date);
+
+            if (to.HasValue)
+                query = query.Where(o => o.CreatedDate.Value.Date <= to.Value.Date);
+
+            return await query.ToListAsync();
+        }
+
+
+
     }
 }

@@ -5,10 +5,6 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ftauthservicewebapi-ahbvbvhbh0epc8c4.southeastasia-01.azurewebsites.net",
-          "Port": 443
-        },
-        {
           "Host": "localhost",
           "Port": 7261
         },
@@ -26,10 +22,6 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ftauthservicewebapi-ahbvbvhbh0epc8c4.southeastasia-01.azurewebsites.net",
-          "Port": 443
-        },
-        {
           "Host": "localhost",
           "Port": 7261
         },
@@ -45,10 +37,6 @@
       "DownstreamPathTemplate": "/api/cart/{id}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
-        {
-          "Host": "customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net",
-          "Port": 443
-        },
         {
           "Host": "localhost",
           "Port": 7264
@@ -66,10 +54,6 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net",
-          "Port": 443
-        },
-        {
           "Host": "localhost",
           "Port": 7264
         },
@@ -86,10 +70,6 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net",
-          "Port": 443
-        },
-        {
           "Host": "localhost",
           "Port": 7264
         },
@@ -105,10 +85,6 @@
       "DownstreamPathTemplate": "/api/cart/{id}/clear",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
-        {
-          "Host": "customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net",
-          "Port": 443
-        },
         {
           "Host": "localhost",
           "Port": 7264
@@ -146,7 +122,7 @@
       "UpstreamHttpMethod": [ "Get" ]
     },
     {
-      "DownstreamPathTemplate": "/api/stores",
+      "DownstreamPathTemplate": "/api/products/filter-by-category",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
@@ -154,7 +130,19 @@
           "Port": 7265
         }
       ],
-      "UpstreamPathTemplate": "/stores",
+      "UpstreamPathTemplate": "/products/filter-by-category",
+      "UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/products/top-selling-products",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7265
+        }
+      ],
+      "UpstreamPathTemplate": "/products/top-selling-products",
       "UpstreamHttpMethod": [ "Get" ]
     },
     {
@@ -178,10 +166,6 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ftorderservicewebapi.azurewebsites.net",
-          "Port": 443
-        },
-        {
           "Host": "localhost",
           "Port": 7266
         }
@@ -193,10 +177,6 @@
       "DownstreamPathTemplate": "/api/orders",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
-        {
-          "Host": "ftorderservicewebapi.azurewebsites.net",
-          "Port": 443
-        },
         {
           "Host": "localhost",
           "Port": 7266
@@ -210,13 +190,25 @@
       "UpstreamHttpMethod": [ "Post" ]
     },
     {
-      "DownstreamPathTemplate": "/api/orders",
+      "DownstreamPathTemplate": "/api/orders/{orderId}/status",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ftorderservicewebapi.azurewebsites.net",
-          "Port": 443
+          "Host": "localhost",
+          "Port": 7266
         },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/orders/{orderId}/status",
+      "UpstreamHttpMethod": [ "Put" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/orders",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
           "Port": 7266
@@ -230,10 +222,6 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ftorderservicewebapi.azurewebsites.net",
-          "Port": 443
-        },
-        {
           "Host": "localhost",
           "Port": 7266
         }
@@ -245,10 +233,6 @@
       "DownstreamPathTemplate": "/api/orders/returnable",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
-        {
-          "Host": "ftorderservicewebapi.azurewebsites.net",
-          "Port": 443
-        },
         {
           "Host": "localhost",
           "Port": 7266
@@ -262,10 +246,6 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ftorderservicewebapi.azurewebsites.net",
-          "Port": 443
-        },
-        {
           "Host": "localhost",
           "Port": 7266
         }
@@ -277,10 +257,6 @@
       "DownstreamPathTemplate": "/api/return-requests/checkout",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
-        {
-          "Host": "ftorderservicewebapi.azurewebsites.net",
-          "Port": 443
-        },
         {
           "Host": "localhost",
           "Port": 7266
@@ -294,10 +270,6 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ftorderservicewebapi.azurewebsites.net",
-          "Port": 443
-        },
-        {
           "Host": "localhost",
           "Port": 7266
         }
@@ -309,10 +281,6 @@
       "DownstreamPathTemplate": "/api/feedback/create-multiple",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
-        {
-          "Host": "customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net",
-          "Port": 443
-        },
         {
           "Host": "localhost",
           "Port": 7264
@@ -326,10 +294,6 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net",
-          "Port": 443
-        },
-        {
           "Host": "localhost",
           "Port": 7264
         }
@@ -341,10 +305,6 @@
       "DownstreamPathTemplate": "/api/customer/profile/{accountId}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
-        {
-          "Host": "customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net",
-          "Port": 443
-        },
         {
           "Host": "localhost",
           "Port": 7264
@@ -358,10 +318,6 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net",
-          "Port": 443
-        },
-        {
           "Host": "localhost",
           "Port": 7264
         }
@@ -374,10 +330,6 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ftorderservicewebapi.azurewebsites.net",
-          "Port": 443
-        },
-        {
           "Host": "localhost",
           "Port": 7266
         }
@@ -386,13 +338,34 @@
       "UpstreamHttpMethod": [ "Post" ]
     },
     {
-      "DownstreamPathTemplate": "/api/shippingaddresses/account/{accountId}",
+      "DownstreamPathTemplate": "/api/shippingaddresses/{id}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ftorderservicewebapi.azurewebsites.net",
-          "Port": 443
-        },
+          "Host": "localhost",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/shippingaddresses/{id}",
+      "UpstreamHttpMethod": [ "Put" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/shippingaddresses/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/shippingaddresses/{id}",
+      "UpstreamHttpMethod": [ "Delete" ]
+    },
+
+    {
+      "DownstreamPathTemplate": "/api/shippingaddresses/account/{accountId}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
           "Port": 7266
@@ -406,10 +379,6 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "inventoryservice123.azurewebsites.net",
-          "Port": 443
-        },
-        {
           "Host": "localhost",
           "Port": 7265
         }
@@ -422,10 +391,6 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "inventoryservice123.azurewebsites.net",
-          "Port": 443
-        },
-        {
           "Host": "localhost",
           "Port": 7265
         }
@@ -437,10 +402,6 @@
       "DownstreamPathTemplate": "/api/favorites/{accountId}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
-        {
-          "Host": "inventoryservice123.azurewebsites.net",
-          "Port": 443
-        },
         {
           "Host": "localhost",
           "Port": 7265

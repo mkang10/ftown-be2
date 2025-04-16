@@ -43,51 +43,56 @@ namespace Application.UseCases
 		}
 
 
-		// Tạo nhiều sản phẩm cùng lúc
-		public async Task<List<ProductDetailResponse>> CreateMultipleProductsAsync(List<CreateProductRequest> requests)
-		{
-			var products = _mapper.Map<List<Product>>(requests);
+        // Tạo nhiều sản phẩm cùng lúc
+        public async Task<List<ProductDetailResponse>> CreateMultipleProductsAsync(List<CreateProductRequest> requests)
+        {
+            var result = new List<Product>();
 
-			for (int i = 0; i < products.Count; i++)
-			{
-				products[i].Status = "Draft";
+            for (int i = 0; i < requests.Count; i++)
+            {
+                var product = _mapper.Map<Product>(requests[i]);
+                product.Status = "Draft";
 
-				if (requests[i].ImageFiles != null && requests[i].ImageFiles.Any())
-				{
-					var (mainImagePath, productImages) = await UploadProductImagesAsync(requests[i].ImageFiles);
-					products[i].ImagePath = mainImagePath;
-					products[i].ProductImages = productImages;
-				}
-			}
+                if (requests[i].ImageFiles != null && requests[i].ImageFiles.Any())
+                {
+                    var (mainImagePath, productImages) = await UploadProductImagesAsync(requests[i].ImageFiles);
+                    product.ImagePath = mainImagePath;
+                    product.ProductImages = productImages;
+                }
 
-			await _productRepository.AddProductsAsync(products);
-			return _mapper.Map<List<ProductDetailResponse>>(products);
-		}
+                result.Add(product);
+            }
 
-		private async Task<(string mainImagePath, List<ProductImage> images)> UploadProductImagesAsync(List<IFormFile> imageFiles)
-		{
-			var images = new List<ProductImage>();
-			string mainImagePath = string.Empty;
+            await _productRepository.AddProductsAsync(result);
+            return _mapper.Map<List<ProductDetailResponse>>(result);
+        }
 
-			for (int i = 0; i < imageFiles.Count; i++)
-			{
-				var imageUrl = await _cloudinaryService.UploadMediaAsync(imageFiles[i]);
+        private async Task<(string mainImagePath, List<ProductImage>)> UploadProductImagesAsync(List<IFormFile> files)
+        {
+            var productImages = new List<ProductImage>();
+            string mainImagePath = null;
 
-				var productImage = new ProductImage
-				{
-					ImagePath = imageUrl,
-					IsMain = (i == 0),
-					CreatedDate = DateTime.UtcNow
-				};
+            foreach (var file in files)
+            {
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                var filePath = Path.Combine("wwwroot/uploads/products", fileName);
 
-				if (i == 0)
-					mainImagePath = imageUrl;
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
 
-				images.Add(productImage);
-			}
+                if (mainImagePath == null)
+                    mainImagePath = $"/uploads/products/{fileName}";
 
-			return (mainImagePath, images);
-		}
+                productImages.Add(new ProductImage
+                {
+                    ImagePath = $"/uploads/products/{fileName}"
+                });
+            }
 
-	}
+            return (mainImagePath, productImages);
+        }
+
+    }
 }

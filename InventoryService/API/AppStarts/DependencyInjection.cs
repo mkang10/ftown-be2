@@ -77,6 +77,7 @@ namespace API.AppStarts
             services.AddScoped<GetFavoriteProductsHandler>();
             services.AddScoped<AddFavoriteHandler>();
             services.AddScoped<RemoveFavoriteHandler>();
+            services.AddScoped<GetTopSellingProductHandler>();
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowLocalhost",
