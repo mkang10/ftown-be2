@@ -33,6 +33,8 @@ public partial class Account
 
     public virtual ICollection<ConversationParticipant> ConversationParticipants { get; set; } = new List<ConversationParticipant>();
 
+    public virtual ICollection<ConversationsBot> ConversationsBots { get; set; } = new List<ConversationsBot>();
+
     public virtual ICollection<CustomerDetail> CustomerDetails { get; set; } = new List<CustomerDetail>();
 
     public virtual ICollection<Dispatch> Dispatches { get; set; } = new List<Dispatch>();

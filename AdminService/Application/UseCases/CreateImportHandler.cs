@@ -35,7 +35,7 @@ namespace Application.UseCases
             }
 
             // Tính tổng tiền từ các ImportDetail (Quantity * UnitPrice)
-            decimal totalCost = request.ImportDetails.Sum(d => d.Quantity * d.UnitPrice);
+            decimal totalCost = request.ImportDetails.Sum(d => d.Quantity * d.CostPrice);
 
             // Duyệt qua từng ImportDetail để gán HandleBy cho StoreDetail từ ShopManagerId của warehouse
             foreach (var importDetail in request.ImportDetails)
@@ -156,6 +156,7 @@ namespace Application.UseCases
                 {
                     ProductVariantId = oldDetail.ProductVariantId,
                     Quantity = 0, // sẽ cập nhật sau
+                    CostPrice =0,
                     ImportStoreDetails = new List<ImportStoreDetail>()
                 };
 
@@ -181,7 +182,7 @@ namespace Application.UseCases
                 if (totalMissing > 0)
                 {
                     newImport.ImportDetails.Add(newDetail);
-                    totalCost += totalMissing * reqDetail.UnitPrice;
+                    totalCost += totalMissing * reqDetail.CostPrice;
 
                     // Sau khi tạo mới ImportDetail và ImportStoreDetails, cập nhật status của ImportStoreDetails cũ thành "Processing"
                     foreach (var store in missingStores)

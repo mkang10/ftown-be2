@@ -1,8 +1,8 @@
-﻿using Application.DTO.Request;
-using Application.Interfaces;
+﻿using Application.Interfaces;
 using AutoMapper;
 using Azure.Core;
 using Domain.Commons;
+using Domain.DTO.Request;
 using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;

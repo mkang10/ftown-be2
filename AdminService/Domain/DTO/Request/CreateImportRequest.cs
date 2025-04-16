@@ -21,7 +21,7 @@ namespace Domain.DTO.Request
     {
         public int ProductVariantId { get; set; }
         public int Quantity { get; set; }
-        public decimal UnitPrice { get; set; }
+        public decimal CostPrice { get; set; }
 
         public List<CreateStoreDetailDto> StoreDetails { get; set; } = new();
     }
