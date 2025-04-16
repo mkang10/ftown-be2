@@ -82,5 +82,10 @@ namespace Application.UseCases
                 throw new Exception("An error occurred: " + ex.Message);
             }
         }
+
+        public Task<List<MessageCreateRequest>> updateStatusIsRead(List<UpdateStatusIsReadMessageDTO> user)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

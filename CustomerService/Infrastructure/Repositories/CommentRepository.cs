@@ -94,17 +94,19 @@ namespace Infrastructure.Repositories
                                            .Where(f => f.ProductId == id)
                                            .CountAsync();
 
-            var items = await _context.Feedbacks.Include(o => o.Account)
-                .Include(o => o.Product)
+            var items = await _context.Feedbacks
+                                       .Include(o => o.Account)
+                                       .Include(o => o.Product)
                                        .Where(f => f.ProductId == id)
+                                       .OrderByDescending(f => f.CreatedDate) // 👉 Sắp xếp mới nhất lên trước
                                        .Skip((paginationParameter.PageIndex - 1) * paginationParameter.PageSize)
                                        .Take(paginationParameter.PageSize)
                                        .AsNoTracking()
                                        .ToListAsync();
 
-            var result = new Pagination<Feedback>(items, itemCount, paginationParameter.PageIndex, paginationParameter.PageSize);
-            return result;
+            return new Pagination<Feedback>(items, itemCount, paginationParameter.PageIndex, paginationParameter.PageSize);
         }
+
 
         public async Task<Pagination<ReplyFeedback>> GettAllReplyByFeedbackId(int id, PaginationParameter paginationParameter)
         {
@@ -114,6 +116,7 @@ namespace Infrastructure.Repositories
 
             var items = await _context.ReplyFeedbacks.Include(o => o.Account)
                                        .Where(f => f.FeedbackId == id)
+                                       .OrderByDescending(f => f.CreatedDate) // 👉 Sắp xếp mới nhất lên trước
                                        .Skip((paginationParameter.PageIndex - 1) * paginationParameter.PageSize)
                                        .Take(paginationParameter.PageSize)
                                        .AsNoTracking()

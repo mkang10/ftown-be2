@@ -65,7 +65,7 @@ namespace Infrastructure.Repositories
         public async Task<Pagination<Account>> GetAllUser(PaginationParameter paginationParameter)
         {
             var itemCount = await _context.Accounts.CountAsync();
-            var items = await _context.Accounts
+            var items = await _context.Accounts.Include(o=>o.Role)
                                     .Skip((paginationParameter.PageIndex - 1) * paginationParameter.PageSize)
                                     .Take(paginationParameter.PageSize)
                                     .AsNoTracking()
@@ -93,7 +93,9 @@ namespace Infrastructure.Repositories
 
         public async Task<Account> GetUserById(int id)
         {
-            var data = await _context.Accounts.SingleOrDefaultAsync(x => x.AccountId.Equals(id));
+            var data = await _context.Accounts
+                .Include(o=>o.Role)
+                .SingleOrDefaultAsync(x => x.AccountId.Equals(id));
             return data;
         }
 

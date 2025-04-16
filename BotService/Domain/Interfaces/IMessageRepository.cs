@@ -9,10 +9,12 @@ using System.Threading.Tasks;
 namespace Domain.Interfaces
 {
     public interface IMessageRepository
-    {
+    {   
         public Task<Pagination<Message>> GetAllMessageByConservationId(int id,PaginationParameter paginationParameter);
         public Task<Message> CreateMessage(Message user);
         public Task<bool> DeleteMessage(Message user);
+        public Task<List<Message>> UpdateStatusIsReadRepository(List<Message> user);
+
 
         public Task<Pagination<Conversation>> GetAllConversationByAccountId(int id,PaginationParameter paginationParameter);
         public Task<Conversation> CreateConversation(Conversation user);

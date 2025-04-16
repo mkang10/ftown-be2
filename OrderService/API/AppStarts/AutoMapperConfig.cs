@@ -36,6 +36,17 @@ namespace API.AppStarts
                                                                                             
             CreateMap<UpdateGHNIdDTO, Order>().ReverseMap();
 
+            CreateMap<Order, InvoiceForEmailDTO>()
+                .ForMember(dest => dest.OrderdetailEmail, opt => opt.MapFrom(src => src.OrderDetails)).ReverseMap();
+            CreateMap<OrderDetail, OrderDetailEmailDTO>()
+    .ForMember(dest => dest.Item, opt => opt.MapFrom(src => src.ProductVariant))
+    .ReverseMap();
+            CreateMap<ProductVariant, ProductDetailEmailDTO>()
+                .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.SizeId, opt => opt.MapFrom(src => src.Size.SizeName))
+                .ForMember(dest => dest.ColorId, opt => opt.MapFrom(src => src.Color.ColorName)).ReverseMap();
+
+
 
         }
     }

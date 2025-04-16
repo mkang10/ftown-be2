@@ -121,6 +121,12 @@ namespace Infrastructure.Repositories
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.ProductVariant)
                 .ThenInclude(pv => pv.Product)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.ProductVariant)
+                .ThenInclude(pv => pv.Size)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.ProductVariant)
+                .ThenInclude(pv => pv.Color)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
         }
         public async Task CreateAssignmentAsync(OrderAssignment assignment)

@@ -1,4 +1,5 @@
 ﻿using Application.DTO.Request;
+using Application.Enum;
 using Application.Interfaces;
 using AutoMapper;
 using Azure.Core;
@@ -255,8 +256,20 @@ namespace Application.UseCases
         {
             
 
-            var orderDetail = await _orderDetailRepository.GetOrderDetailById(feedbackRequests.orderDetailId.Value);
-
+            var orderDetail = await _orderDetailRepository.GetOrderStatuslById(feedbackRequests.orderDetailId.Value);
+            if (orderDetail.AccountId != feedbackRequests.AccountId)
+            {
+                throw new Exception("Sai chủ đơn hàng!");
+            }
+            if (orderDetail.Status == StatusSuccess.completed.ToString())
+            {
+                throw new Exception("Đơn hàng chưa hoàn tất!");
+            }
+            if (orderDetail.IsFeedback == true)
+            {
+                throw new Exception("Đơn hàng đã được feedback, không thể tạo!");
+            }
+            
             if (feedbackRequests.ImgFile != null && feedbackRequests.ImgFile.Length > 0)
             {
                 var uploadParams = new ImageUploadParams

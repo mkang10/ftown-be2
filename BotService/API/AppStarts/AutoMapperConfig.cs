@@ -14,6 +14,8 @@ namespace API.AppStarts
 
             CreateMap<Message, MessageCreateRequest>().ReverseMap();
             CreateMap<Message, MessageRequest>().ReverseMap();
+            CreateMap<Message, UpdateStatusIsReadMessageDTO>().ReverseMap();
+
         }
     }
 }

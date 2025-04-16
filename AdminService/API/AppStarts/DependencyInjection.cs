@@ -48,10 +48,12 @@ namespace API.AppStarts
             services.AddScoped<GetAllTransferHandler>();
             services.AddScoped<DispatchHandler>();
             services.AddScoped<ImportStoreDetailHandler>();
+            services.AddScoped<RedisHandler>();
 
 
 
             services.AddScoped<IUserManagementRepository, UserManagementRepository>();
+            services.AddScoped<IRedisRepository, RedisRepository>();
 
 
             // auto mapper

@@ -64,6 +64,8 @@ namespace API.AppStarts
             services.AddScoped<IReturnOrderRepository, ReturnOrderRepository>();
             services.AddScoped<IRedisRepository, RedisRepository>();
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+            services.AddScoped<IEmailRepository, EmailService>();
+
             //Handler
 
             services.AddScoped<CreateOrderHandler>();
@@ -81,6 +83,8 @@ namespace API.AppStarts
             services.AddScoped<SubmitReturnRequestHandler>();
             services.AddScoped<RedisHandler>();
             services.AddScoped<AuditLogHandler>();
+            services.AddScoped<EmailHandler>();
+
 
             //GHN
             services.AddScoped<GHNLogHandler>();

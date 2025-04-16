@@ -36,7 +36,7 @@ namespace API.Controllers
                     var notFoundResponse = new MessageRespondDTO<object>(null, false, "User not found.");
                     return NotFound(notFoundResponse);
                 }
-                var successResponse = new MessageRespondDTO<object>(result, true, "User retrieved successfully.");
+                var successResponse = new MessageRespondDTO<UserRequestDTO>(result, true, "User retrieved successfully.");
                 return Ok(successResponse);
             }
             catch (Exception ex)
@@ -82,7 +82,7 @@ namespace API.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> Create(CreateUserRequestWithPasswordDTO user)
+        public async Task<IActionResult> Create([FromForm] CreateUserRequestWithPasswordDTO user)
         {
             try
             {

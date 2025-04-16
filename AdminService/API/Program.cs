@@ -25,6 +25,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.Configuration = redisConnection;
     options.InstanceName = redisSection["InstanceName"];
 });
+builder.Services.AddCloudinary();
 
 // Thêm IConnectionMultiplexer làm Singleton
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>

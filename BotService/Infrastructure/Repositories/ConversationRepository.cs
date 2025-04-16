@@ -150,5 +150,12 @@ namespace Infrastructure.Repositories
 
             return items;
         }
+
+        public async Task<List<Message>> UpdateStatusIsReadRepository(List<Message> user)
+        {
+            _context.UpdateRange(user);
+            await _context.SaveChangesAsync();
+            return user;
+        }
     }
 }

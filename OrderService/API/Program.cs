@@ -2,6 +2,7 @@ using API.AppStarts;
 using Application.Interfaces;
 using CloudinaryDotNet;
 using Infrastructure.HelperServices;
+using Infrastructure.HelperServices.Models;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
@@ -34,6 +35,10 @@ builder.Services.AddSingleton(sp =>
     var account = new Account(settings.CloudName, settings.ApiKey, settings.ApiSecret);
     return new Cloudinary(account);
 });
+//Email
+builder.Services.Configure<EmailServiceDTO>(builder.Configuration.GetSection("Mailtrap"));
+
+builder.Services.AddTransient<EmailService>();
 
 // ??ng ký CloudinaryService
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();

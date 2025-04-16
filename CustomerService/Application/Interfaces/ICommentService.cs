@@ -20,5 +20,6 @@ namespace Application.Interfaces
         public Task<bool> Delete(int id);
         public Task<bool> Update(int id, UpdateFeedbackRequestDTO user);
         public Task<FeedbackRequestDTO> GetById(int id);
+
     }
 }

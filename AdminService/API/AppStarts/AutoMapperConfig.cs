@@ -53,7 +53,9 @@ namespace API.AppStarts
             //opt => opt.MapFrom(src => src.StaffDetail != null ? src.StaffDetail.Account.FullName : null))
             //    .ForMember(dest => dest.ActualQuantity,
             //               opt => opt.MapFrom(src => src.ActualReceivedQuantity));
-            CreateMap<Account, UserRequestDTO>().ReverseMap();
+            CreateMap<Account, UserRequestDTO>()
+                                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.RoleName))
+                                             .ReverseMap();
             CreateMap<Account, BanUserRequestDTO>().ReverseMap();
             CreateMap<Account, CreateUserRequestWithPasswordDTO>().ReverseMap();
 
@@ -143,7 +145,7 @@ namespace API.AppStarts
                 .ForMember(dest => dest.WarehouseName,
                            opt => opt.MapFrom(src => src.Warehouse.WarehouseName))
                 .ForMember(dest => dest.Staff,
-                           opt => opt.MapFrom(src => src.StaffDetail.Account.FullName)) 
+                           opt => opt.MapFrom(src => src.StaffDetail.Account.FullName))
                 .ForMember(dest => dest.HandleBy,
                            opt => opt.MapFrom(src => src.HandleByNavigation.Account.FullName))
                 .ReverseMap();

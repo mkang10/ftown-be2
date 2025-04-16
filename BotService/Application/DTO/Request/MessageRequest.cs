@@ -41,6 +41,10 @@ namespace Application.DTO.Request
         public bool IsRead { get; set; }
     }
 
-   
+   public class UpdateStatusIsReadMessageDTO
+    {
+        public int id { get; set; } 
+        public bool IsRead = true;
+    }
 }
 

@@ -1,6 +1,8 @@
 ﻿using Application.DTO.Request;
 using Application.Interfaces;
 using AutoMapper;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Domain.Commons;
 using Domain.Entities;
 using Domain.Interfaces;
@@ -10,6 +12,7 @@ using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -21,12 +24,14 @@ namespace Application.UseCases
         private readonly IUserManagementRepository _userManagementRepository;
         private const string CacheKey = "UserAccounts";
         private readonly IMapper _mapper;
+        private readonly Cloudinary _cloudinary;
 
-        public GetAccountHandler(IConnectionMultiplexer redis, IUserManagementRepository userManagementRepository, IMapper mapper)
+        public GetAccountHandler(IConnectionMultiplexer redis, IUserManagementRepository userManagementRepository, IMapper mapper, Cloudinary cloudinary)
         {
             _redis = redis;
             _userManagementRepository = userManagementRepository;
             _mapper = mapper;
+            _cloudinary = cloudinary;
         }
 
         public async Task<bool> banUser(int id, BanUserRequestDTO user)
@@ -59,10 +64,31 @@ namespace Application.UseCases
                 {
                     throw new Exception("Wrong roleId");
                 }
+
+                if (user.ImgFile != null && user.ImgFile.Length > 0)
+                {
+                    var uploadParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(user.ImgFile.FileName, user.ImgFile.OpenReadStream()),
+                        UseFilename = true,
+                        UniqueFilename = true,
+                        Overwrite = true
+                    };
+
+                    var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+                    if (uploadResult.StatusCode != HttpStatusCode.OK)
+                    {
+                        throw new Exception("Error Picture!");
+                    }
+                    user.ImagePath = uploadResult.SecureUrl.ToString();
+
+                }
+
                 // Encrypte
                 user.PasswordHash = EncryptPassword("funkytown123");
 
-                var map = _mapper.Map<Account>(user);
+                var map = _mapper.Map<Domain.Entities.Account>(user);
                 var userCreate = await _userManagementRepository.CreateUser(map);
                 var result = _mapper.Map<CreateUserRequestWithPasswordDTO>(userCreate);
                 return result;
@@ -102,16 +128,6 @@ namespace Application.UseCases
             {
                 throw new Exception(ex.Message);
             }
-        }
-
-        public Task<Account> getAccountInfoByAccountName(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<Account> getAccountInfoByEmail(string email)
-        {
-            throw new NotImplementedException();
         }
 
         public async Task<UserRequestDTO> getAccountInfoById(int id)
