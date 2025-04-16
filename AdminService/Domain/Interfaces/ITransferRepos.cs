@@ -19,6 +19,8 @@ namespace Domain.Interfaces
            string? filter,
            CancellationToken cancellationToken = default
        );
+        Task<Transfer?> GetByIdWithDetailsAsync(int transferId);
+
 
     }
 
