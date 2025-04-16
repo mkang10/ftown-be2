@@ -103,6 +103,7 @@ namespace Application.UseCases
                 {
                     VariantId = transferDetail.VariantId,
                     Quantity = transferDetail.Quantity
+
                 };
                 dispatch.DispatchDetails.Add(dispatchDetail);
             }
@@ -121,7 +122,7 @@ namespace Application.UseCases
         private async Task<Import> CreateImportAsync(CreateTransferFullFlowDto request, Transfer transfer)
         {
             // 1. Tính tổng chi phí
-            decimal totalCost = request.TransferDetails.Sum(d => d.Quantity * d.UnitPrice);
+            decimal totalCost = request.TransferDetails.Sum(d => d.Quantity * d.CostPrice);
 
             // 2. Tạo đối tượng Import mà không gán ImportID (để EF tự sinh giá trị)
             var import = new Import
@@ -144,6 +145,7 @@ namespace Application.UseCases
                 {
                     ProductVariantId = transferDetail.VariantId,
                     Quantity = transferDetail.Quantity,
+                    CostPrice = 0,
                     // Thiết lập quan hệ: EF sẽ tự gán ImportID cho ImportDetail thông qua navigation property
                     Import = import
                 };

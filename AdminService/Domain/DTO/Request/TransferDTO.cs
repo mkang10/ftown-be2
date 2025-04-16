@@ -27,7 +27,7 @@ namespace Domain.DTO.Request
     {
         public int VariantId { get; set; }
         public int Quantity { get; set; }
-        public decimal UnitPrice { get; set; } // Dùng để tính tổng chi phí cho Import
+        public decimal CostPrice { get; set; } // Dùng để tính tổng chi phí cho Import
     }
 
     // TransferFullFlowDto.cs

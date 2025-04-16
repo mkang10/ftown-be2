@@ -1,41 +1,26 @@
-﻿using Domain.Interfaces;
-using Microsoft.AspNetCore.Http;
+﻿using Domain.DTO.Request;
+using Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace API.Controllers
+namespace Api.Controllers
 {
-    public class ChatRequest
-    {
-        public string Message { get; set; }
-    }
-
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/chat")]
     public class ChatController : ControllerBase
     {
-        private readonly IChatServices _chatService;
+        private readonly ChatAppService _svc;
+        public ChatController(ChatAppService svc) => _svc = svc;
 
-        public ChatController(IChatServices chatService)
+        [HttpPost("message")]
+        public async Task<IActionResult> Message(
+            [FromBody] ChatMessageRequest req,
+            CancellationToken ct)
         {
-            _chatService = chatService;
-        }
-
-        [HttpPost("sse")]
-        public async Task StreamChatSse([FromBody] ChatRequest request, CancellationToken cancellationToken)
-        {
-            // Đặt Content-Type cho SSE
-            Response.ContentType = "text/event-stream";
-
-            // Gọi dịch vụ chat, mỗi khi nhận được một chunk dữ liệu, định dạng theo chuẩn SSE (data: ...\n\n)
-            await _chatService.StreamChatAsync(request.Message, async chunk =>
-            {
-                // Định dạng chunk theo chuẩn SSE
-                string sseData = $"data: {chunk}\n\n";
-                await Response.WriteAsync(sseData, cancellationToken);
-                await Response.Body.FlushAsync(cancellationToken);
-            }, cancellationToken);
+            var reply = await _svc.GetFullReplyAsync(req.UserId, req.Content, ct);
+            var convId = await _svc.GetOrCreateConversationAsync(req.UserId, ct);
+            return Ok(new { conversationId = convId, reply });
         }
     }
 }
