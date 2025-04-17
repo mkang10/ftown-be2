@@ -4,7 +4,7 @@ using Domain.Interfaces;
 using Domain.Models;
 using Domain.DTO.Request;
 
-namespace Infrastructure.Services
+namespace Infrastructure
 {
     public class OutfitRecommendationService : IOutfitRecommendationService
     {

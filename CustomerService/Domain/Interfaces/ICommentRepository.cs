@@ -18,13 +18,15 @@ namespace Domain.Interfaces
         public Task<bool> DeleteFeedback(Feedback data);
         //===================================================================================================================
         public Task<Pagination<ReplyFeedback>> GettAllReplyByFeedbackId(int id, PaginationParameter paginationParameter);
-        public Task<ReplyFeedback> CreateReply (ReplyFeedback data);
+        public Task<ReplyFeedback> CreateReply(ReplyFeedback data);
         public Task<ReplyFeedback> UpdateReply(ReplyFeedback data);
         public Task<bool> DeleteReply(ReplyFeedback data);
         //===================================================================================================================
 
         public Task<Feedback> GetFeedBackById(int id);
         public Task<ReplyFeedback> GetReplyFeedBackById(int id);
+        public Task<Order> UpdateStatusIsFeedback(Order data);
+
 
     }
 }

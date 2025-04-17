@@ -1,6 +1,10 @@
 ﻿using Application.DTO.Request;
+using Application.Enum;
 using Application.Interfaces;
 using AutoMapper;
+using Azure.Core;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Domain.Commons;
 using Domain.Entities;
 using Domain.Interfaces;
@@ -9,6 +13,7 @@ using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,26 +25,30 @@ namespace Application.UseCases
     {
         private readonly ICommentRepository _commentRepository;
         private readonly IOrderDetailRepository _orderDetailRepository;
+        private readonly Cloudinary _cloudinary;
+
 
         private const string CacheKey = "Data";
         private readonly IMapper _mapper;
         private readonly IConnectionMultiplexer _redis;
         private readonly HttpClient _httpClient;
 
-
-        public FeedbackHandler(HttpClient httpClient, ICommentRepository commentRepository, IOrderDetailRepository orderDetailRepository , IMapper mapper, IConnectionMultiplexer redis)
+        public FeedbackHandler(ICommentRepository commentRepository,
+            IOrderDetailRepository orderDetailRepository, Cloudinary cloudinary,
+            IMapper mapper, IConnectionMultiplexer redis, HttpClient httpClient)
         {
             _commentRepository = commentRepository;
+            _orderDetailRepository = orderDetailRepository;
+            _cloudinary = cloudinary;
             _mapper = mapper;
             _redis = redis;
             _httpClient = httpClient;
-            _orderDetailRepository = orderDetailRepository;
-
         }
 
-        public async Task<List<CreateFeedBackRequestDTO>> CreateMultiple(List<CreateFeedBackRequestDTO> feedbackRequests)
+        public async Task<List<CreateFeedBackArrayRequestDTO>> CreateMultiple(List<CreateFeedBackArrayRequestDTO> feedbackRequests)
         {
-            var createdFeedbacks = new List<CreateFeedBackRequestDTO>();
+            var createdFeedbacks = new List<CreateFeedBackArrayRequestDTO>();
+            int? orderIdToUpdate = null;
 
             foreach (var request in feedbackRequests)
             {
@@ -49,19 +58,47 @@ namespace Application.UseCases
 
                 // Lấy thông tin OrderDetail từ repository
                 var orderDetail = await _orderDetailRepository.GetOrderDetailById(request.orderDetailId.Value);
+                var orderData = await _orderDetailRepository.GetOrderStatuslById(orderDetail.OrderId);
+
 
                 // Kiểm tra đơn hàng có trạng thái "completed"
-                if (orderDetail?.Order?.Status?.Equals("completed", StringComparison.OrdinalIgnoreCase) != true)
+                if (orderData?.Status?.Equals("completed", StringComparison.OrdinalIgnoreCase) != true)
                     continue; // Bỏ qua nếu đơn hàng chưa hoàn thành
+                if (orderData?.IsFeedback == true)
+                    continue;
+                orderIdToUpdate = orderDetail.OrderId;
+
+                if (request.ImageFile != null && request.ImageFile.Length > 0)
+                {
+                    var uploadParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(request.ImageFile.FileName, request.ImageFile.OpenReadStream()),
+                        UseFilename = true,
+                        UniqueFilename = true,
+                        Overwrite = true
+                    };
+
+                    var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+                    if (uploadResult.StatusCode != HttpStatusCode.OK)
+                    {
+                        throw new Exception("Error Picture!");
+                    }
+                    request.ImagePath = uploadResult.SecureUrl.ToString();
+                }
 
                 // Map DTO sang entity và lưu vào database
                 var feedbackEntity = _mapper.Map<Feedback>(request);
                 var createdFeedback = await _commentRepository.CreateFeedback(feedbackEntity);
-
                 // Thêm feedback đã tạo vào danh sách kết quả
-                createdFeedbacks.Add(_mapper.Map<CreateFeedBackRequestDTO>(createdFeedback));
+                createdFeedbacks.Add(_mapper.Map<CreateFeedBackArrayRequestDTO>(createdFeedback));
             }
-
+            if (orderIdToUpdate.HasValue)
+            {
+                var orderToUpdate = await _orderDetailRepository.GetOrderStatuslById(orderIdToUpdate.Value);
+                orderToUpdate.IsFeedback = true;
+                await _commentRepository.UpdateStatusIsFeedback(orderToUpdate);
+            }
             return createdFeedbacks; // Trả về danh sách feedback đã tạo
         }
 
@@ -215,7 +252,7 @@ namespace Application.UseCases
                 await db.KeyDeleteAsync("Data");
                 var paginationParameter = new PaginationParameter();
                 // call and wite new cache to redis
-                var updatedUsers = await _commentRepository.GettAllFeedbackByProductId(user.ProductId ,paginationParameter);
+                var updatedUsers = await _commentRepository.GettAllFeedbackByProductId(user.ProductId, paginationParameter);
                 await db.StringSetAsync("Data", JsonConvert.SerializeObject(updatedUsers), TimeSpan.FromMinutes(300));
 
                 return true;
@@ -224,6 +261,50 @@ namespace Application.UseCases
             {
                 throw new Exception("An error occurred: " + ex.Message);
             }
+        }
+
+        public async Task<CreateFeedBackRequestDTO> Create(CreateFeedBackRequestDTO feedbackRequests)
+        {
+
+
+            var orderDetail = await _orderDetailRepository.GetOrderStatuslById(feedbackRequests.orderDetailId.Value);
+            if (orderDetail.AccountId != feedbackRequests.AccountId)
+            {
+                throw new Exception("Sai chủ đơn hàng!");
+            }
+            if (orderDetail.Status == StatusSuccess.completed.ToString())
+            {
+                throw new Exception("Đơn hàng chưa hoàn tất!");
+            }
+            if (orderDetail.IsFeedback == true)
+            {
+                throw new Exception("Đơn hàng đã được feedback, không thể tạo!");
+            }
+
+            if (feedbackRequests.ImgFile != null && feedbackRequests.ImgFile.Length > 0)
+            {
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(feedbackRequests.ImgFile.FileName, feedbackRequests.ImgFile.OpenReadStream()),
+                    UseFilename = true,
+                    UniqueFilename = true,
+                    Overwrite = true
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+                if (uploadResult.StatusCode != HttpStatusCode.OK)
+                {
+                    throw new Exception("Error Picture!");
+                }
+                feedbackRequests.ImagePath = uploadResult.SecureUrl.ToString();
+            }
+
+            // Map DTO sang entity và lưu vào database
+            var feedbackEntity = _mapper.Map<Feedback>(feedbackRequests);
+            var createdFeedback = await _commentRepository.CreateFeedback(feedbackEntity);
+            var result = _mapper.Map<CreateFeedBackRequestDTO>(createdFeedback);
+            return result;
         }
     }
 }

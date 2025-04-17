@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Application.Services; // ReportService
 using System.IO;
 using System.IO.Compression;
+using Application.DTO.Response;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -122,5 +123,25 @@ public class TransferController : ControllerBase
             return BadRequest(result);
 
         return Ok(result);
+    }
+    [HttpGet("transfer/{id}")]
+    public async Task<IActionResult> GetJSONTransferByIdController(int id)
+    {
+        try
+        {
+            var result = await _transferHandler.GetJSONTransferById(id);
+            if (result == null)
+            {
+                var notFoundResponse = new MessageRespondDTO<JSONTransferDispatchImportGet>(null, false, "Transfer not found!");
+                return NotFound(notFoundResponse);
+            }
+            var successResponse = new MessageRespondDTO<JSONTransferDispatchImportGet>(result, true, "Success!");
+            return Ok(successResponse);
+        }
+        catch (Exception ex)
+        {
+            var errorResponse = new MessageRespondDTO<object>(null, false, "An error occurred: " + ex.Message);
+            return BadRequest(errorResponse);
+        }
     }
 }

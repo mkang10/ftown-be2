@@ -5,7 +5,6 @@ using Application.UseCases;
 using Domain.Interfaces;
 using Infrastructure;
 using Infrastructure.Repositories;
-using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.AppStarts

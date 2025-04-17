@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
-using static Domain.DTO.Response.MessageRespondDTO<T>;
 
 namespace API.Controllers
 {
@@ -85,7 +84,6 @@ namespace API.Controllers
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteMessage(int id)
         {
-            var response = new MessageResponseButNoData();
 
             try
             {
@@ -106,4 +104,4 @@ namespace API.Controllers
 
         }
     }
-    }
+}

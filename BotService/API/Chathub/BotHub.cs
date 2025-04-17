@@ -1,4 +1,4 @@
-﻿using Infrastructure.Services;
+﻿using Infrastructure;
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 

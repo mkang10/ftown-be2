@@ -12,5 +12,11 @@ namespace Domain.Interfaces
         Task SaveChangesAsync();
         Task<Dispatch?> GetDispatchByTransferIdAsync(int transferId);
 
+        // duc anh
+        public Task<Dispatch> GetJSONDispatchById(int id);
+
+        Task<StoreExportStoreDetail> GetStoreExportStoreDetailById(int importId);
+        //====
+
     }
 }

@@ -26,11 +26,11 @@ namespace API.Controllers
         }
 
         [HttpGet("accountid/{id}")]
-        public async Task<IActionResult> GettAllFeedbackByAccountId(int id,[FromQuery] PaginationParameter paginationParameter)
+        public async Task<IActionResult> GettAllFeedbackByAccountId(int id, [FromQuery] PaginationParameter paginationParameter)
         {
             try
             {
-                var result = await _service.GettAllFeedbackByAccountId(id ,paginationParameter);
+                var result = await _service.GettAllFeedbackByAccountId(id, paginationParameter);
 
                 if (result == null)
                 {
@@ -61,7 +61,7 @@ namespace API.Controllers
             }
         }
         [HttpGet("productid/{id}")]
-        public async Task<IActionResult> GettAllFeedbackByProductId(int id,[FromQuery] PaginationParameter paginationParameter)
+        public async Task<IActionResult> GettAllFeedbackByProductId(int id, [FromQuery] PaginationParameter paginationParameter)
         {
             try
             {
@@ -97,7 +97,7 @@ namespace API.Controllers
         }
 
         [HttpPost("create-multiple")]
-        public async Task<IActionResult> CreateMultiple([FromBody] CreateMultipleFeedBackRequest feedbackRequest)
+        public async Task<IActionResult> CreateMultiple([FromForm] CreateMultipleFeedBackRequest feedbackRequest)
         {
             try
             {
@@ -113,14 +113,37 @@ namespace API.Controllers
                     return BadRequest(new MessageRespondDTO<string>(null, false, "Không thể tạo feedback."));
                 }
 
-                return Ok(new MessageRespondDTO<List<CreateFeedBackRequestDTO>>(createdFeedbacks, true, StatusSuccess.Success.ToString()));
+                return Ok(new MessageRespondDTO<List<CreateFeedBackArrayRequestDTO>>(createdFeedbacks, true, StatusSuccess.Success.ToString()));
             }
             catch (Exception ex)
             {
                 return BadRequest(new MessageRespondDTO<string>(null, false, ex.Message));
             }
         }
+        [HttpPost("create")]
+        public async Task<IActionResult> Create([FromForm] CreateFeedBackRequestDTO feedbackRequest)
+        {
+            try
+            {
+                if (feedbackRequest == null)
+                {
+                    return BadRequest(new MessageRespondDTO<string>(null, false, "Danh sách feedback không được để trống."));
+                }
 
+                var createdFeedbacks = await _service.Create(feedbackRequest);
+
+                if (createdFeedbacks == null)
+                {
+                    return BadRequest(new MessageRespondDTO<string>(null, false, "Không thể tạo feedback."));
+                }
+
+                return Ok(new MessageRespondDTO<CreateFeedBackRequestDTO>(createdFeedbacks, true, StatusSuccess.Success.ToString()));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new MessageRespondDTO<string>(null, false, ex.Message));
+            }
+        }
 
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteFeedback(int id)
@@ -173,6 +196,6 @@ namespace API.Controllers
             }
         }
 
-        
+
     }
 }

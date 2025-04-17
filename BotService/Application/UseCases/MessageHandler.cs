@@ -82,5 +82,23 @@ namespace Application.UseCases
                 throw new Exception("An error occurred: " + ex.Message);
             }
         }
+        public async Task<List<MessageCreateRequest>> updateStatusIsRead(List<UpdateStatusIsReadMessageDTO> dtos)
+        {
+            var ids = dtos.Select(x => x.id).ToList();
+
+            var messages = await _message.GetMessagesByIdsAsync(ids);
+
+            if (messages == null || messages.Count == 0)
+                return new List<MessageCreateRequest>();
+
+            foreach (var message in messages)
+            {
+                message.IsRead = true;
+            }
+
+            await _message.UpdateStatusIsReadRepository(messages);
+
+            return _mapper.Map<List<MessageCreateRequest>>(messages);
+        }
     }
 }

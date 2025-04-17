@@ -11,9 +11,9 @@ public partial class OrderAssignment
 
     public int ShopManagerId { get; set; }
 
-    public int StaffId { get; set; }
+    public int? StaffId { get; set; }
 
-    public DateTime AssignmentDate { get; set; }
+    public DateTime? AssignmentDate { get; set; }
 
     public string? Comments { get; set; }
 

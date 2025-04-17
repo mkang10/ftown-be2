@@ -9,7 +9,7 @@ using Domain.Entities;
 using Domain.Interfaces;
 using Domain.Models;
 
-namespace Infrastructure.Services
+namespace Infrastructure
 {
     public class ChatAppService
     {
