@@ -27,6 +27,7 @@ namespace Domain.Interfaces
 		Task RemoveFavoriteAsync(int accountId, int productId);
 		Task<List<Product>> GetFavoritePagedProductsAsync(int accountId, int page, int pageSize);
         Task<List<Product>> GetProductsByCategoryNameAsync(string categoryName);
+        Task<List<Order>> GetCompletedOrdersWithDetailsAsync(DateTime? from, DateTime? to);
 
     }
 }

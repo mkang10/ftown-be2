@@ -7,11 +7,8 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Request
 {
-    public class CreateShippingAddressRequest
+    public class UpdateShippingAddressRequest
     {
-        [Required]
-        public int AccountId { get; set; }
-
         [Required(ErrorMessage = "Địa chỉ không được để trống")]
         [StringLength(255, ErrorMessage = "Địa chỉ không được vượt quá 255 ký tự")]
         public string Address { get; set; } = null!;
@@ -38,7 +35,6 @@ namespace Application.DTO.Request
         [StringLength(100, ErrorMessage = "Email không được vượt quá 100 ký tự")]
         public string Email { get; set; } = null!;
 
-        public bool? IsDefault { get; set; }
+        public bool IsDefault { get; set; }
     }
-
 }

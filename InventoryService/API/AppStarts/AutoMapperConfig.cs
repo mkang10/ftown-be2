@@ -63,6 +63,18 @@ namespace API.AppStarts
                 .ForMember(dest => dest.WarehouseId, opt => opt.Ignore()) 
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore());
             CreateMap<ProductVariantRequest, ProductVariant>().ReverseMap();
+
+            CreateMap<Product, TopSellingProductResponse>()
+            .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.ProductId))
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Name))
+            .ForMember(dest => dest.ImagePath, opt => opt.MapFrom(src => src.ImagePath))
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : null))
+            .ForMember(dest => dest.Price, opt => opt.Ignore()) // sẽ set thủ công từ variant
+            .ForMember(dest => dest.DiscountedPrice, opt => opt.Ignore())
+            .ForMember(dest => dest.QuantitySold, opt => opt.Ignore())
+            .ForMember(dest => dest.Revenue, opt => opt.Ignore())
+            .ForMember(dest => dest.PromotionTitle, opt => opt.Ignore());
+
         }
     }
 }

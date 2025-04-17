@@ -35,7 +35,11 @@ namespace API.AppStarts
             .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.PriceAtPurchase)); // Map giá lúc mua
                                                                                             
             CreateMap<UpdateGHNIdDTO, Order>().ReverseMap();
-
+            CreateMap<UpdateShippingAddressRequest, ShippingAddress>()
+                .ForMember(dest => dest.AddressId, opt => opt.Ignore())
+                .ForMember(dest => dest.AccountId, opt => opt.Ignore());
+            CreateMap<CreateShippingAddressRequest, ShippingAddress>();
+            CreateMap<ShippingAddress, ShippingAddressResponse>();
 
         }
     }

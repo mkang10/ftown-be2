@@ -197,6 +197,23 @@ namespace Infrastructure
                 .ToListAsync();
         }
 
+        public async Task<List<Order>> GetCompletedOrdersWithDetailsAsync(DateTime? from, DateTime? to)
+        {
+            var query = _context.Orders
+                .Where(o => o.Status == "completed" && o.CreatedDate.HasValue)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.ProductVariant)
+                        .ThenInclude(pv => pv.Product)
+                            .ThenInclude(p => p.Category) // ✅ phải có dòng này
+                .AsQueryable();
 
+            if (from.HasValue)
+                query = query.Where(o => o.CreatedDate.Value.Date >= from.Value.Date);
+
+            if (to.HasValue)
+                query = query.Where(o => o.CreatedDate.Value.Date <= to.Value.Date);
+
+            return await query.ToListAsync();
+        }
     }
 }
