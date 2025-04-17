@@ -23,9 +23,42 @@ namespace Infrastructure
             return import;
         }
 
+        public async Task<Import?> GetImportByTransferIdAsync(int transferId)
+        {
+            var transfer = await _context.Transfers
+              .AsNoTracking()
+              .FirstOrDefaultAsync(t => t.TransferOrderId == transferId);
+            if (transfer == null || transfer.ImportId == 0)
+                return null;
+
+            return await _context.Imports
+                .Include(i => i.ImportDetails)
+                    .ThenInclude(id => id.ProductVariant)
+                        .ThenInclude(v => v.Product)
+                .Include(i => i.ImportDetails)
+                    .ThenInclude(id => id.ProductVariant)
+                        .ThenInclude(v => v.Color)
+                .Include(i => i.ImportDetails)
+                    .ThenInclude(id => id.ProductVariant)
+                        .ThenInclude(v => v.Size)
+                .Include(i => i.ImportDetails)
+                    .ThenInclude(id => id.ImportStoreDetails)
+                .FirstOrDefaultAsync(i => i.ImportId == transfer.ImportId);
+        }
         public async Task<Import?> GetByIdAsync(int importId)
         {
             return await _context.Imports
+                .Include(i => i.ImportDetails)
+                    .ThenInclude(id => id.ProductVariant)
+                        .ThenInclude(v => v.Product)
+                .Include(i => i.ImportDetails)
+                    .ThenInclude(id => id.ProductVariant)
+                        .ThenInclude(v => v.Color)
+                .Include(i => i.ImportDetails)
+                    .ThenInclude(id => id.ProductVariant)
+                        .ThenInclude(v => v.Size)
+                .Include(i => i.ImportDetails)
+                    .ThenInclude(id => id.ImportStoreDetails)
                 .FirstOrDefaultAsync(i => i.ImportId == importId);
         }
 
