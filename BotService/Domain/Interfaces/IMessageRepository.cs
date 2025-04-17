@@ -31,7 +31,7 @@ namespace Domain.Interfaces
 
         public Task<List<int>> GetAllShopManagerId();
         public Task<List<int>> GetAllStaffId();
-
+        public Task<List<Message>> GetMessagesByIdsAsync(List<int> ids);
 
     }
 }

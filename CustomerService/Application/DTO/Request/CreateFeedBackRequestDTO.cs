@@ -8,6 +8,26 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Request
 {
+    public class CreateFeedBackArrayRequestDTO
+
+    {
+        public int? orderDetailId { get; set; }
+        public int AccountId { get; set; }
+
+        public int ProductId { get; set; }
+
+        public string? Title { get; set; }
+
+        public int? Rating { get; set; }
+
+        public string? Comment { get; set; }
+
+        public DateTime? CreatedDate { get; set; }
+        [JsonIgnore]
+        public IFormFile? ImageFile { get; set; }
+        public string? ImagePath { get; set; }
+
+    }
     public class CreateFeedBackRequestDTO
 
     {

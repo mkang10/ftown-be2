@@ -39,4 +39,10 @@ namespace Application.DTO.Request
 
         public DateTime? CreatedDate { get; set; }
     }
+
+    public class UpdateOrderStatusDTO
+    {
+        public bool? IsFeedback { get; set; }
+
+    }
 }

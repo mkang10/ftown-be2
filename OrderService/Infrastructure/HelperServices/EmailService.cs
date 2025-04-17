@@ -1,40 +1,41 @@
 ﻿using Domain.Interfaces;
 using Infrastructure.HelperServices.Models;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Options;
-using RestSharp;
+using MimeKit;
+using System.Net.Mail;
 
 namespace Infrastructure.HelperServices
 {
     public class EmailService : IEmailRepository
     {
         private readonly EmailServiceDTO _settings;
+
         public EmailService(IOptions<EmailServiceDTO> settings)
         {
             _settings = settings.Value;
         }
+
         public async Task SendInvoiceEmailAsync(string toEmail, string subject, string htmlContent)
         {
-            var client = new RestClient(_settings.ApiUrl);
-            var request = new RestRequest();
-            request.AddHeader("Authorization", $"Bearer {_settings.ApiToken}");
-            request.AddHeader("Content-Type", "application/json");
+            var email = new MimeMessage();
+            email.From.Add(new MailboxAddress("Shop Invoice", _settings.FromEmail));
+            email.To.Add(MailboxAddress.Parse(toEmail));
+            email.Subject = subject;
 
-            var body = new
+            var builder = new BodyBuilder
             {
-                from = new { email = "hello@example.com", name = "Shop Invoice" },
-                to = new[] { new { email = toEmail } },
-                subject = subject,
-                html = htmlContent, // gửi HTML thay vì text
-                category = "Invoice"
+                HtmlBody = htmlContent
             };
 
-            request.AddJsonBody(body);
-            var response = await client.ExecutePostAsync(request);
+            email.Body = builder.ToMessageBody();
 
-            if (!response.IsSuccessful)
-            {
-                throw new Exception($"Email sending failed: {response.Content}");
-            }
+            using var smtp = new MailKit.Net.Smtp.SmtpClient();
+            await smtp.ConnectAsync("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
+            await smtp.AuthenticateAsync(_settings.FromEmail, _settings.Password);
+            await smtp.SendAsync(email);
+            await smtp.DisconnectAsync(true);
         }
     }
 }

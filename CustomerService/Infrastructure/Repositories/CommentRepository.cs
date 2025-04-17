@@ -132,6 +132,12 @@ namespace Infrastructure.Repositories
             await _context.SaveChangesAsync();
             return data;
         }
+        public async Task<Order> UpdateStatusIsFeedback(Order data)
+        {
+            _context.Update(data);
+            await _context.SaveChangesAsync();
+            return data;
+        }
 
         public async Task<ReplyFeedback> UpdateReply(ReplyFeedback data)
         {

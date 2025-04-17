@@ -26,6 +26,22 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.InstanceName = redisConfig["InstanceName"];
 });
     builder.Services.AddCloudinary();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigins", policy =>
+    {
+        policy
+            .WithOrigins(
+                "http://localhost:3000",
+                "http://localhost:5000",
+                "http://127.0.0.1:5500", // <== Thêm dòng này
+                "https://ftown-client-product.vercel.app"
+            )
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
+});
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {

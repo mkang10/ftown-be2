@@ -8,7 +8,7 @@ namespace Infrastructure.HelperServices.Models
 {
     public class EmailServiceDTO
     {
-        public string ApiUrl { get; set; }
-        public string ApiToken { get; set; }
+        public string FromEmail { get; set; }
+        public string Password { get; set; }
     }
 }

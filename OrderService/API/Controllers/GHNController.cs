@@ -120,7 +120,7 @@ namespace API.Controllers
                 if (latestStatuses.Any(s => s.status == "delivered"))
                 {
                     // Gọi hàm cập nhật nếu trạng thái là "delivered"
-                    var update = await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "completed", orderDetailRequest.create_by);
+                    var update = await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "completed");
                 }
                 return Ok(new { latestStatuses });
             }
@@ -162,7 +162,7 @@ namespace API.Controllers
                 if (latestStatus != null && latestStatus.status == "delivered")
                 {
                     // Gọi hàm cập nhật nếu trạng thái là "delivered"
-                    var update = await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "completed", orderDetailRequest.create_by);
+                    var update = await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "completed");
                 }
                 return Ok(latestStatus);
             }

@@ -45,7 +45,7 @@ namespace Application.UseCases
                 throw new Exception("An error occurred: " + ex.Message);
             }
         }
-        public async Task<bool> GetOrderByGHNId(string orderId, string newStatus, int changedBy)
+        public async Task<bool> GetOrderByGHNId(string orderId, string newStatus)
         {
             // 📌 1️⃣ Lấy thông tin đơn hàng
             var order = await _orderRepository.GetOrderByIdGHNAsync(orderId);
@@ -70,7 +70,7 @@ namespace Application.UseCases
                 "Orders",
                 orderId.ToString(),
                 newStatus,
-                changedBy,
+                order.AccountId,
                 changeData, // ✅ Lưu dữ liệu thay đổi
                "CHANGE STATUS"
             );

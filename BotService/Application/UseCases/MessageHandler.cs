@@ -83,9 +83,24 @@ namespace Application.UseCases
             }
         }
 
-        public Task<List<MessageCreateRequest>> updateStatusIsRead(List<UpdateStatusIsReadMessageDTO> user)
+        public async Task<List<MessageCreateRequest>> updateStatusIsRead(List<UpdateStatusIsReadMessageDTO> dtos)
         {
-            throw new NotImplementedException();
+            var ids = dtos.Select(x => x.id).ToList();
+
+            var messages = await _message.GetMessagesByIdsAsync(ids);
+
+            if (messages == null || messages.Count == 0)
+                return new List<MessageCreateRequest>();
+
+            foreach (var message in messages)
+            {
+                message.IsRead = true;
+            }
+
+            await _message.UpdateStatusIsReadRepository(messages);
+
+            return _mapper.Map<List<MessageCreateRequest>>(messages);
         }
+
     }
 }

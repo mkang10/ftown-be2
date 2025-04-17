@@ -1,5 +1,6 @@
 ﻿using Application.DTO.Request;
 using Domain.Commons;
+using Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,5 +15,6 @@ namespace Application.Interfaces
         public Task<MessageCreateRequest> createMessage(MessageCreateRequest user);
         public Task<List<MessageCreateRequest>> updateStatusIsRead(List<UpdateStatusIsReadMessageDTO> user);
         public Task<bool> deleteMessage(int id);
+
     }
 }

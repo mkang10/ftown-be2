@@ -27,6 +27,8 @@ namespace Application.DTO.Request
 
     public class MessageCreateRequest
     {
+        [JsonIgnore]
+        public int MessageId { get; set; }
 
         public int ConversationId { get; set; }
 

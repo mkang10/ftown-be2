@@ -97,7 +97,7 @@ namespace API.Controllers
         }
 
         [HttpPost("create-multiple")]
-        public async Task<IActionResult> CreateMultiple([FromBody] CreateMultipleFeedBackRequest feedbackRequest)
+        public async Task<IActionResult> CreateMultiple([FromForm] CreateMultipleFeedBackRequest feedbackRequest)
         {
             try
             {
@@ -113,7 +113,7 @@ namespace API.Controllers
                     return BadRequest(new MessageRespondDTO<string>(null, false, "Không thể tạo feedback."));
                 }
 
-                return Ok(new MessageRespondDTO<List<CreateFeedBackRequestDTO>>(createdFeedbacks, true, StatusSuccess.Success.ToString()));
+                return Ok(new MessageRespondDTO<List<CreateFeedBackArrayRequestDTO>>(createdFeedbacks, true, StatusSuccess.Success.ToString()));
             }
             catch (Exception ex)
             {

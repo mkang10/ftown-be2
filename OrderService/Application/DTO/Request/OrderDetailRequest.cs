@@ -14,8 +14,6 @@ namespace Application.DTO.Request
     public class OrderDetailWithUpdateRequest
     {
         public string order_code { get; set; }
-        public int create_by { get; set; }
-
 
     }
 }

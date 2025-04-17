@@ -54,7 +54,12 @@ namespace API.AppStarts
             CreateMap<UpdateFeedbackRequestDTO, Feedback>()
            .ForMember(dest => dest.ProductId, opt => opt.Ignore());
             //feedback reverse
-            CreateMap<Feedback, CreateFeedBackRequestDTO>();
+            CreateMap<Feedback, CreateFeedBackRequestDTO>()
+                                .ForMember(dest => dest.ImgFile, opt => opt.Ignore())
+.ReverseMap();
+            CreateMap<Feedback, CreateFeedBackArrayRequestDTO>()
+                                .ForMember(dest => dest.ImageFile, opt => opt.Ignore())
+.ReverseMap();
             CreateMap<Feedback, FeedbackRequestDTO>()
                      .ForMember(dest => dest.Product, opt => opt.MapFrom(src => src.Product.Name))
                      .ForMember(dest => dest.Account, opt => opt.MapFrom(src => src.Account.FullName)).ReverseMap();
@@ -64,6 +69,7 @@ namespace API.AppStarts
                 .ForMember(dest => dest.Account, opt => opt.MapFrom(src => src.Account.FullName)).ReverseMap();
             CreateMap<ReplyFeedback, CreateReplyRequestDTO>().ReverseMap();
             CreateMap<ReplyFeedback, UpdateReplyRequestDTO>().ReverseMap();
+            CreateMap<Order, UpdateOrderStatusDTO>().ReverseMap();
 
 
         }

@@ -1,5 +1,6 @@
 ﻿using Domain.Commons;
 using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,6 +32,11 @@ namespace Domain.Interfaces
         public Task<bool> DeleteRole(Role role);
 
         public Task<Role> GetRoleById(int id);
+
+        public Task<StaffDetail> CreateStaffDetail(StaffDetail user);
+        public Task<StaffDetail> GetStaffDetailById(int id);
+        public Task<StaffDetail> UpdateStaffDetail(StaffDetail user);
+     
 
     }
 }

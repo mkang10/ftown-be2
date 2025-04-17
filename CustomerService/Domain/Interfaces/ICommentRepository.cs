@@ -25,6 +25,8 @@ namespace Domain.Interfaces
 
         public Task<Feedback> GetFeedBackById(int id);
         public Task<ReplyFeedback> GetReplyFeedBackById(int id);
+        public Task<Order> UpdateStatusIsFeedback(Order data);
+
 
     }
 }

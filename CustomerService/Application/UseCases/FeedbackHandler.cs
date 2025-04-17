@@ -45,9 +45,10 @@ namespace Application.UseCases
             _httpClient = httpClient;
         }
 
-        public async Task<List<CreateFeedBackRequestDTO>> CreateMultiple(List<CreateFeedBackRequestDTO> feedbackRequests)
+        public async Task<List<CreateFeedBackArrayRequestDTO>> CreateMultiple(List<CreateFeedBackArrayRequestDTO> feedbackRequests)
         {
-            var createdFeedbacks = new List<CreateFeedBackRequestDTO>();
+            var createdFeedbacks = new List<CreateFeedBackArrayRequestDTO>();
+            int? orderIdToUpdate = null;
 
             foreach (var request in feedbackRequests)
             {
@@ -57,15 +58,21 @@ namespace Application.UseCases
 
                 // Lấy thông tin OrderDetail từ repository
                 var orderDetail = await _orderDetailRepository.GetOrderDetailById(request.orderDetailId.Value);
+                var orderData = await _orderDetailRepository.GetOrderStatuslById(orderDetail.OrderId);
+
 
                 // Kiểm tra đơn hàng có trạng thái "completed"
-                if (orderDetail?.Order?.Status?.Equals("completed", StringComparison.OrdinalIgnoreCase) != true)
+                if (orderData?.Status?.Equals("completed", StringComparison.OrdinalIgnoreCase) != true)
                     continue; // Bỏ qua nếu đơn hàng chưa hoàn thành
-                if (request.ImgFile != null && request.ImgFile.Length > 0)
+                if (orderData?.IsFeedback == true)
+                    continue;
+                 orderIdToUpdate = orderDetail.OrderId;
+
+                if (request.ImageFile != null && request.ImageFile.Length > 0)
                 {
                     var uploadParams = new ImageUploadParams
                     {
-                        File = new FileDescription(request.ImgFile.FileName, request.ImgFile.OpenReadStream()),
+                        File = new FileDescription(request.ImageFile.FileName, request.ImageFile.OpenReadStream()),
                         UseFilename = true,
                         UniqueFilename = true,
                         Overwrite = true
@@ -83,11 +90,15 @@ namespace Application.UseCases
                 // Map DTO sang entity và lưu vào database
                 var feedbackEntity = _mapper.Map<Feedback>(request);
                 var createdFeedback = await _commentRepository.CreateFeedback(feedbackEntity);
-
                 // Thêm feedback đã tạo vào danh sách kết quả
-                createdFeedbacks.Add(_mapper.Map<CreateFeedBackRequestDTO>(createdFeedback));
+                createdFeedbacks.Add(_mapper.Map<CreateFeedBackArrayRequestDTO>(createdFeedback));
             }
-
+            if (orderIdToUpdate.HasValue)
+            {
+                var orderToUpdate = await _orderDetailRepository.GetOrderStatuslById(orderIdToUpdate.Value);
+                orderToUpdate.IsFeedback = true;
+                await _commentRepository.UpdateStatusIsFeedback(orderToUpdate);
+            }
             return createdFeedbacks; // Trả về danh sách feedback đã tạo
         }
 
