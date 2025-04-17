@@ -31,7 +31,9 @@ namespace API.Controllers
         }
 
         [HttpPut("edit-profile/{accountId}")]
-        public async Task<ActionResult<ResponseDTO<EditProfileResponse>>> EditProfile(int accountId, [FromBody] EditProfileRequest request)
+        public async Task<ActionResult<ResponseDTO<EditProfileResponse>>> EditProfile(
+                                                                            int accountId,
+                                                                            [FromForm] EditProfileRequest request) 
         {
             var result = await _editProfileHandler.EditProfile(accountId, request);
             if (!result.Success)
@@ -40,5 +42,6 @@ namespace API.Controllers
             }
             return Ok(new ResponseDTO<EditProfileResponse>(result, true, "Edit profile successful"));
         }
+
     }
 }

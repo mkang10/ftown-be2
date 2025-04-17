@@ -33,17 +33,17 @@ namespace API.Controllers
 		[HttpPost("webhook")]
 		public async Task<IActionResult> PayOSWebhook([FromBody] PayOSCallbackRoot callbackData)
 		{
-			// 1. Log để xem payload PayOS gửi
+			// Log để xem payload PayOS gửi
 			_logger.LogInformation("Nhận callback từ PayOS: {@CallbackData}", callbackData);
 
-			// 2. Kiểm tra tính hợp lệ của callback (chữ ký, token, ...)
+			// Kiểm tra tính hợp lệ của callback (chữ ký, token, ...)
 			if (!IsValidSignature(callbackData))
 			{
 				_logger.LogWarning("Callback từ PayOS không hợp lệ (chữ ký sai).");
 				return BadRequest();
 			}
 
-			// 3. Kiểm tra code hoặc status để xác định giao dịch có thành công không
+			// Kiểm tra code hoặc status để xác định giao dịch có thành công không
 			// - "code": "00" => thành công
 			// - "success": true => thành công
 			// - "status" (trong callbackData.data) = "success" => thành công
@@ -51,10 +51,10 @@ namespace API.Controllers
 				callbackData.data != null &&
 				callbackData.data.desc == "success")
 			{
-                // 4. Lấy mã đơn hàng từ callback
+                // Lấy mã đơn hàng từ callback
                 long orderCode = callbackData.data.orderCode;
 
-                // 5. Tìm Payment/Order tương ứng trong DB
+                // Tìm Payment/Order tương ứng trong DB
                 var payment = await _paymentRepository.GetPaymentByOrderCodeAsync(orderCode);
                 if (payment == null)
                 {
@@ -63,7 +63,7 @@ namespace API.Controllers
                 }
                 int orderId = payment.OrderId;
 
-                // 6. Cập nhật trạng thái Payment và Order
+                // Cập nhật trạng thái Payment và Order
                 payment.PaymentStatus = "Paid";
 				await _paymentRepository.UpdatePaymentAsync(payment);
 
@@ -88,7 +88,12 @@ namespace API.Controllers
 				}
 				await _orderProcessingHelper.LogPendingConfirmedStatusAsync(orderId, order.AccountId);
                 await _orderProcessingHelper.AssignOrderToManagerAsync(orderId, order.AccountId);
-
+				await _orderProcessingHelper.SendOrderNotificationAsync(
+                                        order.AccountId,
+                                        order.OrderId,
+                                        "Đơn hàng mới",
+                                        $"Đơn hàng #{order.OrderId} đã thanh toán thành công và đang chờ xác nhận."
+                                    );
             }
 			else
 			{
