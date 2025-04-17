@@ -19,6 +19,7 @@ namespace Application.DTO.Response
 
         public string? CategoryName { get; set; }
         public string? PromotionTitle { get; set; }
+        public List<string> Colors { get; set; } = new();
     }
 
 }

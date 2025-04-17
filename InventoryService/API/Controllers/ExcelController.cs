@@ -117,7 +117,7 @@ namespace API.Controllers
                         worksheet.Cells[i + 2, 2].Value = result.Items[i].Name;
                         worksheet.Cells[i + 2, 3].Value = result.Items[i].Description;
                         worksheet.Cells[i + 2, 4].Value = result.Items[i].CategoryId;
-                        worksheet.Cells[i + 2, 5].Value = result.Items[i].ImagePath;
+                        //worksheet.Cells[i + 2, 5].Value = result.Items[i].ImagePath;
                         worksheet.Cells[i + 2, 6].Value = result.Items[i].Origin;
                         worksheet.Cells[i + 2, 7].Value = result.Items[i].Model;
                         worksheet.Cells[i + 2, 8].Value = result.Items[i].Occasion;
@@ -174,7 +174,7 @@ namespace API.Controllers
                                 Name = worksheet.Cells[row, 2].Text,
                                 Description = worksheet.Cells[row, 3].Text,
                                 CategoryId = int.Parse(worksheet.Cells[row, 4].Text),
-                                ImagePath = worksheet.Cells[row, 5].Text,
+                                //ImagePath = worksheet.Cells[row, 5].Text,
                                 Origin = worksheet.Cells[row, 6].Text,
                                 Model = worksheet.Cells[row, 7].Text,
                                 Occasion = worksheet.Cells[row, 8].Text,
