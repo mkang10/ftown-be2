@@ -55,7 +55,7 @@ namespace Application.UseCases
             }
         }
 
-        public async Task<CreateUserRequestWithPasswordDTO> createUser(CreateUserRequestWithPasswordDTO user)
+        public async Task<UserRequestDTO> createUser(CreateUserRequestWithPasswordDTO user)
         {
             try
             {
@@ -90,7 +90,7 @@ namespace Application.UseCases
 
                 var map = _mapper.Map<Domain.Entities.Account>(user);
                 var userCreate = await _userManagementRepository.CreateUser(map);
-                var result = _mapper.Map<CreateUserRequestWithPasswordDTO>(userCreate);
+                var result = _mapper.Map<UserRequestDTO>(userCreate);
                 return result;
             }
             catch (Exception ex)

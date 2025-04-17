@@ -13,7 +13,7 @@ public partial class StaffDetail
 
     public DateTime? JoinDate { get; set; }
 
-    public string Role { get; set; } = null!;
+    public string Role { get; set; } = null!;   
 
     public string JobTitle { get; set; } = null!;
 

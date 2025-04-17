@@ -203,6 +203,7 @@ namespace API.AppStarts
                 .ForMember(dest => dest.Product,
                            opt => opt.MapFrom(src => src.Variant.Product.Name)).ReverseMap();
 
+            //create account shopmanager and staff
         }
     }
 }       

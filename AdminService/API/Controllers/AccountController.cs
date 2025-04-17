@@ -2,6 +2,7 @@
 using Application.DTO.Response;
 using Application.Enum;
 using Application.Interfaces;
+using Application.UseCases;
 using Domain.Commons;
 using Infrastructure;
 using Microsoft.AspNetCore.Http;
@@ -20,11 +21,14 @@ namespace API.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IUserManagementService _service;
+        private readonly CreateAccountShopManagerDetail _createStaffOrShopmanager;
 
-        public AccountController(IUserManagementService service)
+        public AccountController(IUserManagementService service, CreateAccountShopManagerDetail createStaffOrShopmanager)
         {
             _service = service;
+            _createStaffOrShopmanager = createStaffOrShopmanager;
         }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUserById(int id)
         {
@@ -86,12 +90,12 @@ namespace API.Controllers
         {
             try
             {
-                var data = await _service.createUser(user);
+                var data = await _createStaffOrShopmanager.createUserStaffOrShopManager(user);
                 if (data == null)
                 {
                     return BadRequest(new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString()));
                 }
-                return Ok(new MessageRespondDTO<CreateUserRequestWithPasswordDTO>(data, true, StatusSuccess.Success.ToString()));
+                return Ok(new MessageRespondDTO<CreateUserFullResponseDTO>(data, true, StatusSuccess.Success.ToString()));
             }
             catch (Exception ex)
             {

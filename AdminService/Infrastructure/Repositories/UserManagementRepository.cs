@@ -99,7 +99,7 @@ namespace Infrastructure.Repositories
 
         public async Task<Account> GetUserByGmail(string gmail)
         {
-            var data = await _context.Accounts.SingleOrDefaultAsync(x => x.Email.Equals(gmail));
+            var data = await _context.Accounts.Include(o=>o.Role).SingleOrDefaultAsync(x => x.Email.Equals(gmail));
             return data;
         }
 

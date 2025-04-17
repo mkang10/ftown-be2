@@ -20,6 +20,9 @@ namespace Domain.Interfaces
         public Task<ShopManagerDetail> UpdateShopmanagerDetail(ShopManagerDetail user);
         public Task<ShopManagerDetail> GetShopManagerdetailById(int id);
 
+        public Task<StaffDetail> CreateStaffDetail(StaffDetail user);
+        public Task<StaffDetail> GetStaffDetailById(int id);
+        public Task<StaffDetail> UpdateStaffDetail(StaffDetail user);
 
         public Task<Account> GetUserById(int id);
         public Task<Account> GetUserByName(string name);
