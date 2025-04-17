@@ -35,35 +35,59 @@ namespace API.Controllers
             _importRepos = importRepos;
             _reportService = reportService;
         }
-      
 
-        //// Endpoint approve: POST api/InventoryImport/{importId}/approve
+
         [HttpPost("{importId}/approve")]
-        public async Task<IActionResult> ApproveImport(int importId, [FromBody] ApproveRejectRequestDto request)
+        public async Task<IActionResult> ApproveImport(
+        int importId,
+        [FromBody] ApproveRejectRequestDto request)
         {
             if (!ModelState.IsValid)
             {
-                var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors)
-                                                                  .Select(e => e.ErrorMessage));
-                var response = new ResponseDTO<string>(null, false, $"Validation errors: {errors}");
-                return BadRequest(response);
+                var errors = string.Join("; ", ModelState.Values
+                                                    .SelectMany(v => v.Errors)
+                                                    .Select(e => e.ErrorMessage));
+                return BadRequest(new ResponseDTO<string>(null, false, $"Validation errors: {errors}"));
             }
 
             try
             {
+                // 1. Thực hiện approve
                 await _appHandler.ApproveImportAsync(importId, request.ChangedBy, request.Comments);
-                var response = new ResponseDTO<string>("", true, "Inventory import approved successfully.");
-                return Ok(response);
+
+                // 2. Load lại entity Import với chi tiết để làm báo cáo
+                //    (Giả sử GetByIdAsyncWithDetails bao gồm ImportDetails + ImportStoreDetails)
+                var importEntity = await _importRepos.GetByIdAsyncWithDetails(importId);
+                if (importEntity == null)
+                    return NotFound(new ResponseDTO<string>(null, false, "Không tìm thấy đơn nhập đã approve."));
+
+                // 3. Gọi ReportService để sinh file báo cáo Import Slip
+                byte[] slipBytes = _reportService.GenerateImportSlip(importEntity);
+
+                // 4. Trả về file để client download
+                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
+                return File(
+                    slipBytes,
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    fileName
+                );
+            }
+            catch (ArgumentException argEx)
+            {
+                return BadRequest(new ResponseDTO<string>(null, false, argEx.Message));
+            }
+            catch (UnauthorizedAccessException uaEx)
+            {
+                return Unauthorized(new ResponseDTO<string>(null, false, uaEx.Message));
             }
             catch (Exception ex)
             {
-                var errorResponse = new ResponseDTO<string>(null, false, $"Error: {ex.Message}");
-                return StatusCode(500, errorResponse);
+                return StatusCode(500, new ResponseDTO<string>(null, false, $"Lỗi server: {ex.Message}"));
             }
         }
 
-        // Endpoint reject: POST api/InventoryImport/{importId}/reject
-        [HttpPost("{importId}/reject")]
+            // Endpoint reject: POST api/InventoryImport/{importId}/reject
+            [HttpPost("{importId}/reject")]
         public async Task<IActionResult> RejectImport(int importId, [FromBody] ApproveRejectRequestDto request)
         {
             if (!ModelState.IsValid)
@@ -184,7 +208,7 @@ namespace API.Controllers
 
                 // Tạo báo cáo nhập bổ sung
                 byte[] reportFileBytes = _reportService.GenerateImportSupplementSlip(supplementImportEntity, oldImportEntity);
-                string fileName = $"PhieuNhapSupplement_{supplementImportEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
+                string fileName = $"PhieuNhapBoSung_{supplementImportEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
                 return File(reportFileBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
             }
             catch (ArgumentException argEx)

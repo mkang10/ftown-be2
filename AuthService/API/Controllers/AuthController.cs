@@ -3,6 +3,7 @@ using Domain.DTO.Request;
 using Domain.DTO.Response;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace WebAPI.Controllers
@@ -51,6 +52,20 @@ namespace WebAPI.Controllers
             }
         }
 
+
+      
+        [HttpPost("google-login")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+        {
+            var result = await _authService.AuthenticateWithGoogleAsync(request.IdToken);
+
+            if (result == null || result.Token == null)
+            {
+                return Unauthorized(new { message = "Đăng nhập Google không thành công hoặc tài khoản bị vô hiệu hoá." });
+            }
+
+            return Ok(result);
+        }
         /// <summary>
         /// Đăng ký tài khoản mới.
         /// </summary>
@@ -75,6 +90,8 @@ namespace WebAPI.Controllers
                 // Log exception (ex) nếu cần thiết
                 return StatusCode(500, new ResponseDTO<object>(null, false, "Đã có lỗi xảy ra từ phía server. Vui lòng thử lại sau!"));
             }
+
+
         }
     }
 

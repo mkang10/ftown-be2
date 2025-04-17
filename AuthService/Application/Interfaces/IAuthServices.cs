@@ -8,5 +8,8 @@ namespace Application.Interfaces
     {
         Task<LoginResponse> AuthenticateAsync(string username, string password);
         Task<TokenResponse> RegisterAsync(RegisterReq registerDTO);
+
+        Task<LoginResponse> AuthenticateWithGoogleAsync(string idToken);
+
     }
 }

@@ -42,6 +42,7 @@ namespace API.AppStarts
             services.AddScoped<IProductVarRepos, ProductVarRepos>();
             services.AddScoped<IProductRepos, ProductRepos>();
             services.AddScoped<IUploadImageService, UploadImageService>();
+            services.AddScoped<IWarehouseRepository, WarehouseRepository>();
 
             services.AddScoped<ReportService>();
             services.AddScoped<GetWareHouseIdHandler>();
@@ -50,12 +51,14 @@ namespace API.AppStarts
             services.AddScoped<RejectHandler>();
             services.AddScoped<GetAllImportHandler>();
             services.AddScoped<GetImportDetailHandler>();
+            services.AddScoped<GetAllProductHandler>();
 
             services.AddScoped<CreateImportHandler>();
             services.AddScoped<GetWareHouseHandler>();
             services.AddScoped<TransferHandler>();
             services.AddScoped<GetAllTransferHandler>();
             services.AddScoped<CreateProductHandler>();
+            services.AddScoped<CreateWarehouseHandler>();
 
 
 

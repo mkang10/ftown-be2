@@ -25,8 +25,23 @@ namespace Infrastructure.Repositories
                 .Include(ws => ws.Variant)
                     .ThenInclude(v => v.Color)
                 .Include(ws => ws.WareHouse)
-                .Include(ws => ws.WareHouseStockAudits)
+               .Include(ws => ws.WareHouseStockAudits)
+            .ThenInclude(a => a.ChangedByNavigation)
+                        .ThenInclude(a => a.Account)
+
                 .FirstOrDefaultAsync(ws => ws.WareHouseStockId == id);
+        }
+
+        public async Task<IEnumerable<WareHousesStock>> GetByWarehouseIdAsync(int warehouseId)
+        {
+            return await _context.WareHousesStocks
+                .Where(ws => ws.WareHouseId == warehouseId)
+                .Include(ws => ws.Variant).ThenInclude(v => v.Product)
+                .Include(ws => ws.Variant).ThenInclude(v => v.Size)
+                .Include(ws => ws.Variant).ThenInclude(v => v.Color)
+                .Include(ws => ws.WareHouse)
+                .Include(ws => ws.WareHouseStockAudits)
+                .ToListAsync();
         }
     }
 }

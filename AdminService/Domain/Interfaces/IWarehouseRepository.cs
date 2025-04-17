@@ -7,10 +7,8 @@ using System.Threading.Tasks;
 
 namespace Domain.Interfaces
 {
-    public interface IProductRepos
+    public interface IWarehouseRepository
     {
-        Task<Product> CreateAsync(Product product);
-        Task<IEnumerable<Product>> GetAllAsync();
-
+        Task<Warehouse> CreateAsync(Warehouse warehouse);
     }
 }

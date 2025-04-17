@@ -1135,6 +1135,10 @@ public partial class FtownContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.WareHouseStockId).HasColumnName("WareHouseStockID");
 
+            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.WareHouseStockAudits)
+                .HasForeignKey(d => d.ChangedBy)
+                .HasConstraintName("FK_WareHouseStockAudit_StaffDetail");
+
             entity.HasOne(d => d.WareHouseStock).WithMany(p => p.WareHouseStockAudits)
                 .HasForeignKey(d => d.WareHouseStockId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
