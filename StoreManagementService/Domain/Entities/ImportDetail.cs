@@ -13,6 +13,8 @@ public partial class ImportDetail
 
     public int Quantity { get; set; }
 
+    public decimal? CostPrice { get; set; }
+
     public virtual Import Import { get; set; } = null!;
 
     public virtual ICollection<ImportStoreDetail> ImportStoreDetails { get; set; } = new List<ImportStoreDetail>();

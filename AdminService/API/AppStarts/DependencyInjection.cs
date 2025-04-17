@@ -1,5 +1,7 @@
 
 using Application.Interfaces;
+using Application.Service;
+using Application.Services;
 using Application.UseCases;
 using Domain.Interfaces;
 using Infrastructure;
@@ -33,17 +35,27 @@ namespace API.AppStarts
             services.AddScoped<IImportStoreRepos, ImportStoreRepos>();
             services.AddScoped<IStoreExportRepos, StoreExportRepos>();
             services.AddScoped<ITransferRepos, TransferRepos>();
+            services.AddScoped<IStockRepos, StockRepos>();
+            services.AddScoped<IWarehouseStockRepos, WarehouseStockRepository>();
+            services.AddScoped<IUserManagementService, GetAccountHandler>();
+            services.AddScoped<IRoleService, GetRoleHandler>();
+            services.AddScoped<IProductVarRepos, ProductVarRepos>();
+            services.AddScoped<IProductRepos, ProductRepos>();
+            services.AddScoped<IUploadImageService, UploadImageService>();
+
+            services.AddScoped<ReportService>();
+            services.AddScoped<GetWareHouseIdHandler>();
 
             services.AddScoped<ApproveHandler>();
             services.AddScoped<RejectHandler>();
             services.AddScoped<GetAllImportHandler>();
             services.AddScoped<GetImportDetailHandler>();
-  services.AddScoped<IUserManagementService, GetAccountHandler>();
-            services.AddScoped<IRoleService, GetRoleHandler>();
+
             services.AddScoped<CreateImportHandler>();
             services.AddScoped<GetWareHouseHandler>();
             services.AddScoped<TransferHandler>();
             services.AddScoped<GetAllTransferHandler>();
+            services.AddScoped<CreateProductHandler>();
 
 
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +26,8 @@ public partial class FtownContext : DbContext
 
     public virtual DbSet<Category> Categories { get; set; }
 
+    public virtual DbSet<ChatBot> ChatBots { get; set; }
+
     public virtual DbSet<CheckDetail> CheckDetails { get; set; }
 
     public virtual DbSet<CheckSession> CheckSessions { get; set; }
@@ -36,6 +38,8 @@ public partial class FtownContext : DbContext
 
     public virtual DbSet<ConversationParticipant> ConversationParticipants { get; set; }
 
+    public virtual DbSet<ConversationsBot> ConversationsBots { get; set; }
+
     public virtual DbSet<CustomerDetail> CustomerDetails { get; set; }
 
     public virtual DbSet<DeliveryTracking> DeliveryTrackings { get; set; }
@@ -43,6 +47,8 @@ public partial class FtownContext : DbContext
     public virtual DbSet<Dispatch> Dispatches { get; set; }
 
     public virtual DbSet<DispatchDetail> DispatchDetails { get; set; }
+
+    public virtual DbSet<FavoriteProduct> FavoriteProducts { get; set; }
 
     public virtual DbSet<Feedback> Feedbacks { get; set; }
 
@@ -55,6 +61,8 @@ public partial class FtownContext : DbContext
     public virtual DbSet<Interest> Interests { get; set; }
 
     public virtual DbSet<Message> Messages { get; set; }
+
+    public virtual DbSet<MessagesBot> MessagesBots { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
@@ -71,6 +79,8 @@ public partial class FtownContext : DbContext
     public virtual DbSet<ProductImage> ProductImages { get; set; }
 
     public virtual DbSet<ProductVariant> ProductVariants { get; set; }
+
+    public virtual DbSet<Promotion> Promotions { get; set; }
 
     public virtual DbSet<ReplyFeedback> ReplyFeedbacks { get; set; }
 
@@ -108,7 +118,7 @@ public partial class FtownContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=DESKTOP-T0VARJ7;Database=Ftown;User Id=sa;Password=sa123456;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("Server=LAPTOP-FEOOS2UC;Database=Ftown;Uid=sa;Pwd=123;TrustServerCertificate=True");
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -223,6 +233,22 @@ public partial class FtownContext : DbContext
             entity.Property(e => e.ParentCategoryId).HasColumnName("ParentCategoryID");
         });
 
+        modelBuilder.Entity<ChatBot>(entity =>
+        {
+            entity.HasKey(e => e.ChatBotId).HasName("PK__ChatBot__E326099A7F33219B");
+
+            entity.ToTable("ChatBot");
+
+            entity.HasIndex(e => e.IsDefault, "IX_ChatBot_IsDefault")
+                .IsUnique()
+                .HasFilter("([IsDefault]=(1))");
+
+            entity.Property(e => e.BaseUrl)
+                .HasMaxLength(500)
+                .HasColumnName("BaseURL");
+            entity.Property(e => e.Key).HasMaxLength(200);
+        });
+
         modelBuilder.Entity<CheckDetail>(entity =>
         {
             entity.HasKey(e => e.CheckDetailId).HasName("PK__CheckDet__C0611DEA870DA964");
@@ -321,6 +347,21 @@ public partial class FtownContext : DbContext
                 .HasConstraintName("FK_ConversationParticipants_Conversation");
         });
 
+        modelBuilder.Entity<ConversationsBot>(entity =>
+        {
+            entity.HasKey(e => e.ConversationId).HasName("PK__Conversa__C050D8776CC84CDB");
+
+            entity.ToTable("ConversationsBot");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Title).HasMaxLength(200);
+
+            entity.HasOne(d => d.User).WithMany(p => p.ConversationsBots)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ConversationsBot_Account");
+        });
+
         modelBuilder.Entity<CustomerDetail>(entity =>
         {
             entity.HasKey(e => e.CustomerDetailId).HasName("PK__Customer__D04B36FE7D00F448");
@@ -407,6 +448,17 @@ public partial class FtownContext : DbContext
                 .HasConstraintName("FK_DispatchDetails_ProductVariant");
         });
 
+        modelBuilder.Entity<FavoriteProduct>(entity =>
+        {
+            entity.HasKey(e => e.FavoriteId).HasName("PK__Favorite__CE74FAD5788DD9FC");
+
+            entity.ToTable("FavoriteProduct");
+
+            entity.HasIndex(e => new { e.AccountId, e.ProductId }, "UQ_Favorite_Account_Product").IsUnique();
+
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+        });
+
         modelBuilder.Entity<Feedback>(entity =>
         {
             entity.HasKey(e => e.FeedbackId).HasName("PK__Feedback__6A4BEDF6D7A23E7A");
@@ -459,6 +511,7 @@ public partial class FtownContext : DbContext
             entity.HasKey(e => e.ImportDetailId).HasName("PK__ImportDe__CDFBBA5143F3507D");
 
             entity.Property(e => e.ImportDetailId).HasColumnName("ImportDetailID");
+            entity.Property(e => e.CostPrice).HasColumnType("decimal(18, 0)");
             entity.Property(e => e.ImportId).HasColumnName("ImportID");
             entity.Property(e => e.ProductVariantId).HasColumnName("ProductVariantID");
 
@@ -541,6 +594,23 @@ public partial class FtownContext : DbContext
                 .HasForeignKey(d => d.SenderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Message_Sender");
+        });
+
+        modelBuilder.Entity<MessagesBot>(entity =>
+        {
+            entity.HasKey(e => e.MessageId).HasName("PK__Messages__C87C0C9CA4AF977C");
+
+            entity.ToTable("MessagesBot");
+
+            entity.HasIndex(e => e.SentAt, "IX_Messages_SentAt");
+
+            entity.Property(e => e.Sender).HasMaxLength(20);
+            entity.Property(e => e.SentAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.HasOne(d => d.Conversation).WithMany(p => p.MessagesBots)
+                .HasForeignKey(d => d.ConversationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Messages_Conversations");
         });
 
         modelBuilder.Entity<Notification>(entity =>
@@ -762,6 +832,29 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.Size).WithMany(p => p.ProductVariants)
                 .HasForeignKey(d => d.SizeId)
                 .HasConstraintName("FK_ProductVariant_Size");
+        });
+
+        modelBuilder.Entity<Promotion>(entity =>
+        {
+            entity.HasKey(e => e.PromotionId).HasName("PK__Promotio__52C42FCF477D4109");
+
+            entity.ToTable("Promotion");
+
+            entity.Property(e => e.ApplyTo)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.DiscountType)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.DiscountValue).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.EndDate).HasColumnType("datetime");
+            entity.Property(e => e.MaxDiscountAmount).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.MinOrderAmount).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.StartDate).HasColumnType("datetime");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.Title).HasMaxLength(255);
         });
 
         modelBuilder.Entity<ReplyFeedback>(entity =>

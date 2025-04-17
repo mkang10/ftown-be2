@@ -7,13 +7,10 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static Application.UseCases.TransferHandler;
 
 namespace Application.UseCases
 {
-
     public class TransferHandler
     {
         private readonly ITransferRepos _transferRepos;
@@ -22,7 +19,9 @@ namespace Application.UseCases
         private readonly IStoreExportRepos _storeExportRepos;
         private readonly IImportStoreRepos _importStoreRepos;
         private readonly IAuditLogRepos _auditLogRepos;
+        private readonly IStockRepos _stockRepos;
         private readonly IMapper _mapper;
+
 
         public TransferHandler(
             ITransferRepos transferRepos,
@@ -31,6 +30,7 @@ namespace Application.UseCases
             IStoreExportRepos storeExportRepos,
             IImportStoreRepos importStoreRepos,
             IAuditLogRepos auditLogRepos,
+            IStockRepos stockRepos,
             IMapper mapper)
         {
             _transferRepos = transferRepos;
@@ -39,91 +39,110 @@ namespace Application.UseCases
             _storeExportRepos = storeExportRepos;
             _importStoreRepos = importStoreRepos;
             _auditLogRepos = auditLogRepos;
+            _stockRepos = stockRepos;
             _mapper = mapper;
         }
 
         public async Task<ResponseDTO<TransferFullFlowDto>> CreateTransferFullFlowAsync(CreateTransferFullFlowDto request)
         {
-            // 1. Tạo đối tượng Transfer từ request (chưa lưu vào DB)
+            // 1. Map và chuẩn bị Transfer
             var newTransfer = _mapper.Map<Transfer>(request);
             newTransfer.CreatedDate = DateTime.UtcNow;
             newTransfer.Status = "Approved";
             foreach (var detailDto in request.TransferDetails)
             {
-                var newTransferDetail = _mapper.Map<TransferDetail>(detailDto);
-                newTransfer.TransferDetails.Add(newTransferDetail);
+                var newDetail = _mapper.Map<TransferDetail>(detailDto);
+                newTransfer.TransferDetails.Add(newDetail);
             }
 
-            // 2. Tạo Dispatch và lưu để có DispatchId
-            var newDispatch = await CreateDispatchAsync(request, newTransfer);
+            // 2. Tạo Dispatch (có validation tồn kho)
+            Dispatch newDispatch;
+            try
+            {
+                newDispatch = await CreateDispatchAsync(request, newTransfer);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return new ResponseDTO<TransferFullFlowDto>(null, false, ex.Message);
+            }
 
-            // 3. Tạo Import và lưu để có ImportId
+            // 3. Tạo Import
             var newImport = await CreateImportAsync(request, newTransfer);
 
-            // 4. Gán DispatchId và ImportId cho Transfer, sau đó lưu Transfer
+            // 4. Gán ID và lưu Transfer
             newTransfer.DispatchId = newDispatch.DispatchId;
             newTransfer.ImportId = newImport.ImportId;
             _transferRepos.Add(newTransfer);
             await _transferRepos.SaveChangesAsync();
-            await LogAuditAsync("Transfer", "CREATE", newTransfer.TransferOrderId, request.CreatedBy, newTransfer,
-                "Tạo mới đơn chuyển hàng");
-            foreach (var detail in newTransfer.TransferDetails)
+
+            // Audit cho Transfer và TransferDetails
+            await LogAuditAsync("Transfer", "CREATE", newTransfer.TransferOrderId, request.CreatedBy, newTransfer, "Tạo mới đơn chuyển hàng");
+            foreach (var d in newTransfer.TransferDetails)
             {
-                await LogAuditAsync("TransferDetail", "CREATE", detail.TransferOrderDetailId, request.CreatedBy, detail,
-                    "Tạo chi tiết đơn chuyển hàng");
+                await LogAuditAsync("TransferDetail", "CREATE", d.TransferOrderDetailId, request.CreatedBy, d, "Tạo chi tiết đơn chuyển hàng");
             }
 
-            // 5. Tạo các bản ghi StoreExport cho từng DispatchDetail
+            // 5. Tạo StoreExport
             await CreateStoreExportRecordsAsync(request, newDispatch);
 
-            // 6. Mapping kết quả trả về
+            // 6. Trả về kết quả
             var resultDto = _mapper.Map<TransferFullFlowDto>(newTransfer);
             return new ResponseDTO<TransferFullFlowDto>(resultDto, true, "Tạo đơn chuyển hàng và các đơn liên quan thành công!");
         }
 
-        #region Helper Methods
-
         private async Task<Dispatch> CreateDispatchAsync(CreateTransferFullFlowDto request, Transfer transfer)
         {
+            // Validation tồn kho
+            int sourceWarehouseId = request.SourceWarehouseId;
+            foreach (var td in transfer.TransferDetails)
+            {
+                var stock = await _stockRepos.GetByWarehouseAndVariantAsync(sourceWarehouseId, td.VariantId);
+                if (stock == null)
+                    throw new InvalidOperationException(
+                        $"Sản phẩm VariantId={td.VariantId} không tồn tại trong kho #{sourceWarehouseId}.");
+                if (stock.StockQuantity < td.Quantity)
+                    throw new InvalidOperationException(
+                        $"Kho #{sourceWarehouseId} chỉ còn {stock.StockQuantity} sản phẩm VariantId={td.VariantId}, không đủ để xuất {td.Quantity}.");
+            }
+
+            // Tạo Dispatch và DispatchDetails
             var dispatch = new Dispatch
             {
                 CreatedBy = request.CreatedBy,
                 CreatedDate = DateTime.UtcNow,
                 Status = "Approved",
                 ReferenceNumber = !string.IsNullOrEmpty(request.DispatchReferenceNumber) && request.DispatchReferenceNumber.StartsWith("DIS")
-                                    ? request.DispatchReferenceNumber
-                                    : "DIS" + new Random().Next(100, 1000).ToString(),
+                                  ? request.DispatchReferenceNumber
+                                  : "DIS" + new Random().Next(100, 1000),
                 Remarks = "Tự động tạo từ chuyển hàng"
             };
 
-            // Tạo DispatchDetail từ các TransferDetail
-            foreach (var transferDetail in transfer.TransferDetails)
+            foreach (var td in transfer.TransferDetails)
             {
-                var dispatchDetail = new DispatchDetail
+                dispatch.DispatchDetails.Add(new DispatchDetail
                 {
-                    VariantId = transferDetail.VariantId,
-                    Quantity = transferDetail.Quantity
-                };
-                dispatch.DispatchDetails.Add(dispatchDetail);
+                    VariantId = td.VariantId,
+                    Quantity = td.Quantity
+                });
             }
+
             _dispatchRepos.Add(dispatch);
             await _dispatchRepos.SaveChangesAsync();
 
-            // Audit cho Dispatch và các DispatchDetail
+            // Audit
             await LogAuditAsync("Dispatch", "CREATE", dispatch.DispatchId, request.CreatedBy, dispatch, "Tạo mới đơn xuất hàng");
-            foreach (var detail in dispatch.DispatchDetails)
+            foreach (var d in dispatch.DispatchDetails)
             {
-                await LogAuditAsync("DispatchDetail", "CREATE", detail.DispatchDetailId, request.CreatedBy, detail, "Tạo chi tiết đơn xuất hàng");
+                await LogAuditAsync("DispatchDetail", "CREATE", d.DispatchDetailId, request.CreatedBy, d, "Tạo chi tiết đơn xuất hàng");
             }
+
             return dispatch;
         }
 
         private async Task<Import> CreateImportAsync(CreateTransferFullFlowDto request, Transfer transfer)
         {
-            // 1. Tính tổng chi phí
-            decimal totalCost = request.TransferDetails.Sum(d => d.Quantity * d.UnitPrice);
+            decimal totalCost = request.TransferDetails.Sum(d => d.Quantity * d.CostPrice);
 
-            // 2. Tạo đối tượng Import mà không gán ImportID (để EF tự sinh giá trị)
             var import = new Import
             {
                 CreatedBy = request.CreatedBy,
@@ -131,109 +150,82 @@ namespace Application.UseCases
                 Status = "Approved",
                 ReferenceNumber = !string.IsNullOrEmpty(request.ImportReferenceNumber) && request.ImportReferenceNumber.StartsWith("IIN")
                                     ? request.ImportReferenceNumber
-                                    : "IIN" + new Random().Next(100, 1000).ToString(),
+                                    : "IIN" + new Random().Next(100, 1000),
                 TotalCost = totalCost,
                 ApprovedDate = null,
                 CompletedDate = null
             };
 
-            // 3. Tạo ImportDetail từ từng TransferDetail và thêm vào collection của Import
-            foreach (var transferDetail in transfer.TransferDetails)
+            foreach (var td in transfer.TransferDetails)
             {
-                var importDetail = new ImportDetail
+                var detail = new ImportDetail
                 {
-                    ProductVariantId = transferDetail.VariantId,
-                    Quantity = transferDetail.Quantity,
-                    // Thiết lập quan hệ: EF sẽ tự gán ImportID cho ImportDetail thông qua navigation property
+                    ProductVariantId = td.VariantId,
+                    Quantity = td.Quantity,
+                    CostPrice = 0,
                     Import = import
                 };
-                import.ImportDetails.Add(importDetail);
+                import.ImportDetails.Add(detail);
             }
 
-            // 4. Thêm Import (với các ImportDetail) vào repository và lưu để sinh ra các giá trị identity
             _importRepos.Add(import);
-            await _importRepos.SaveChangesAsync(); // Sau bước này, import.ImportID và importDetail.ImportDetailID đã có giá trị từ DB
+            await _importRepos.SaveChangesAsync();
 
-            // 5. Lấy thông tin Warehouse để lấy HandleBy (ShopManagerId) từ Warehouse
-            // Giả sử bạn có WarehouseRepository với hàm GetByIdAsync
             var warehouse = await _importRepos.GetWareHouseByIdAsync(request.DestinationWarehouseId);
             int? handleBy = warehouse?.ShopManagerId;
 
-            // 6. Tạo ImportStoreDetail cho mỗi ImportDetail
-            foreach (var importDetail in import.ImportDetails)
-            {
-                var importStore = new ImportStoreDetail
-                {
-                    AllocatedQuantity = importDetail.Quantity,
-                    Status = "Pending",
-                    Comments = "Nhập hàng vào warehouse đích cho chuyển hàng",
-                    ImportDetail = importDetail,   // Liên kết ImportStoreDetail với ImportDetail
-                    WarehouseId = request.DestinationWarehouseId,
-                    HandleBy = handleBy             // Lấy từ Warehouse
-                };
-
-                _importStoreRepos.Add(importStore);
-                // Bạn có thể lưu một lần sau vòng lặp (nếu không cần log ngay từng dòng)
-                await _importStoreRepos.SaveChangesAsync();
-
-                // Log cho ImportStoreDetail với identity đã được sinh ra
-                await LogAuditAsync("ImportStoreDetail", "CREATE", importStore.ImportStoreId, request.CreatedBy, importStore,
-                    "Tạo bản ghi nhập hàng");
-            }
-
-            // 7. Log Audit cho Import và từng ImportDetail
-            await LogAuditAsync("Import", "CREATE", import.ImportId, request.CreatedBy, import, "Tạo mới đơn nhập hàng");
             foreach (var detail in import.ImportDetails)
             {
-                await LogAuditAsync("ImportDetail", "CREATE", detail.ImportDetailId, request.CreatedBy, detail, "Tạo chi tiết đơn nhập hàng");
+                var store = new ImportStoreDetail
+                {
+                    AllocatedQuantity = detail.Quantity,
+                    Status = "Pending",
+                    Comments = "Nhập hàng vào warehouse đích cho chuyển hàng",
+                    ImportDetail = detail,
+                    WarehouseId = request.DestinationWarehouseId,
+                    HandleBy = handleBy
+                };
+                _importStoreRepos.Add(store);
+                await _importStoreRepos.SaveChangesAsync();
+                await LogAuditAsync("ImportStoreDetail", "CREATE", store.ImportStoreId, request.CreatedBy, store, "Tạo bản ghi nhập hàng");
             }
+
+            await LogAuditAsync("Import", "CREATE", import.ImportId, request.CreatedBy, import, "Tạo mới đơn nhập hàng");
+            foreach (var d in import.ImportDetails)
+                await LogAuditAsync("ImportDetail", "CREATE", d.ImportDetailId, request.CreatedBy, d, "Tạo chi tiết đơn nhập hàng");
 
             return import;
         }
 
-
-
-
         private async Task CreateStoreExportRecordsAsync(CreateTransferFullFlowDto request, Dispatch dispatch)
         {
-            // Tạo danh sách để lưu các bản ghi StoreExportStoreDetail
             var storeExports = new List<StoreExportStoreDetail>();
-
-            // Lấy thông tin Warehouse nguồn để lấy HandleBy (ShopManagerId)
             var warehouse = await _importRepos.GetWareHouseByIdAsync(request.SourceWarehouseId);
             var handleBy = warehouse?.ShopManagerId;
 
-            foreach (var dispatchDetail in dispatch.DispatchDetails)
+            foreach (var dd in dispatch.DispatchDetails)
             {
-                var storeExport = new StoreExportStoreDetail
+                var store = new StoreExportStoreDetail
                 {
-                    // Gán DispatchDetailId lấy từ đối tượng dispatchDetail
-                    DispatchDetailId = dispatchDetail.DispatchDetailId,
+                    DispatchDetailId = dd.DispatchDetailId,
                     WarehouseId = request.SourceWarehouseId,
-                    AllocatedQuantity = dispatchDetail.Quantity,
+                    AllocatedQuantity = dd.Quantity,
                     Status = "Pending",
                     Comments = "Xuất hàng từ warehouse nguồn cho chuyển hàng",
                     HandleBy = handleBy
                 };
-
-                _storeExportRepos.Add(storeExport);
-                storeExports.Add(storeExport);
+                _storeExportRepos.Add(store);
+                storeExports.Add(store);
             }
 
-            // Lưu các bản ghi và sau đó log với giá trị DispatchStoreDetailId đã được sinh ra
             await _storeExportRepos.SaveChangesAsync();
-
-            foreach (var storeExport in storeExports)
-            {
-                await LogAuditAsync("StoreExportStoreDetail", "CREATE", storeExport.DispatchStoreDetailId, request.CreatedBy, storeExport,
-                    "Tạo bản ghi xuất hàng");
-            }
+            foreach (var s in storeExports)
+                await LogAuditAsync("StoreExportStoreDetail", "CREATE", s.DispatchStoreDetailId, request.CreatedBy, s, "Tạo bản ghi xuất hàng");
         }
-
 
         private async Task LogAuditAsync(string tableName, string operation, int recordId, int changedBy, object entity, string comment)
         {
-            var auditLog = new AuditLog
+            var audit = new AuditLog
             {
                 TableName = tableName,
                 RecordId = recordId.ToString(),
@@ -243,10 +235,41 @@ namespace Application.UseCases
                 ChangeData = JsonConvert.SerializeObject(entity, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }),
                 Comment = comment
             };
-            _auditLogRepos.Add(auditLog);
+            _auditLogRepos.Add(audit);
             await _auditLogRepos.SaveChangesAsync();
         }
 
-        #endregion
+        public async Task<Transfer> GetTransferByIdAsync(int transferId)
+        {
+            // Ví dụ: sử dụng repository để truy xuất theo id
+            var transfer = await _transferRepos.GetByIdWithDetailsAsync(transferId);
+            return transfer;
+        }
+
+        /// <summary>
+        /// Lấy thông tin đơn xuất kho (Dispatch/Export) dựa trên TransferId.
+        /// Giả sử trong hệ thống, đơn xuất kho được liên kết với Transfer thông qua trường TransferId.
+        /// </summary>
+        /// <param name="transferId">Id của đơn chuyển hàng liên quan.</param>
+        /// <returns>Đối tượng Dispatch (Export) hoặc null nếu không tìm thấy.</returns>
+        public async Task<Dispatch> GetExportByTransferIdAsync(int transferId)
+        {
+            // Ví dụ: giả sử repository có phương thức truy xuất theo TransferId
+            var export = await _dispatchRepos.GetDispatchByTransferIdAsync(transferId);
+            return export;
+        }
+
+        /// <summary>
+        /// Lấy thông tin đơn nhập kho (Import) dựa trên TransferId.
+        /// Giả sử trong hệ thống, đơn nhập kho được liên kết với Transfer qua TransferId.
+        /// </summary>
+        /// <param name="transferId">Id của đơn chuyển hàng liên quan.</param>
+        /// <returns>Đối tượng Import hoặc null nếu không tìm thấy.</returns>
+        public async Task<Import> GetImportByTransferIdAsync(int transferId)
+        {
+            // Ví dụ: sử dụng repository cho Import để lấy theo TransferId
+            var import = await _importRepos.GetImportByTransferIdAsync(transferId);
+            return import;
+        }
     }
 }

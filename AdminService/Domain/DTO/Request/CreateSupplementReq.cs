@@ -15,6 +15,6 @@ namespace Domain.DTO.Request
     public class SupplementImportDetailDto
     {
         public int ProductVariantId { get; set; }
-        public decimal UnitPrice { get; set; }
+        public decimal CostPrice { get; set; }
     }
 }

@@ -10,5 +10,7 @@ namespace Domain.Interfaces
     public interface IDispatchRepos { 
         void Add(Dispatch dispatch);
         Task SaveChangesAsync();
+        Task<Dispatch?> GetDispatchByTransferIdAsync(int transferId);
+
     }
 }

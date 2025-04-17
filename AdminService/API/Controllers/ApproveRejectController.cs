@@ -1,7 +1,9 @@
-﻿using Application.UseCases;
+﻿using Application.Services;
+using Application.UseCases;
 using Domain.DTO.Request;
 using Domain.DTO.Response;
 using Domain.Entities;
+using Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,10 +19,12 @@ namespace API.Controllers
         private readonly GetImportDetailHandler _getDetailHandler;
         private readonly CreateImportHandler _createImportHandler;
         private readonly GetWareHouseHandler _getWareHouseHandler;
+        private readonly IImportRepos _importRepos;
+        private readonly ReportService _reportService;
 
 
 
-        public InventoryImportController(GetWareHouseHandler getWareHouseHandler, CreateImportHandler createImportHandler, GetImportDetailHandler getDetailHandler, ApproveHandler appHandler, RejectHandler reHandler, GetAllImportHandler getHandler)
+        public InventoryImportController(IImportRepos importRepos, ReportService reportService, GetWareHouseHandler getWareHouseHandler, CreateImportHandler createImportHandler, GetImportDetailHandler getDetailHandler, ApproveHandler appHandler, RejectHandler reHandler, GetAllImportHandler getHandler)
         {
             _appHandler = appHandler;
             _reHandler = reHandler;
@@ -28,6 +32,8 @@ namespace API.Controllers
             _getDetailHandler = getDetailHandler;
             _createImportHandler = createImportHandler;
             _getWareHouseHandler = getWareHouseHandler;
+            _importRepos = importRepos;
+            _reportService = reportService;
         }
       
 
@@ -123,12 +129,21 @@ namespace API.Controllers
             try
             {
                 if (request == null || request.ImportDetails == null || !request.ImportDetails.Any())
-                {
                     return BadRequest(new ResponseDTO<object>(null, false, "Dữ liệu import không hợp lệ!"));
-                }
 
                 var response = await _createImportHandler.CreateImportAsync(request);
-                return Ok(response);
+                if (!response.Status)
+                    return BadRequest(response);
+
+                // Sau khi tạo thành công, load lại Import từ repository (theo ImportId được trả về trong response)
+                var importEntity = await _importRepos.GetByIdAsync(response.Data.ImportId);
+                if (importEntity == null)
+                    return NotFound(new ResponseDTO<object>(null, false, "Không tìm thấy đơn nhập sau khi tạo."));
+
+                // Gọi ReportService để tạo file biên bản nhập hàng
+                byte[] slipFile = _reportService.GenerateImportSlip(importEntity);
+                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
+                return File(slipFile, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
             }
             catch (ArgumentException argEx)
             {
@@ -144,6 +159,9 @@ namespace API.Controllers
             }
         }
 
+        /// <summary>
+        /// Tạo đơn nhập hàng bổ sung và trả về file Word (biên bản nhập hàng) dựa trên đơn bổ sung vừa tạo.
+        /// </summary>
         [HttpPost("create-supplement")]
         public async Task<IActionResult> CreateSupplementImport([FromBody] SupplementImportRequestDto request)
         {
@@ -155,7 +173,19 @@ namespace API.Controllers
                     return BadRequest(new ResponseDTO<object>(null, false, "OriginalImportId không hợp lệ!"));
 
                 var response = await _createImportHandler.CreateSupplementImportAsync(request);
-                return Ok(response);
+                if (!response.Status)
+                    return BadRequest(response);
+
+                // Sau khi tạo đơn bổ sung, load lại đơn bổ sung và đơn cũ đầy đủ dữ liệu
+                var supplementImportEntity = await _importRepos.GetByIdAsync(response.Data.ImportData.ImportId);
+                var oldImportEntity = await _importRepos.GetByIdAsync(response.Data.ImportData.OriginalImportId.Value);
+                if (supplementImportEntity == null || oldImportEntity == null)
+                    return NotFound(new ResponseDTO<object>(null, false, "Không tìm thấy dữ liệu đơn nhập khi tạo báo cáo."));
+
+                // Tạo báo cáo nhập bổ sung
+                byte[] reportFileBytes = _reportService.GenerateImportSupplementSlip(supplementImportEntity, oldImportEntity);
+                string fileName = $"PhieuNhapSupplement_{supplementImportEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
+                return File(reportFileBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
             }
             catch (ArgumentException argEx)
             {
