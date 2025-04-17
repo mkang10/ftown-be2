@@ -38,7 +38,7 @@ namespace Application.UseCases
             }
 
             // Tính tổng tiền từ các ImportDetail (Quantity * UnitPrice)
-            decimal totalCost = request.ImportDetails.Sum(d => d.Quantity * d.UnitPrice);
+            decimal totalCost = request.ImportDetails.Sum(d => d.Quantity * d.CostPrice);
 
             // Map từ Request DTO sang Entity
             var newImport = _mapper.Map<Import>(request);
@@ -49,6 +49,7 @@ namespace Application.UseCases
             newImport.TotalCost = totalCost;
             newImport.ApprovedDate = null;
             newImport.CompletedDate = null;
+
 
             // Lưu Import qua repository
             _impRepos.Add(newImport);

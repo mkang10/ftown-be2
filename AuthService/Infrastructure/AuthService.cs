@@ -12,6 +12,7 @@ using Domain.DTO.Response;
 using Domain.DTO.Request;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using Google.Apis.Auth;
 
 namespace Infrastructure.Services
 {
@@ -163,5 +164,103 @@ namespace Infrastructure.Services
 
             return computedHash.SequenceEqual(hashBytes.Skip(16).Take(20));
         }
+
+      
+
+        public async Task<LoginResponse> AuthenticateWithGoogleAsync(string idToken)
+        {
+            // 1. Xác thực idToken với Google
+            var settings = new GoogleJsonWebSignature.ValidationSettings()
+            {
+                Audience = new[] { _configuration["Google:ClientId"] }
+            };
+
+            GoogleJsonWebSignature.Payload payload;
+            try
+            {
+                payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
+            }
+            catch (InvalidJwtException)
+            {
+                // Token không hợp lệ
+                return null;
+            }
+
+            // 2. Lấy email từ payload
+            string email = payload.Email;
+            string fullName = payload.Name;
+
+            // 3. Kiểm tra account đã tồn tại chưa
+            var account = await _accountRepos.GetUserByUsernameAsync(email);
+            if (account == null)
+            {
+                // Tạo tài khoản mới
+                account = new Account
+                {
+                    FullName = fullName,
+                    Email = email,
+                    PasswordHash = null,    // không dùng password truyền thống
+                    RoleId = 1,       // default user
+                    IsActive = true
+                };
+                await _accountRepos.AddUserAsync(account);
+
+                // Tạo chi tiết customer
+                var customerDetail = new CustomerDetail
+                {
+                    AccountId = account.AccountId,
+                    LoyaltyPoints = 0,
+                    MembershipLevel = "Basic",
+                    DateOfBirth = null,
+                    Gender = null,
+                    CustomerType = null,
+                    PreferredPaymentMethod = null
+                };
+                await _accountRepos.AddCustomerAsync(customerDetail);
+            }
+
+            // 4. Nếu account bị khoá hoặc inactive
+            if (!(bool)account.IsActive)
+            {
+                return new LoginResponse
+                {
+                    Token = null,
+                    Account = new AccountResponse
+                    {
+                        AccountId = account.AccountId,
+                        FullName = account.FullName,
+                        RoleId = account.RoleId,
+                        IsActive = account.IsActive,
+                        Email = account.Email
+                    }
+                };
+            }
+
+            // 5. Sinh JWT và trả về
+            string token = GenerateJwtToken(
+                account.FullName,
+                "user",
+                account.AccountId,
+                account.Email
+            );
+
+            object roleDetails = await _accountRepos.GetRoleDetailsAsync(account);
+
+            return new LoginResponse
+            {
+                Token = token,
+                Account = new AccountResponse
+                {
+                    AccountId = account.AccountId,
+                    FullName = account.FullName,
+                    RoleId = account.RoleId,
+                    IsActive = account.IsActive,
+                    Email = account.Email,
+                    RoleDetails = roleDetails
+                }
+            };
+        }
+
+
     }
 }

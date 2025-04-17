@@ -10,6 +10,8 @@ namespace Domain.DTOs
         public int QuantityChange { get; set; }
         public DateTime ActionDate { get; set; }
         public int? ChangedBy { get; set; }
+        public string? changedByName { get; set; }
+
         public string? Note { get; set; }
     }
 
