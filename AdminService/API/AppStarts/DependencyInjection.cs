@@ -42,6 +42,9 @@ namespace API.AppStarts
             services.AddScoped<IProductVarRepos, ProductVarRepos>();
             services.AddScoped<IProductRepos, ProductRepos>();
             services.AddScoped<IUploadImageService, UploadImageService>();
+            //ducanh
+            services.AddScoped<ITransferRepos, TransferRepos>();
+            services.AddScoped<IDispatchRepos, DispatchRepos>();
 
             services.AddScoped<ReportService>();
             services.AddScoped<GetWareHouseIdHandler>();
@@ -56,10 +59,14 @@ namespace API.AppStarts
             services.AddScoped<TransferHandler>();
             services.AddScoped<GetAllTransferHandler>();
             services.AddScoped<CreateProductHandler>();
-
+            //ducanh
+            services.AddScoped<DispatchHandler>();
+            services.AddScoped<ImportStoreDetailHandler>();
+            services.AddScoped<RedisHandler>();
 
 
             services.AddScoped<IUserManagementRepository, UserManagementRepository>();
+            services.AddScoped<IRedisRepository, RedisRepository>();
 
 
             // auto mapper

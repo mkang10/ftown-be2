@@ -150,5 +150,17 @@ namespace Infrastructure.Repositories
 
             return items;
         }
+        public async Task<List<Message>> UpdateStatusIsReadRepository(List<Message> user)
+        {
+            _context.UpdateRange(user);
+            await _context.SaveChangesAsync();
+            return user;
+        }
+        public async Task<List<Message>> GetMessagesByIdsAsync(List<int> ids)
+        {
+            return await _context.Messages
+                .Where(m => ids.Contains(m.MessageId))
+                .ToListAsync();
+        }
     }
 }
