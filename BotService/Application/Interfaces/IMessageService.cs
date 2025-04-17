@@ -12,6 +12,7 @@ namespace Application.Interfaces
     {
         public Task<Pagination<MessageRequest>> GetAllMessageServiceByConversationId(int id, PaginationParameter paginationParameter);
         public Task<MessageCreateRequest> createMessage(MessageCreateRequest user);
+        public Task<List<MessageCreateRequest>> updateStatusIsRead(List<UpdateStatusIsReadMessageDTO> user);
         public Task<bool> deleteMessage(int id);
     }
 }

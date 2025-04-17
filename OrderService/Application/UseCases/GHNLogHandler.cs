@@ -13,11 +13,16 @@ namespace Application.UseCases
 {
     public class GHNLogHandler
     {
+
+        private readonly IOrderRepository _orderRepository;
+        private readonly IAuditLogRepository _auditLogRepository;
         private readonly IGHNLogRepository _ghNLogRepository;
         private readonly IMapper _mapper;
 
-        public GHNLogHandler(IGHNLogRepository ghNLogRepository, IMapper mapper)
+        public GHNLogHandler(IOrderRepository orderRepository, IAuditLogRepository auditLogRepository, IGHNLogRepository ghNLogRepository, IMapper mapper)
         {
+            _orderRepository = orderRepository;
+            _auditLogRepository = auditLogRepository;
             _ghNLogRepository = ghNLogRepository;
             _mapper = mapper;
         }
@@ -40,7 +45,40 @@ namespace Application.UseCases
                 throw new Exception("An error occurred: " + ex.Message);
             }
         }
+        public async Task<bool> GetOrderByGHNId(string orderId, string newStatus)
+        {
+            // 📌 1️⃣ Lấy thông tin đơn hàng
+            var order = await _orderRepository.GetOrderByIdGHNAsync(orderId);
+            if (order == null)
+            {
+                return false;
+            }
 
+            // 📌 2️⃣ Cập nhật trạng thái đơn hàng
+            await _orderRepository.UpdateOrderStatusGHNIdAsync(orderId, newStatus);
+
+            // 📌 3️⃣ Ghi log vào AuditLog
+            var previousStatus = order.Status; // Lấy trạng thái cũ
+
+            var changeData = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                OldStatus = previousStatus,
+                NewStatus = newStatus
+            });
+
+            await _auditLogRepository.AddAuditLogAsync(
+                "Orders",
+                orderId.ToString(),
+                newStatus,
+                order.AccountId,
+                changeData, // ✅ Lưu dữ liệu thay đổi
+               "CHANGE STATUS"
+            );
+
+
+
+            return true;
+        }
         public async Task<OrderRequest> AutoCreateOrderGHN(int id)
         {
             var dataModel = await _ghNLogRepository.GetDataOrder(id);
@@ -82,7 +120,7 @@ namespace Application.UseCases
                 service_type_id = 2,
                 coupon = "",
                 pick_shift = [2],
-                items = dataModel.Select(detail => new Item 
+                items = dataModel.Select(detail => new Item
                 {
                     name = detail.ProductVariant.Product.Name,
                     code = detail.ProductVariant.Barcode,

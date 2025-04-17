@@ -33,6 +33,12 @@ namespace Infrastructure.Repositories
             await _context.SaveChangesAsync();
             return user;
         }
+        public async Task<StaffDetail> CreateStaffDetail(StaffDetail user)
+        {
+            _context.Add(user);
+            await _context.SaveChangesAsync();
+            return user;
+        }
 
         public async Task<Account> CreateUser(Account user)
         {
@@ -61,11 +67,11 @@ namespace Infrastructure.Repositories
             return data;
         }
 
-      
+
         public async Task<Pagination<Account>> GetAllUser(PaginationParameter paginationParameter)
         {
             var itemCount = await _context.Accounts.CountAsync();
-            var items = await _context.Accounts
+            var items = await _context.Accounts.Include(o => o.Role)
                                     .Skip((paginationParameter.PageIndex - 1) * paginationParameter.PageSize)
                                     .Take(paginationParameter.PageSize)
                                     .AsNoTracking()
@@ -83,7 +89,13 @@ namespace Infrastructure.Repositories
         public async Task<ShopManagerDetail> GetShopManagerdetailById(int id)
         {
             var data = await _context.ShopManagerDetails.SingleOrDefaultAsync(x => x.AccountId.Equals(id));
-            return data;      }
+            return data;
+        }
+        public async Task<StaffDetail> GetStaffDetailById(int id)
+        {
+            var data = await _context.StaffDetails.SingleOrDefaultAsync(x => x.AccountId.Equals(id));
+            return data;
+        }
 
         public async Task<Account> GetUserByGmail(string gmail)
         {
@@ -93,7 +105,9 @@ namespace Infrastructure.Repositories
 
         public async Task<Account> GetUserById(int id)
         {
-            var data = await _context.Accounts.SingleOrDefaultAsync(x => x.AccountId.Equals(id));
+            var data = await _context.Accounts
+                .Include(o => o.Role)
+                .SingleOrDefaultAsync(x => x.AccountId.Equals(id));
             return data;
         }
 
@@ -111,6 +125,12 @@ namespace Infrastructure.Repositories
         }
 
         public async Task<ShopManagerDetail> UpdateShopmanagerDetail(ShopManagerDetail user)
+        {
+            _context.Update(user);
+            await _context.SaveChangesAsync();
+            return user;
+        }
+        public async Task<StaffDetail> UpdateStaffDetail(StaffDetail user)
         {
             _context.Update(user);
             await _context.SaveChangesAsync();

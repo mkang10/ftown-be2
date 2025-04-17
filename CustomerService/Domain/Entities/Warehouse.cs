@@ -23,7 +23,7 @@ public partial class Warehouse
 
     public string WarehouseType { get; set; } = null!;
 
-    public int WarehouseStockId { get; set; }
+    public int? ShopManagerId { get; set; }
 
     public virtual ICollection<CheckDetail> CheckDetails { get; set; } = new List<CheckDetail>();
 
@@ -31,7 +31,9 @@ public partial class Warehouse
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
+    public virtual ShopManagerDetail? ShopManager { get; set; }
+
     public virtual ICollection<StoreExportStoreDetail> StoreExportStoreDetails { get; set; } = new List<StoreExportStoreDetail>();
 
-    public virtual WareHousesStock WarehouseStock { get; set; } = null!;
+    public virtual ICollection<WareHousesStock> WareHousesStocks { get; set; } = new List<WareHousesStock>();
 }

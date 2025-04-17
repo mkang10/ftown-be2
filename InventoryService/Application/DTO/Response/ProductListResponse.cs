@@ -16,6 +16,12 @@ namespace Application.DTO.Response
         public string? CategoryName { get; set; }
         public string? PromotionTitle { get; set; } // Tên khuyến mãi nếu có
         public bool? IsFavorite { get; set; }
-
-	}
+        public List<string> Colors { get; set; } = new();
+    }
+    public class ColorInfo
+    {
+        public int ColorId { get; set; }
+        public string ColorName { get; set; }
+        public string? ColorCode { get; set; }
+    }
 }

@@ -154,8 +154,8 @@ namespace Application.UseCases
                 if (request.PaymentMethod == "PAYOS")
                 {
                     // Gọi PayOS tạo link thanh toán
-                    // Gọi PayOS tạo link thanh toán
-                    var payosInfraResult = await _payOSService.CreatePayment(newOrder.OrderId, subTotal + shippingCost, request.PaymentMethod);
+                    
+                    var payosInfraResult = await _payOSService.CreatePayment(newOrder.OrderId, subTotal + shippingCost, request.PaymentMethod, orderItems);
                     if (payosInfraResult == null || string.IsNullOrEmpty(payosInfraResult.CheckoutUrl))
                     {
                         await _unitOfWork.RollbackAsync();

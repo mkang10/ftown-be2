@@ -16,17 +16,26 @@ namespace API.AppStarts
 
             CreateMap<Product, ProductListResponse>()
                 .ForMember(dest => dest.CategoryName,
-                           opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : "Uncategorized"))
+                    opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : "Uncategorized"))
                 .ForMember(dest => dest.Price,
-                   opt => opt.MapFrom(src => src.ProductVariants.Any()
-                       ? src.ProductVariants.First().Price
-                       : 0))
-                
+                    opt => opt.MapFrom(src => src.ProductVariants.Any() ? src.ProductVariants.First().Price : 0))
                 .ForMember(dest => dest.ImagePath,
-               opt => opt.MapFrom(src => src.ProductImages
-                                          .Where(pi => pi.IsMain)
-                                          .Select(pi => pi.ImagePath)
-                                          .FirstOrDefault()));
+                    opt => opt.MapFrom(src => src.ProductImages
+                        .Where(pi => pi.IsMain)
+                        .Select(pi => pi.ImagePath)
+                        .FirstOrDefault()))
+                .ForMember(dest => dest.Colors,
+                    opt => opt.MapFrom(src =>
+                        src.ProductVariants
+                            .Where(pv => pv.Color != null && !string.IsNullOrEmpty(pv.Color.ColorCode))
+                            .Select(pv => pv.Color.ColorCode)
+                            .Distinct()
+                            .ToList()
+                    ));
+
+
+            CreateMap<Color, ColorInfo>();
+
             CreateMap<CreateProductRequest, Product>()
             .ForMember(dest => dest.ProductImages, opt => opt.Ignore())  // Vì sẽ xử lý upload ảnh riêng
             .ForMember(dest => dest.Status, opt => opt.Ignore());
@@ -67,13 +76,24 @@ namespace API.AppStarts
             CreateMap<Product, TopSellingProductResponse>()
             .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.ProductId))
             .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Name))
-            .ForMember(dest => dest.ImagePath, opt => opt.MapFrom(src => src.ImagePath))
+            .ForMember(dest => dest.ImagePath, opt => opt.MapFrom(src => src.ProductImages
+                                                       .Where(i => i.IsMain)
+                                                       .Select(i => i.ImagePath)
+                                                       .FirstOrDefault()))
             .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : null))
             .ForMember(dest => dest.Price, opt => opt.Ignore()) // sẽ set thủ công từ variant
             .ForMember(dest => dest.DiscountedPrice, opt => opt.Ignore())
             .ForMember(dest => dest.QuantitySold, opt => opt.Ignore())
             .ForMember(dest => dest.Revenue, opt => opt.Ignore())
-            .ForMember(dest => dest.PromotionTitle, opt => opt.Ignore());
+            .ForMember(dest => dest.PromotionTitle, opt => opt.Ignore())
+            .ForMember(dest => dest.Colors,
+                        opt => opt.MapFrom(src =>
+                            src.ProductVariants
+                                .Where(pv => pv.Color != null && !string.IsNullOrEmpty(pv.Color.ColorCode))
+                                .Select(pv => pv.Color.ColorCode!)
+                                .Distinct()
+                                .ToList()
+                        ));
 
         }
     }

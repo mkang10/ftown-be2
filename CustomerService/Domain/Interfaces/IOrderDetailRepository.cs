@@ -10,5 +10,7 @@ namespace Domain.Interfaces
     public interface IOrderDetailRepository
     {
         Task<OrderDetail> GetOrderDetailById(int orderDetailId);
+        Task<Order> GetOrderStatuslById(int id);
+
     }
 }

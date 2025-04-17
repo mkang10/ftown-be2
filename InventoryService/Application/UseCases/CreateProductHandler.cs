@@ -34,7 +34,7 @@ namespace Application.UseCases
 			if (request.ImageFiles != null && request.ImageFiles.Any())
 			{
 				var (mainImagePath, productImages) = await UploadProductImagesAsync(request.ImageFiles);
-				product.ImagePath = mainImagePath; // Lưu ảnh chính vào Product
+				//product.ImagePath = mainImagePath; // Lưu ảnh chính vào Product
 				product.ProductImages = productImages;
 			}
 
@@ -56,7 +56,7 @@ namespace Application.UseCases
                 if (requests[i].ImageFiles != null && requests[i].ImageFiles.Any())
                 {
                     var (mainImagePath, productImages) = await UploadProductImagesAsync(requests[i].ImageFiles);
-                    product.ImagePath = mainImagePath;
+                    //product.ImagePath = mainImagePath;
                     product.ProductImages = productImages;
                 }
 

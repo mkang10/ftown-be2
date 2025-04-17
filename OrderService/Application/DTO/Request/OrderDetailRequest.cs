@@ -10,4 +10,9 @@ namespace Application.DTO.Request
     {
         public string order_code { get; set; }
     }
+    public class OrderDetailWithUpdateRequest
+    {
+        public string order_code { get; set; }
+
+    }
 }   

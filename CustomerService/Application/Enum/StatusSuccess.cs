@@ -9,6 +9,7 @@ namespace Application.Enum
     public enum StatusSuccess
     {
         Success,
-        Wrong
+        Wrong,
+        completed
     }
 }

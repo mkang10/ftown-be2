@@ -66,6 +66,6 @@ namespace Infrastructure.Repository
             return data;
         }
 
-        
+
     }
 }
