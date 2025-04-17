@@ -40,30 +40,31 @@ namespace Application.UseCases
         public async Task<ResponseDTO<List<CartItemResponse>>> Handle(int accountId)
         {
             var cartKey = GetCartKey(accountId);
-            // Kiểm tra giỏ hàng trong Redis
-            var cart = await _redisCacheService.GetCacheAsync<List<CartItem>>(cartKey) ?? new List<CartItem>();
 
-            // Nếu cache trống, tải từ DB và cập nhật cache
+            // Lấy giỏ hàng từ Redis hoặc DB
+            var cart = await _redisCacheService.GetCacheAsync<List<CartItem>>(cartKey) ?? new List<CartItem>();
             if (!cart.Any())
             {
                 Console.WriteLine("⏳ Cache miss: Lấy giỏ hàng từ Database...");
                 cart = await _cartRepository.GetCartFromDatabaseAsync(accountId);
                 if (cart.Any())
                 {
-                    await _redisCacheService.SetCacheAsync(cartKey, cart, TimeSpan.FromMinutes(30));
+                    await _redisCacheService.SetCacheAsync(cartKey, cart, TimeSpan.FromMinutes(1));
                 }
             }
 
-            // Nếu vẫn trống, trả về giỏ hàng rỗng
             if (!cart.Any())
             {
                 return new ResponseDTO<List<CartItemResponse>>(new List<CartItemResponse>(), true, "Giỏ hàng trống.");
             }
 
-            // Ánh xạ sang response
-            var cartItemResponses = _mapper.Map<List<CartItemResponse>>(cart);
+            var cartItemResponses = cart.Select(cartItem => new CartItemResponse
+            {
+                ProductVariantId = cartItem.ProductVariantId,
+                Quantity = cartItem.Quantity
+            }).ToList();
 
-            // Lấy thông tin sản phẩm song song từ InventoryService
+            // Kiểm tra tồn kho
             var tasks = cartItemResponses.Select(async item =>
             {
                 var productVariant = await _inventoryServiceClient.GetProductVariantById(item.ProductVariantId);
@@ -76,16 +77,30 @@ namespace Application.UseCases
                     item.Price = productVariant.Price;
                     item.DiscountedPrice = productVariant.DiscountedPrice;
                     item.PromotionTitle = productVariant.PromotionTitle;
+
+                    // ❗ Kiểm tra tồn kho
+                    if (item.Quantity > productVariant.StockQuantity)
+                    {
+                        item.Message = $"Sản phẩm chỉ còn {productVariant.StockQuantity} trong kho.";
+                        // Nếu muốn cập nhật lại số lượng để phản ánh đúng:
+                        // item.Quantity = productVariant.StockQuantity;
+                    }
+                }
+                else
+                {
+                    item.Message = "Sản phẩm không tồn tại hoặc đã bị xoá.";
                 }
             });
             await Task.WhenAll(tasks);
 
+
             return new ResponseDTO<List<CartItemResponse>>(cartItemResponses, true, "Lấy giỏ hàng thành công!");
         }
 
+
         public async Task<ResponseDTO<bool>> AddCartItem(int accountId, AddToCartRequest cartItemDto)
         {
-            //Lấy ProductVariant từ InventoryService dựa trên ProductId, Size, Color
+            // Lấy ProductVariant từ InventoryService dựa trên ProductId, Size, Color
             var productVariant = await _inventoryServiceClient.GetProductVariantByDetails(cartItemDto.ProductId, cartItemDto.Size, cartItemDto.Color);
 
             if (productVariant == null)
@@ -93,22 +108,26 @@ namespace Application.UseCases
                 return new ResponseDTO<bool>(false, false, "Sản phẩm với kích thước và màu sắc không tồn tại!");
             }
 
-            if (productVariant.StockQuantity < cartItemDto.Quantity)
-            {
-                return new ResponseDTO<bool>(false, false, "Số lượng sản phẩm không đủ!");
-            }
-
             var cartKey = GetCartKey(accountId);
 
-            //Lấy giỏ hàng từ Redis; nếu không có thì tải từ DB
+            // Lấy giỏ hàng từ Redis; nếu không có thì tải từ DB
             var cart = await _redisCacheService.GetCacheAsync<List<CartItem>>(cartKey);
             if (cart == null)
             {
                 cart = await _cartRepository.GetCartFromDatabaseAsync(accountId) ?? new List<CartItem>();
             }
 
-            //Cập nhật giỏ hàng trong bộ nhớ
+            // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
             var existingItem = cart.FirstOrDefault(c => c.ProductVariantId == productVariant.VariantId);
+            int totalQuantityAfterAdding = cartItemDto.Quantity + (existingItem?.Quantity ?? 0);
+
+            // So sánh với tồn kho
+            if (totalQuantityAfterAdding > productVariant.StockQuantity)
+            {
+                return new ResponseDTO<bool>(false, false, "Số lượng sản phẩm trong giỏ hàng vượt quá tồn kho!");
+            }
+
+            // Cập nhật giỏ hàng trong bộ nhớ
             if (existingItem != null)
             {
                 existingItem.Quantity += cartItemDto.Quantity;
@@ -134,6 +153,7 @@ namespace Application.UseCases
 
             return new ResponseDTO<bool>(true, true, "Thêm sản phẩm vào giỏ hàng thành công!");
         }
+
 
         // --- Remove Cart Item ---
         public async Task<ResponseDTO<bool>> RemoveCartItem(int accountId, int productVariantId)

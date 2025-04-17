@@ -12,7 +12,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins",
         policy => policy
-            .WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-client-product.vercel.app/") // Thêm ngu?n m?i
+            .WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-client-pro-n8x7.vercel.app") // Thêm ngu?n m?i
             .AllowAnyMethod()
             .AllowAnyHeader());
 });
