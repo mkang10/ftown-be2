@@ -11,6 +11,8 @@ namespace Domain.Interfaces
     public interface IExcelRepo
     {
         public Task<Pagination<Product>> GetAllProduct(PaginationParameter paginationParameter);
+        public Task<List<Product>> GetAllProductList();
+
         public Task<List<Product>> CreateProduct(List<Product> user);
 
     }

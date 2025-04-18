@@ -58,8 +58,12 @@ namespace API.AppStarts
 
                 return new ElasticClient(settings);
             });
+            services.AddScoped<ISizeAndColorRepository, ColorAndSizeRepository>();
 
             //Handler    
+            services.AddScoped<ColorHandler>();
+            services.AddScoped<SizeHandler>();
+
 
             services.AddScoped<GetAllProductsHandler>();
             services.AddScoped<FilterProductHandler>();

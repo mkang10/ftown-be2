@@ -76,9 +76,8 @@ namespace Application.Template
             sb.AppendLine("<div>");
             sb.AppendLine("<table style='width: 300px; text-align: left;'>");
             sb.AppendLine($"<tr><td>Tạm tính:</td><td>{string.Format(culture, "{0:#,##0} \u20ab", subTotal)}</td></tr>");
-            sb.AppendLine("<tr><td>Giảm giá:</td><td>0.00₫</td></tr>");
-            sb.AppendLine("<tr><td>Thuế (0%):</td><td>0.00₫</td></tr>");
-            sb.AppendLine("<tr><td>Phí vận chuyển:</td><td>0.00₫</td></tr>");
+            sb.AppendLine("<tr><td>Giảm giá:</td><td></td></tr>");
+            sb.AppendLine($"<tr><td>Phí vận chuyển:</td><td>{string.Format(culture, "{0:#,##0} \u20ab", invoice.ShippingCost)}</td></tr>");
             sb.AppendLine($"<tr style='font-weight:bold;'><td>Tổng cộng:</td><td>{string.Format(culture, "{0:#,##0} \u20ab", subTotal)}</td></tr>");
             sb.AppendLine("</table>");
             sb.AppendLine("</div>");
