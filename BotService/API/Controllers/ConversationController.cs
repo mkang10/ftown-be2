@@ -6,7 +6,6 @@ using Domain.DTO.Response;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using static Domain.DTO.Response.MessageRespondDTO<T>;
 
 internal class T
 {
@@ -25,11 +24,11 @@ namespace API.Controllers
             _service = service;
         }
         [HttpGet]
-        public async Task<IActionResult> GetAllUserAccount(int id ,[FromQuery] PaginationParameter paginationParameter)
+        public async Task<IActionResult> GetAllUserAccount(int id, [FromQuery] PaginationParameter paginationParameter)
         {
             try
             {
-                var result = await _service.GetAllConversationServiceByAccountId( id, paginationParameter);
+                var result = await _service.GetAllConversationServiceByAccountId(id, paginationParameter);
 
                 if (result == null)
                 {
@@ -80,7 +79,6 @@ namespace API.Controllers
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteConversationById(int id)
         {
-            var response = new MessageResponseButNoData();
 
             try
             {

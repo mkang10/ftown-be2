@@ -33,6 +33,9 @@ namespace Domain.Interfaces
 
         Task<Import?> GetImportByTransferIdAsync(int transferId);
 
+        // ======Duc Anh=======
+        Task<ImportStoreDetail> GetImportStoreDetail(int importId);
+
     }
 }
 

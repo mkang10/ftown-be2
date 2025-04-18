@@ -32,5 +32,7 @@ namespace Domain.Interfaces
 
         public Task<Role> GetRoleById(int id);
 
+
+
     }
 }

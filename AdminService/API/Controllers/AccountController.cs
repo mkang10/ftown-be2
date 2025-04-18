@@ -82,7 +82,7 @@ namespace API.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> Create(CreateUserRequestWithPasswordDTO user)
+        public async Task<IActionResult> Create([FromForm] CreateUserRequestWithPasswordDTO user)
         {
             try
             {

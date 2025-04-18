@@ -62,7 +62,7 @@ namespace Application.UseCases
 			variantResponse.PromotionTitle = promotionTitle;
 
 			// ✅ Lưu vào cache với TTL 30 phút
-			await _cacheService.SetCacheAsync(cacheKey, variantResponse, TimeSpan.FromMinutes(30));
+			await _cacheService.SetCacheAsync(cacheKey, variantResponse, TimeSpan.FromMinutes(5));
 
             return variantResponse;
         }

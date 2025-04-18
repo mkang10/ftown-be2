@@ -50,36 +50,46 @@ namespace Application.UseCases
             var promotions = await _promotionRepository.GetActiveProductPromotionsAsync();
 
             var productGroups = orderDetails
-                .GroupBy(od => od.ProductVariant.Product.ProductId)
-                .Select(g =>
-                {
-                    var first = g.First();
-                    var product = first.ProductVariant.Product;
-                    var variant = first.ProductVariant;
+            .GroupBy(od => od.ProductVariant.Product.ProductId)
+            .Select(g =>
+            {
+                var first = g.First();
+                var product = first.ProductVariant.Product;
 
-                    // Ánh xạ từ Product sang Response
-                    var response = _mapper.Map<TopSellingProductResponse>(product);
+                // ✅ Lấy toàn bộ biến thể (ProductVariants) từ các orderDetails
+                var allVariants = g.Select(x => x.ProductVariant).Where(pv => pv != null).ToList();
 
-                    // Gán thủ công các trường không ánh xạ trực tiếp
-                    response.QuantitySold = g.Sum(x => x.Quantity);
-                    response.Revenue = g.Sum(x => x.Quantity * x.PriceAtPurchase);
-                    response.Price = variant.Price;
+                // ✅ Gom toàn bộ ColorCode từ các biến thể (tránh trùng)
+                var colorCodes = allVariants
+                    .Where(pv => pv.Color != null && !string.IsNullOrEmpty(pv.Color.ColorCode))
+                    .Select(pv => pv.Color.ColorCode!)
+                    .Distinct()
+                    .ToList();
 
-                    _promotionService.ApplyPromotion(
-                        product.ProductId,
-                        variant.Price,
-                        promotions,
-                        out var discountedPrice,
-                        out var promotionTitle);
+                // ⚡ Ánh xạ từ Product sang Response
+                var response = _mapper.Map<TopSellingProductResponse>(product);
 
-                    response.DiscountedPrice = discountedPrice;
-                    response.PromotionTitle = promotionTitle;
+                response.QuantitySold = g.Sum(x => x.Quantity);
+                response.Revenue = g.Sum(x => x.Quantity * x.PriceAtPurchase);
+                response.Price = allVariants.First().Price;
+                response.Colors = colorCodes; // ✅ Gán danh sách màu
 
-                    return response;
-                })
-                .OrderByDescending(x => x.QuantitySold)
-                .Take(top)
-                .ToList();
+                _promotionService.ApplyPromotion(
+                    product.ProductId,
+                    response.Price,
+                    promotions,
+                    out var discountedPrice,
+                    out var promotionTitle);
+
+                response.DiscountedPrice = discountedPrice;
+                response.PromotionTitle = promotionTitle;
+
+                return response;
+            })
+            .OrderByDescending(x => x.QuantitySold)
+            .Take(top)
+            .ToList();
+
 
             await _cacheService.SetCacheAsync(cacheKey, productGroups, TimeSpan.FromMinutes(10));
 

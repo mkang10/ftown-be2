@@ -246,6 +246,18 @@ namespace Infrastructure
         {
             return await _context.Warehouses.FindAsync(id);
         }
+        public async Task<ImportStoreDetail> GetImportStoreDetail(int importId)
+        {
+            var data = await _context.ImportStoreDetails
+                .Include(od => od.StaffDetail).ThenInclude(oc => oc.Account)
+                .Include(od => od.Warehouse)
+                .Include(od => od.HandleByNavigation)
+                .Include(od => od.ImportDetail).ThenInclude(oc => oc.ProductVariant).ThenInclude(ot => ot.Product)
+                .Include(od => od.ImportDetail)
+                        .ThenInclude(c => c.Import)
+                .FirstOrDefaultAsync(o => o.ImportStoreId == importId);
+            return data;
+        }
 
         public async Task<decimal?> GetLatestCostPriceAsync(int productId, int sizeId, int colorId)
         {

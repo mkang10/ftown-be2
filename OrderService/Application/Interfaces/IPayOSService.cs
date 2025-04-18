@@ -1,4 +1,5 @@
-﻿using Application.DTO.Response;
+﻿using Application.DTO.Request;
+using Application.DTO.Response;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,6 @@ namespace Application.Interfaces
 {
     public interface IPayOSService
     {
-        Task<CreatePaymentResponse?> CreatePayment(int orderId, decimal amount, string paymentMethod);
+        Task<CreatePaymentResponse?> CreatePayment(int orderId, decimal amount, string paymentMethod, List<OrderItemRequest> orderItems);
     }
 }

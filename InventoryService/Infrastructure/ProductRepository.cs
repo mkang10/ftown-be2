@@ -73,6 +73,7 @@ namespace Infrastructure
 				.Where(p => p.Status == ProductStatus.Online.ToString()
 		                   || p.Status == ProductStatus.Both.ToString() )
 				.Include(p => p.ProductVariants)
+                    .ThenInclude(pv => pv.Color)
                 .Include(p => p.Category)
                 .Include(p => p.ProductImages) 
                 .Skip((page - 1) * pageSize)
@@ -204,7 +205,14 @@ namespace Infrastructure
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.ProductVariant)
                         .ThenInclude(pv => pv.Product)
-                            .ThenInclude(p => p.Category) // ✅ phải có dòng này
+                            .ThenInclude(p => p.Category)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.ProductVariant)
+                        .ThenInclude(pv => pv.Product)
+                            .ThenInclude(p => p.ProductImages)
+                .Include(o => o.OrderDetails) // 🆕 Thêm dòng này để lấy màu
+                    .ThenInclude(od => od.ProductVariant)
+                        .ThenInclude(pv => pv.Color)
                 .AsQueryable();
 
             if (from.HasValue)
@@ -215,5 +223,7 @@ namespace Infrastructure
 
             return await query.ToListAsync();
         }
+
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using Application.DTO.Response;
+﻿using Application.DTO.Request;
+using Application.DTO.Response;
 using Application.Interfaces;
 using AutoMapper;
 using Infrastructure.HelperServices.Models;
@@ -44,11 +45,24 @@ namespace Infrastructure.HelperServices
 
         }
 
-        public async Task<CreatePaymentResponse?> CreatePayment(int orderId, decimal amount, string paymentMethod)
+        public async Task<CreatePaymentResponse?> CreatePayment(int orderId, decimal amount, string paymentMethod, List<OrderItemRequest> orderItems)
         {
-            var items = new List<ItemData> {
-            new ItemData("Đơn hàng #" + orderId, 1, Convert.ToInt32(amount))
-};
+            var items = orderItems
+                     .Select(i => new ItemData(
+                         name: $"{i.ProductName} ({i.Color}, {i.Size})",
+                         quantity: i.Quantity,
+                         price: Convert.ToInt32(i.Price)
+                     ))
+                     .ToList();
+
+            // Thêm dòng tổng quan
+            items.Add(new ItemData(
+                name: $"Đơn hàng #{orderId}",
+                quantity: 1,
+                price: Convert.ToInt32(amount)
+            ));
+
+        
             long orderCode = long.Parse($"{orderId}{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() % 1000000}");
 
             var paymentData = new PaymentData(
@@ -57,7 +71,7 @@ namespace Infrastructure.HelperServices
                 description: $"Thanh toán đơn hàng {orderId}",
                 items: items,
                 cancelUrl: "http://localhost:7266/api/payment/cancel",
-                returnUrl: $"https://ftown-client-product.vercel.app/profile/order"
+                returnUrl: $"https://ftown-client-pro-n8x7.vercel.app/profile/order"
             );
 
             var createPayment = await _payOS.createPaymentLink(paymentData);

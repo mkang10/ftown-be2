@@ -22,11 +22,13 @@ namespace Domain.DTO.Request
 
         public int? ParentMessageId { get; set; }
 
-        public bool IsRead { get; set; }    
+        public bool IsRead { get; set; }
     }
 
     public class MessageCreateRequest
     {
+        [JsonIgnore]
+        public int MessageId { get; set; }
 
         public int ConversationId { get; set; }
 
@@ -41,6 +43,10 @@ namespace Domain.DTO.Request
         public bool IsRead { get; set; }
     }
 
-   
+    public class UpdateStatusIsReadMessageDTO
+    {
+        public int id { get; set; }
+        public bool IsRead = true;
+    }
 }
 

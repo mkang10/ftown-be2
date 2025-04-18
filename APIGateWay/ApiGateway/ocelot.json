@@ -257,6 +257,10 @@
       "DownstreamPathTemplate": "/api/return-requests/checkout",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftorderservicewebapi.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7266
@@ -438,6 +442,10 @@
       "DownstreamPathTemplate": "/api/cart/{accountId}/remove/{productVariantId}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7264
@@ -454,6 +462,10 @@
       "DownstreamPathTemplate": "/api/cart/{accountId}/clear",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7264
@@ -470,6 +482,10 @@
       "DownstreamPathTemplate": "/api/cart/{accountId}/change-quantity",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7264
@@ -482,8 +498,6 @@
       "UpstreamPathTemplate": "/cart/{accountId}/change-quantity",
       "UpstreamHttpMethod": [ "Post" ]
     },
-
-
     {
       "DownstreamPathTemplate": "/api/order/{everything}",
       "DownstreamScheme": "https",

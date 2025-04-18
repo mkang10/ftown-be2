@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -51,7 +52,7 @@ namespace Application.DTO.Request
         public bool? IsActive { get; set; }
 
         public int RoleId { get; set; }
-
+        public IFormFile ImgFile { get; set; }
         public string? ImagePath { get; set; }
     }
 
