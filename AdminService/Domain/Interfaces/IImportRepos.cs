@@ -11,6 +11,8 @@ namespace Domain.Interfaces
 {
     public interface IImportRepos
     {
+        Task<decimal?> GetLatestCostPriceAsync(int productId, int sizeId, int colorId);
+
         Task<Import> AddAsync(Import import);
         Task<Import?> GetByIdAsync(int importId);
         Task UpdateAsync(Import import);

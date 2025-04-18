@@ -9,9 +9,9 @@ namespace Application.Enum
 	public enum ProductStatus
 	{
 		Draft,
-		ActiveOnline,
-		ActiveOffline,
-		ActiveBoth
+		Online,
+		Offline,
+		Both
 	}
 
 }

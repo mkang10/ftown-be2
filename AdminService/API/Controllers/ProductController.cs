@@ -13,11 +13,14 @@ namespace API.Controllers
     {
         private readonly CreateProductHandler _createProductHandler;
         private readonly GetAllProductHandler  _getallProductHandler;
+        private readonly GetProductDetailHandler _detailHandler;
 
-        public ProductsController(CreateProductHandler createProductHandler, GetAllProductHandler getAllProductHandler)
+
+        public ProductsController(GetProductDetailHandler detailHandler, CreateProductHandler createProductHandler, GetAllProductHandler getAllProductHandler)
         {
             _createProductHandler = createProductHandler;
             _getallProductHandler = getAllProductHandler;
+            _detailHandler = detailHandler;
         }
 
         // POST: api/Products
@@ -69,6 +72,17 @@ namespace API.Controllers
                 );
                 return StatusCode(500, response);
             }
+        }
+
+        [HttpGet("{productId}")]
+        public async Task<IActionResult> GetProductWithVariants(int productId)
+        {
+            var result = await _detailHandler.GetProductWithVariantsAsync(productId);
+
+            if (!result.Status)
+                return NotFound(result);
+
+            return Ok(result);
         }
 
         [HttpGet]

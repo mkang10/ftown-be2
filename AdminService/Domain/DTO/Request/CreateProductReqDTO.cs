@@ -37,10 +37,7 @@ namespace Domain.DTO.Request
         public int ProductId { get; set; }
         public int? SizeId { get; set; }
         public int? ColorId { get; set; }
-        public decimal Price { get; set; }
         public IFormFile? ImageFile { get; set; }
-        public string? Sku { get; set; }
-        public string? Barcode { get; set; }
         public decimal? Weight { get; set; }
     }
 

@@ -9,10 +9,12 @@ namespace Infrastructure.Repositories
     public class WarehouseStockRepository : IWarehouseStockRepos
     {
         private readonly FtownContext _context;
+        private readonly IProductVarRepos _varRepos;
 
-        public WarehouseStockRepository(FtownContext context)
+        public WarehouseStockRepository(IProductVarRepos varRepos ,FtownContext context)
         {
             _context = context;
+            _varRepos = varRepos;
         }
 
         public async Task<WareHousesStock?> GetByIdWithDetailsAsync(int id)
@@ -42,6 +44,16 @@ namespace Infrastructure.Repositories
                 .Include(ws => ws.WareHouse)
                 .Include(ws => ws.WareHouseStockAudits)
                 .ToListAsync();
+        }
+
+        public async Task<bool> HasStockAsync(int productId, int sizeId, int colorId)
+        {
+            var variantId = await _varRepos.GetVariantIdAsync(productId, sizeId, colorId);
+            if (variantId == null)
+                return false;
+
+            return await _context.WareHousesStocks
+                .AnyAsync(ws => ws.VariantId == variantId && ws.StockQuantity > 0);
         }
     }
 }

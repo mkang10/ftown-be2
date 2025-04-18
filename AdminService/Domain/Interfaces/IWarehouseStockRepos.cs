@@ -11,6 +11,7 @@ namespace Domain.Interfaces
     {
         Task<WareHousesStock?> GetByIdWithDetailsAsync(int id);
         Task<IEnumerable<WareHousesStock>> GetByWarehouseIdAsync(int warehouseId);
+        Task<bool> HasStockAsync(int ProductId, int sizeId, int ColorId);
 
     }
 }
