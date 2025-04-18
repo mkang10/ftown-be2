@@ -98,6 +98,8 @@ namespace API.AppStarts
             CreateMap<CreateColorDTO, Color>().ReverseMap();
             CreateMap<SizeDTO, Size>().ReverseMap();
             CreateMap<CreateSizeDTO, Size>().ReverseMap();
+            CreateMap<CategoryDTO, Category>().ReverseMap();
+            CreateMap<CreateCategoryDTO, Category>().ReverseMap();
 
 
         }

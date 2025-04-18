@@ -82,6 +82,7 @@ namespace API.AppStarts
             services.AddScoped<AddFavoriteHandler>();
             services.AddScoped<RemoveFavoriteHandler>();
             services.AddScoped<GetTopSellingProductHandler>();
+            services.AddScoped<CategoryHandler>();
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowLocalhost",
@@ -97,6 +98,7 @@ namespace API.AppStarts
             services.AddScoped<IWareHousesStockRepository, WareHousesStockRepository>();
             services.AddScoped<IRedisRepository, RedisRepository>();
             services.AddScoped<IPromotionRepository, PromotionRepository>();
+            services.AddScoped<ICategoryRepository, CategoryRepository>();
 
 
             // auto mapper
