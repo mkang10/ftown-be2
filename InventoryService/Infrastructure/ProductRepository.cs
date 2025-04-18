@@ -70,8 +70,8 @@ namespace Infrastructure
         public async Task<List<Product>> GetPagedProductsWithVariantsAsync(int page, int pageSize)
         {
             return await _context.Products
-				.Where(p => p.Status == ProductStatus.ActiveOnline.ToString()
-		                   || p.Status == ProductStatus.ActiveBoth.ToString() )
+				.Where(p => p.Status == ProductStatus.Online.ToString()
+		                   || p.Status == ProductStatus.Both.ToString() )
 				.Include(p => p.ProductVariants)
                 .Include(p => p.Category)
                 .Include(p => p.ProductImages) 
@@ -170,8 +170,8 @@ namespace Infrastructure
 						join favorite in _context.FavoriteProducts
 							on product.ProductId equals favorite.ProductId
 						where favorite.AccountId == accountId
-						   && (product.Status == ProductStatus.ActiveOnline.ToString()
-							   || product.Status == ProductStatus.ActiveBoth.ToString())
+						   && (product.Status == ProductStatus.Online.ToString()
+							   || product.Status == ProductStatus.Both.ToString())
 						orderby favorite.CreatedAt descending // ✅ Sắp xếp mới nhất trước
 						select product;
 
@@ -188,8 +188,8 @@ namespace Infrastructure
         {
             return await _context.Products
                 .Where(p =>
-                    (p.Status == ProductStatus.ActiveOnline.ToString() ||
-                     p.Status == ProductStatus.ActiveBoth.ToString()) &&
+                    (p.Status == ProductStatus.Online.ToString() ||
+                     p.Status == ProductStatus.Both.ToString()) &&
                     p.Category.Name.ToLower() == categoryName.ToLower())
                 .Include(p => p.Category)
                 .Include(p => p.ProductVariants)

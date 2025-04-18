@@ -3,6 +3,7 @@ using AutoMapper;
 using Domain.DTO.Request;
 using Domain.DTO.Response;
 using Domain.Entities;
+using static Domain.DTO.Response.ProductDetailDTO;
 
 namespace API.AppStarts
 {
@@ -122,8 +123,16 @@ namespace API.AppStarts
                            .ForMember(dest => dest.DispatchReferenceNumber,
                                       opt => opt.MapFrom(src => src.DispatchReferenceNumber))
                             .ForMember(dest => dest.CreatedByName,
-                           opt => opt.MapFrom(src => src.CreatedByName)); 
+                           opt => opt.MapFrom(src => src.CreatedByName));
 
+
+            CreateMap<Product, ProductDto>()
+            // map ImagePath từ bộ ProductImages
+            .ForMember(dest => dest.ImagePath,
+                       opt => opt.MapFrom(src => src.ProductImages
+                                                   .FirstOrDefault(pi => pi.IsMain)
+                                                   .ImagePath));
+            CreateMap<ProductVariant, ProductVariantDto>();
         }
     }
 }       

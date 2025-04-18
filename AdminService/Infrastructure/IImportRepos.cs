@@ -10,10 +10,12 @@ namespace Infrastructure
     public class InventoryImportRepository : IImportRepos
     {
         private readonly FtownContext _context;
+        private readonly IProductVarRepos _variantRepo;
 
-        public InventoryImportRepository(FtownContext context)
+        public InventoryImportRepository(FtownContext context, IProductVarRepos variantRepo)
         {
             _context = context;
+            _variantRepo = variantRepo;
         }
 
         public async Task<Import> AddAsync(Import import)
@@ -76,51 +78,56 @@ namespace Infrastructure
 
         public async Task<PagedResult<Import>> GetImportsAsync(InventoryImportFilterDto filter)
         {
-            // Bắt đầu từ IQueryable để xây dựng query
+            // 1. Chuẩn hóa PageNumber
+            if (filter.PageNumber < 1)
+                filter.PageNumber = 1;
+
+            // 2. Build query
             var query = _context.Imports
                 .Include(ii => ii.CreatedByNavigation)
                 .Include(ii => ii.ImportDetails)
                     .ThenInclude(detail => detail.ImportStoreDetails)
                 .AsQueryable();
 
-            // Áp dụng các điều kiện filter (nếu có)
+            // 3. Áp dụng filter
             if (!string.IsNullOrEmpty(filter.Status))
                 query = query.Where(ii => ii.Status.ToLower().Contains(filter.Status.ToLower()));
-
             if (filter.CreatedBy.HasValue)
                 query = query.Where(ii => ii.CreatedBy == filter.CreatedBy.Value);
-
             if (filter.CreatedDateFrom.HasValue)
                 query = query.Where(ii => ii.CreatedDate >= filter.CreatedDateFrom.Value);
-
             if (filter.CreatedDateTo.HasValue)
                 query = query.Where(ii => ii.CreatedDate <= filter.CreatedDateTo.Value);
-
             if (!string.IsNullOrEmpty(filter.ReferenceNumber))
                 query = query.Where(ii => ii.ReferenceNumber.Contains(filter.ReferenceNumber));
-
             if (filter.TotalCostMin.HasValue)
                 query = query.Where(ii => ii.TotalCost >= filter.TotalCostMin.Value);
-
             if (filter.TotalCostMax.HasValue)
                 query = query.Where(ii => ii.TotalCost <= filter.TotalCostMax.Value);
-
             if (filter.ApprovedDateFrom.HasValue)
                 query = query.Where(ii => ii.ApprovedDate >= filter.ApprovedDateFrom.Value);
-
             if (filter.ApprovedDateTo.HasValue)
                 query = query.Where(ii => ii.ApprovedDate <= filter.ApprovedDateTo.Value);
-
             if (filter.CompletedDateFrom.HasValue)
                 query = query.Where(ii => ii.CompletedDate >= filter.CompletedDateFrom.Value);
-
             if (filter.CompletedDateTo.HasValue)
                 query = query.Where(ii => ii.CompletedDate <= filter.CompletedDateTo.Value);
 
-            // Lấy tổng số bản ghi
+            // 4. Đếm tổng bản ghi
             var totalCount = await query.CountAsync();
 
-            // Sắp xếp dựa trên enum và IsDescending
+            // 5. Tính tổng số trang và kiểm tra
+            var totalPages = (int)Math.Ceiling(totalCount / (double)filter.PageSize);
+            if (totalCount > 0 && filter.PageNumber > totalPages)
+            {
+                return new PagedResult<Import>
+                {
+                    Data = new List<Import>(),
+                    TotalCount = totalCount
+                };
+            }
+
+            // 6. Sắp xếp
             switch (filter.SortField)
             {
                 case InventoryImportSortField.ImportId:
@@ -128,50 +135,44 @@ namespace Infrastructure
                         ? query.OrderByDescending(ii => ii.ImportId)
                         : query.OrderBy(ii => ii.ImportId);
                     break;
-
                 case InventoryImportSortField.CreatedDate:
                     query = filter.IsDescending
                         ? query.OrderByDescending(ii => ii.CreatedDate)
                         : query.OrderBy(ii => ii.CreatedDate);
                     break;
-
                 case InventoryImportSortField.TotalCost:
                     query = filter.IsDescending
                         ? query.OrderByDescending(ii => ii.TotalCost)
                         : query.OrderBy(ii => ii.TotalCost);
                     break;
-
                 case InventoryImportSortField.Status:
                     query = filter.IsDescending
                         ? query.OrderByDescending(ii => ii.Status)
                         : query.OrderBy(ii => ii.Status);
                     break;
-
                 case InventoryImportSortField.ReferenceNumber:
                     query = filter.IsDescending
                         ? query.OrderByDescending(ii => ii.ReferenceNumber)
                         : query.OrderBy(ii => ii.ReferenceNumber);
                     break;
-
                 default:
-                    // Nếu không xác định, mặc định sắp xếp theo ImportId
                     query = query.OrderBy(ii => ii.ImportId);
                     break;
             }
 
-            // Áp dụng phân trang
+            // 7. Phân trang
             var data = await query
                 .Skip((filter.PageNumber - 1) * filter.PageSize)
                 .Take(filter.PageSize)
                 .ToListAsync();
 
+            // 8. Trả về kết quả, đảm bảo Data không null
             return new PagedResult<Import>
             {
-                Data = data,
+                Data = data ?? new List<Import>(),
                 TotalCount = totalCount
             };
         }
-
 
         public async Task<Import> GetImportByIdAsync(int importId)
         {
@@ -244,6 +245,19 @@ namespace Infrastructure
         public async Task<Warehouse> GetWareHouseByIdAsync(int id)
         {
             return await _context.Warehouses.FindAsync(id);
+        }
+
+        public async Task<decimal?> GetLatestCostPriceAsync(int productId, int sizeId, int colorId)
+        {
+            var variantId = await _variantRepo.GetVariantIdAsync(productId, sizeId, colorId);
+            if (variantId == null)
+                return null;
+
+            return await _context.ImportDetails
+                .Where(d => d.ProductVariantId == variantId)
+                .OrderByDescending(d => d.Import!.CompletedDate)
+                .Select(d => (decimal?)d.CostPrice)
+                .FirstOrDefaultAsync();
         }
 
     }
