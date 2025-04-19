@@ -39,4 +39,10 @@ namespace Domain.DTO.Response
         public object? RoleDetails { get; set; } // Chứa thông tin chi tiết theo từng role
        
     }
+    public class ForgotPasswordRequestCapcha
+    {
+        public string Email { get; set; }
+        public string RecaptchaToken { get; set; }
+    }
+
 }

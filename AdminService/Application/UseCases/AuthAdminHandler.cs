@@ -1,4 +1,5 @@
-﻿using Domain.DTO.Response;
+﻿using Application.Template;
+using Domain.DTO.Response;
 using Domain.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -7,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Net.Mail;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -20,7 +22,7 @@ namespace Application.UseCases
         private readonly IUserManagementRepository _userManagementRepository;
         private readonly AdminAccountSetting _adminAccount;
 
-        public AuthAdminHandler(IConfiguration configuration, 
+        public AuthAdminHandler(IConfiguration configuration,
             IUserManagementRepository userManagementRepository,
             IOptions<AdminAccountSetting> adminAccount)
         {
@@ -33,7 +35,7 @@ namespace Application.UseCases
         {
             var data = await _userManagementRepository.GetUserByGmail(email);
 
-            if (email == _adminAccount.Account && password == _adminAccount.Password)
+            if (email == _adminAccount.Account && VerifyPassword(password, _adminAccount.Password) == true)
             {
                 string token = GenerateJwtToken(data.Email, data.Role.RoleName, data.AccountId, data.Email);
 
@@ -64,12 +66,64 @@ namespace Application.UseCases
                         RoleId = data.RoleId,
                         IsActive = data.IsActive,
                         Email = data.Email,
-                        RoleDetails = roleDetails 
+                        RoleDetails = roleDetails
                     }
                 };
             }
             return null;
         }
+
+        public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequestCapcha ps)
+        {
+            var user = await _userManagementRepository.GetUserByGmail(ps.Email);
+            if (user == null)
+            {
+                return false;
+            }
+
+            string newPassword = GenerateRandomPassword(8);
+            string hashedPassword = HashPassword(newPassword);
+
+            user.PasswordHash = hashedPassword;
+            await _userManagementRepository.UpdateUser(user);
+
+            string htmlContent = EmailTemplateBuilder.BuildForgotPasswordEmail(newPassword);
+
+
+            await SendEmailAsync(ps.Email, "Khôi phục mật khẩu", htmlContent);
+            return true;
+        }
+
+        private async Task SendEmailAsync(string toEmail, string subject, string body)
+        {
+            var smtpClient = new SmtpClient(_configuration["Mail:Smtp"])
+            {
+                Port = int.Parse(_configuration["Mail:Port"]),
+                Credentials = new System.Net.NetworkCredential(
+                    _configuration["Mail:Username"],
+                    _configuration["Mail:Password"]),
+                EnableSsl = true
+            };
+
+            var mailMessage = new MailMessage
+            {
+                From = new MailAddress(_configuration["Mail:From"]),
+                Subject = subject,
+                Body = body,
+                IsBodyHtml = true,
+            };
+
+            mailMessage.To.Add(toEmail);
+            await smtpClient.SendMailAsync(mailMessage);
+        }
+
+        private string GenerateRandomPassword(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
         private string GenerateJwtToken(string username, string roleName, int userId, string email)
         {
             var tokenHandler = new JwtSecurityTokenHandler();

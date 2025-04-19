@@ -216,5 +216,17 @@ namespace API.Controllers
                 return StatusCode(500, new ResponseDTO<object>(null, false, "Đã có lỗi xảy ra từ phía server. Vui lòng thử lại sau!"));
             }
         }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestCapcha ps)
+        {
+            var success = await _authservice.ForgotPasswordAsync(ps);
+            if (!success)
+                return NotFound("Email không tồn tại trong hệ thống.");
+
+            return Ok("Mật khẩu mới đã được gửi về email của bạn.");
+        }
+
+
     }
 }
