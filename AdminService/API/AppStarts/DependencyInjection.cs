@@ -55,6 +55,7 @@ namespace API.AppStarts
             services.AddScoped<GetAllImportHandler>();
             services.AddScoped<GetImportDetailHandler>();
             services.AddScoped<GetAllProductHandler>();
+            services.AddScoped<GetProductDetailHandler>();
 
             services.AddScoped<CreateImportHandler>();
             services.AddScoped<GetWareHouseHandler>();

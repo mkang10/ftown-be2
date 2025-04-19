@@ -11,6 +11,8 @@ namespace Domain.Interfaces
     {
         Task<Product> CreateAsync(Product product);
         Task<IEnumerable<Product>> GetAllAsync();
+        Task<Product?> GetByIdAsync(int productId);
+        Task<Product?> GetByIdWithVariantsAsync(int productId);
 
     }
 }

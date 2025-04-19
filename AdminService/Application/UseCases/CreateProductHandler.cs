@@ -14,15 +14,22 @@ namespace Application.UseCases
         private readonly IProductRepos _productRepo;
         private readonly IProductVarRepos _variantRepo;
         private readonly IUploadImageService _uploadImageService;
+        private readonly IImportRepos _importDetailRepo;
+        private readonly IWarehouseStockRepos _stockRepo;
+
 
         public CreateProductHandler(
             IProductRepos productRepo,
             IProductVarRepos variantRepo,
-            IUploadImageService uploadImageService)
+            IUploadImageService uploadImageService,
+            IImportRepos importDetailRepos,
+            IWarehouseStockRepos stockRepo)
         {
             _productRepo = productRepo;
             _variantRepo = variantRepo;
             _uploadImageService = uploadImageService;
+            _importDetailRepo = importDetailRepos;
+            _stockRepo = stockRepo;
         }
 
         public async Task<int> CreateProductAsync(ProductCreateDto dto)
@@ -65,25 +72,54 @@ namespace Application.UseCases
             var created = await _productRepo.CreateAsync(product);
             return created.ProductId;
         }
+        private string GenerateSku(int productId, int sizeId, int colorId)
+        {
+            // SKU format: SKU-P[productId]-S[sizeId]-C[colorId]-[random]
+            var randomSuffix = Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper();
+            return $"SKU-P{productId}-S{sizeId}-C{colorId}-{randomSuffix}";
+        }
 
+        private string GenerateBar(int productId, int sizeId, int colorId)
+        {
+            // SKU định dạng: PROD-[productId]-S[sizeId]-C[colorId]-[random]
+            var randomSuffix = Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper();
+            return $"BAR-{productId}-S{sizeId}-C{colorId}-{randomSuffix}";
+        }
         public async Task<int> CreateVariantAsync(ProductVariantCreateDto dto)
         {
+            // 1. Kiểm tra tồn tại và trạng thái product
+            var sku = GenerateSku(dto.ProductId, (int)dto.SizeId, (int)dto.ColorId);
+
+            var bar = GenerateBar(dto.ProductId, (int)dto.SizeId, (int)dto.ColorId);
+
+            var product = await _productRepo.GetByIdAsync(dto.ProductId);
+            if (product == null)
+                throw new InvalidOperationException("Product không tồn tại");
+
+            // 2. Kiểm tra trạng thái product phải là Draft
+            if (!string.Equals(product.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Chỉ được phép thêm biến thể khi sản phẩm đang ở trạng thái Draft");
+
+            // 3. Kiểm tra trùng biến thể (ProductId + SizeId + ColorId)
+            var existingVariant = await _variantRepo.GetByProductSizeColorAsync(dto.ProductId, (int)dto.SizeId, (int)dto.ColorId);
+            if (existingVariant != null)
+                throw new InvalidOperationException("Biến thể với cùng Size và Color đã tồn tại cho sản phẩm này");
+
+            // 4. Upload hình ảnh (nếu có)
             string? imagePath = null;
             if (dto.ImageFile != null)
-            {
-                // Upload ảnh variant qua UploadImageService
                 imagePath = await _uploadImageService.UploadImageAsync(dto.ImageFile);
-            }
 
+            // 5. Tạo variant mới
             var variant = new ProductVariant
             {
                 ProductId = dto.ProductId,
                 SizeId = dto.SizeId,
                 ColorId = dto.ColorId,
-                Price = dto.Price,
+                Price = 0,
                 ImagePath = imagePath,
-                Sku = dto.Sku,
-                Barcode = dto.Barcode,
+                Sku = sku,
+                Barcode = bar,
                 Weight = dto.Weight
             };
 
@@ -92,3 +128,4 @@ namespace Application.UseCases
         }
     }
 }
+
