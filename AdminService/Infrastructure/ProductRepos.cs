@@ -1,5 +1,6 @@
 ﻿using Domain.Entities;
 using Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +24,24 @@ namespace Infrastructure
                 await _context.SaveChangesAsync();
                 return product;
             }
+
+        public async Task<IEnumerable<Product>> GetAllAsync()
+        {
+            return await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.ProductImages)
+                .ToListAsync();
         }
+
+        public Task<Product?> GetByIdAsync(int productId)
+          => _context.Products.FindAsync(productId).AsTask();
+
+       
+        public async Task<Product?> GetByIdWithVariantsAsync(int productId)
+            => await _context.Products.Include(p => p.ProductVariants)
+            .Include(c => c.Category)
+            .Include(p => p.ProductImages)
+                                       .FirstOrDefaultAsync(p => p.ProductId == productId);
+    }
     
 }

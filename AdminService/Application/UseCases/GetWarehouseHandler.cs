@@ -27,5 +27,7 @@ namespace Application.UseCases
             var dtos = _mapper.Map<List<Warehouse>>(pagedResult.Data);
             return new PaginatedResponseDTO<Warehouse>(dtos, pagedResult.TotalRecords, pagedResult.Page, pagedResult.PageSize);
         }
+
+
     }
 }

@@ -1,4 +1,5 @@
 
+
 using Application.Interfaces;
 using Application.Service;
 using Application.Services;
@@ -42,6 +43,7 @@ namespace API.AppStarts
             services.AddScoped<IProductVarRepos, ProductVarRepos>();
             services.AddScoped<IProductRepos, ProductRepos>();
             services.AddScoped<IUploadImageService, UploadImageService>();
+            services.AddScoped<IWarehouseRepository, WarehouseRepository>();
             //ducanh
             services.AddScoped<ITransferRepos, TransferRepos>();
             services.AddScoped<IDispatchRepos, DispatchRepos>();
@@ -53,18 +55,20 @@ namespace API.AppStarts
             services.AddScoped<RejectHandler>();
             services.AddScoped<GetAllImportHandler>();
             services.AddScoped<GetImportDetailHandler>();
+            services.AddScoped<GetAllProductHandler>();
+            services.AddScoped<GetProductDetailHandler>();
 
             services.AddScoped<CreateImportHandler>();
             services.AddScoped<GetWareHouseHandler>();
             services.AddScoped<TransferHandler>();
             services.AddScoped<GetAllTransferHandler>();
             services.AddScoped<CreateProductHandler>();
+            services.AddScoped<CreateWarehouseHandler>();
+
             //ducanh
             services.AddScoped<DispatchHandler>();
             services.AddScoped<ImportStoreDetailHandler>();
             services.AddScoped<RedisHandler>();
-            services.AddScoped<CreateAccountShopManagerDetail>();
-            services.AddScoped<AuthAdminHandler>();
 
 
             services.AddScoped<IUserManagementRepository, UserManagementRepository>();

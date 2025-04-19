@@ -27,11 +27,15 @@ namespace API.AppStarts
             CreateMap<CreateImportDetailDto, ImportDetail>()
                 .ForMember(dest => dest.ImportDetailId, opt => opt.Ignore())
                 .ForMember(dest => dest.Import, opt => opt.Ignore()) // Không map navigation property để tránh vòng lặp
-                .ForMember(dest => dest.ImportStoreDetails, opt => opt.MapFrom(src => src.StoreDetails));
+                .ForMember(dest => dest.ImportStoreDetails, opt => opt.MapFrom(src => src.StoreDetails))
+                                .ForMember(dest => dest.CostPrice, opt => opt.MapFrom(src => src.CostPrice));
+            ;
+
 
             CreateMap<CreateStoreDetailDto, ImportStoreDetail>()
                 .ForMember(dest => dest.ImportStoreId, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "Pending"));
+
 
             // Với SupplementImportRequestDto, ta dùng IncludeBase để kế thừa mapping từ CreateImportDto
             CreateMap<SupplementImportRequestDto, Import>()

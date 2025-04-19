@@ -4,14 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Enum
+namespace Domain.DTO.Request
 {
-	public enum ProductStatus
-	{
-		Draft,
-		Online,
-		Offline,
-		Both
-	}
-
+    public class GoogleLoginRequest
+    {
+        public string IdToken { get; set; }
+    }
 }
