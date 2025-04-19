@@ -45,9 +45,9 @@ namespace Application.UseCases
             _httpClient = httpClient;
         }
 
-        public async Task<List<CreateFeedBackArrayRequestDTO>> CreateMultiple(List<CreateFeedBackArrayRequestDTO> feedbackRequests)
+        public async Task<List<FeedbackRequestDTO>> CreateMultiple(List<CreateFeedBackArrayRequestDTO> feedbackRequests)
         {
-            var createdFeedbacks = new List<CreateFeedBackArrayRequestDTO>();
+            var createdFeedbacks = new List<FeedbackRequestDTO>();
             int? orderIdToUpdate = null;
 
             foreach (var request in feedbackRequests)
@@ -59,7 +59,7 @@ namespace Application.UseCases
                 // Lấy thông tin OrderDetail từ repository
                 var orderDetail = await _orderDetailRepository.GetOrderDetailById(request.orderDetailId.Value);
                 var orderData = await _orderDetailRepository.GetOrderStatuslById(orderDetail.OrderId);
-
+                string ImageString = null;
 
                 // Kiểm tra đơn hàng có trạng thái "completed"
                 if (orderData?.Status?.Equals("completed", StringComparison.OrdinalIgnoreCase) != true)
@@ -84,14 +84,18 @@ namespace Application.UseCases
                     {
                         throw new Exception("Error Picture!");
                     }
-                    request.ImagePath = uploadResult.SecureUrl.ToString();
+                    ImageString = uploadResult.SecureUrl.ToString();
                 }
 
                 // Map DTO sang entity và lưu vào database
                 var feedbackEntity = _mapper.Map<Feedback>(request);
+                feedbackEntity.ImagePath = ImageString.ToString();
                 var createdFeedback = await _commentRepository.CreateFeedback(feedbackEntity);
                 // Thêm feedback đã tạo vào danh sách kết quả
-                createdFeedbacks.Add(_mapper.Map<CreateFeedBackArrayRequestDTO>(createdFeedback));
+                var feedbackGet = await _commentRepository.GetFeedBackById(createdFeedback.FeedbackId);
+                createdFeedback.Account.FullName = feedbackGet.Account.FullName;
+                createdFeedback.Product.Name = feedbackGet.Product.Name;
+                createdFeedbacks.Add(_mapper.Map<FeedbackRequestDTO>(createdFeedback));
             }
             if (orderIdToUpdate.HasValue)
             {
@@ -263,16 +267,16 @@ namespace Application.UseCases
             }
         }
 
-        public async Task<CreateFeedBackRequestDTO> Create(CreateFeedBackRequestDTO feedbackRequests)
+        public async Task<FeedbackRequestDTO> Create(CreateFeedBackRequestDTO feedbackRequests)
         {
-
+            string ImageString = null;
 
             var orderDetail = await _orderDetailRepository.GetOrderStatuslById(feedbackRequests.orderDetailId.Value);
             if (orderDetail.AccountId != feedbackRequests.AccountId)
             {
                 throw new Exception("Sai chủ đơn hàng!");
             }
-            if (orderDetail.Status == StatusSuccess.completed.ToString())
+            if (orderDetail.Status != StatusSuccess.completed.ToString())
             {
                 throw new Exception("Đơn hàng chưa hoàn tất!");
             }
@@ -297,13 +301,14 @@ namespace Application.UseCases
                 {
                     throw new Exception("Error Picture!");
                 }
-                feedbackRequests.ImagePath = uploadResult.SecureUrl.ToString();
+                ImageString = uploadResult.SecureUrl.ToString();
             }
 
             // Map DTO sang entity và lưu vào database
             var feedbackEntity = _mapper.Map<Feedback>(feedbackRequests);
+            feedbackEntity.ImagePath = ImageString;
             var createdFeedback = await _commentRepository.CreateFeedback(feedbackEntity);
-            var result = _mapper.Map<CreateFeedBackRequestDTO>(createdFeedback);
+            var result = _mapper.Map<FeedbackRequestDTO>(createdFeedback);
             return result;
         }
     }

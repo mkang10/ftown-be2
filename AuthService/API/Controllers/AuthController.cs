@@ -1,6 +1,8 @@
 ﻿using Application.Interfaces;
+using Application.UseCases;
 using Domain.DTO.Request;
 using Domain.DTO.Response;
+using Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Security.Claims;
@@ -13,11 +15,17 @@ namespace WebAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly AuthAdminHandler _service;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, AuthAdminHandler service)
         {
             _authService = authService;
+            _service = service;
         }
+
+
+
+
 
         /// <summary>
         /// Đăng nhập và lấy JWT token.
@@ -92,6 +100,19 @@ namespace WebAPI.Controllers
             }
 
 
+        }
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestCapcha ps)
+        {
+            if(ps == null)
+            {
+                throw new ArgumentNullException("Không được để null!");    
+            }
+            var success = await _service.ForgotPasswordAsync(ps);
+            if (!success)
+                return NotFound("Email không tồn tại trong hệ thống.");
+
+            return Ok("Mật khẩu mới đã được gửi về email của bạn.");
         }
     }
 

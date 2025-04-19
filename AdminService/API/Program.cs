@@ -7,6 +7,9 @@ using Application.Interfaces;
 using Application.Services;
 using Application.UseCases;
 using Application.Service;
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Models;
+using Domain.DTO.Response;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -16,7 +19,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-admin.vercel.app/")
+        policy.WithOrigins("http://localhost:3000"
+            , "http://localhost:5000"
+            , "https://ftown-admin.vercel.app/",
+            "http://127.0.0.1:5500")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .WithExposedHeaders("Content-Disposition");
@@ -47,12 +53,46 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 
 // Cài đặt các dịch vụ phụ thuộc từ API.AppStarts
 builder.Services.InstallService(builder.Configuration);
+builder.Services.Configure<AdminAccountSetting>(builder.Configuration.GetSection("Admin"));
 
 // Thêm dịch vụ Controller và Swagger/OpenAPI
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "AuthService API", Version = "v1" });
 
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Please enter a valid token"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+    options.MapType<DateOnly>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Format = "date",
+        Example = new OpenApiString("2024-11-20")
+    });
+});
 // Đọc thông tin cấu hình Cloudinary từ key "CloudinarySettings"
 var cloudName = builder.Configuration["CloudinarySettings:CloudName"];
 var apiKey = builder.Configuration["CloudinarySettings:ApiKey"];

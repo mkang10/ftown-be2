@@ -58,8 +58,12 @@ namespace API.AppStarts
 
                 return new ElasticClient(settings);
             });
+            services.AddScoped<ISizeAndColorRepository, ColorAndSizeRepository>();
 
             //Handler    
+            services.AddScoped<ColorHandler>();
+            services.AddScoped<SizeHandler>();
+
 
             services.AddScoped<GetAllProductsHandler>();
             services.AddScoped<FilterProductHandler>();
@@ -78,6 +82,7 @@ namespace API.AppStarts
             services.AddScoped<AddFavoriteHandler>();
             services.AddScoped<RemoveFavoriteHandler>();
             services.AddScoped<GetTopSellingProductHandler>();
+            services.AddScoped<CategoryHandler>();
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowLocalhost",
@@ -93,6 +98,7 @@ namespace API.AppStarts
             services.AddScoped<IWareHousesStockRepository, WareHousesStockRepository>();
             services.AddScoped<IRedisRepository, RedisRepository>();
             services.AddScoped<IPromotionRepository, PromotionRepository>();
+            services.AddScoped<ICategoryRepository, CategoryRepository>();
 
 
             // auto mapper
