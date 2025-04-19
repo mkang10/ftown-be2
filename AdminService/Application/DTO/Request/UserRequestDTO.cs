@@ -40,6 +40,7 @@ namespace Application.DTO.Request
         public string? Token { get; set; }
     }
 
+
     public class CreateUserRequestWithPasswordDTO
     {
         

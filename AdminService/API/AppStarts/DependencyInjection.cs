@@ -64,6 +64,7 @@ namespace API.AppStarts
             services.AddScoped<ImportStoreDetailHandler>();
             services.AddScoped<RedisHandler>();
             services.AddScoped<CreateAccountShopManagerDetail>();
+            services.AddScoped<AuthAdminHandler>();
 
 
             services.AddScoped<IUserManagementRepository, UserManagementRepository>();

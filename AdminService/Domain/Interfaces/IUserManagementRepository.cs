@@ -11,6 +11,7 @@ namespace Domain.Interfaces
     public interface IUserManagementRepository
     {
         public Task<Pagination<Account>> GetAllUser(PaginationParameter paginationParameter);
+        Task<object?> GetRoleDetailsAsync(Account account);
 
         public Task<Account> CreateUser(Account user);
         public Task<Account> UpdateUser(Account user);

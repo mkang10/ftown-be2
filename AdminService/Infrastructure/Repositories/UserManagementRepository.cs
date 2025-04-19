@@ -143,5 +143,58 @@ namespace Infrastructure.Repositories
             await _context.SaveChangesAsync();
             return user;
         }
+        public async Task<object?> GetRoleDetailsAsync(Account account)
+        {
+            switch (account.RoleId)
+            {
+                case 1: // Ví dụ: RoleId = 1 là Customer
+                    return await _context.CustomerDetails
+                        .Where(c => c.AccountId == account.AccountId)
+                        .Select(c => new
+                        {
+                            c.CustomerDetailId,
+                            c.LoyaltyPoints,
+                            c.MembershipLevel,
+                            c.DateOfBirth,
+                            c.Gender,
+                            c.CustomerType,
+                            c.PreferredPaymentMethod
+                        }).FirstOrDefaultAsync();
+
+                case 2: // Ví dụ: RoleId = 2 là Shop Manager
+                    return await _context.ShopManagerDetails
+                        .Where(m => m.AccountId == account.AccountId)
+                        .Select(m => new
+                        {
+                            m.ShopManagerDetailId,
+                            StoreId = _context.Warehouses
+            .Where(w => w.ShopManagerId == m.ShopManagerDetailId)
+            .Select(w => w.WarehouseId)
+            .FirstOrDefault(),
+                            m.ManagedDate,
+                            m.YearsOfExperience,
+                            m.ManagerCertifications,
+                            m.OfficeContact
+                        }).FirstOrDefaultAsync();
+
+                case 3: // Ví dụ: RoleId = 3 là Staff
+                    return await _context.StaffDetails
+                        .Where(s => s.AccountId == account.AccountId)
+                        .Select(s => new
+                        {
+                            s.StaffDetailId,
+                            s.StoreId,
+                            s.JoinDate,
+                            s.Role,
+                            s.JobTitle,
+                            s.Department,
+                            s.Salary,
+                            s.EmploymentType
+                        }).FirstOrDefaultAsync();
+
+                default:
+                    return null;
+            }
+        }
     }
 }

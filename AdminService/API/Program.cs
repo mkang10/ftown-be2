@@ -9,6 +9,7 @@ using Application.UseCases;
 using Application.Service;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
+using Domain.DTO.Response;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -49,6 +50,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 
 // Cài đặt các dịch vụ phụ thuộc từ API.AppStarts
 builder.Services.InstallService(builder.Configuration);
+builder.Services.Configure<AdminAccountSetting>(builder.Configuration.GetSection("Admin"));
 
 // Thêm dịch vụ Controller và Swagger/OpenAPI
 builder.Services.AddControllers();

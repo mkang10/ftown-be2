@@ -4,8 +4,11 @@ using Application.Enum;
 using Application.Interfaces;
 using Application.UseCases;
 using Domain.Commons;
+using Domain.DTO.Request;
+using Domain.DTO.Response;
 using Infrastructure;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using static Application.DTO.Response.MessageRespondDTO<T>;
@@ -21,11 +24,14 @@ namespace API.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IUserManagementService _service;
+        private readonly AuthAdminHandler _authservice;
+
         private readonly CreateAccountShopManagerDetail _createStaffOrShopmanager;
 
-        public AccountController(IUserManagementService service, CreateAccountShopManagerDetail createStaffOrShopmanager)
+        public AccountController(IUserManagementService service, AuthAdminHandler authservice, CreateAccountShopManagerDetail createStaffOrShopmanager)
         {
             _service = service;
+            _authservice = authservice;
             _createStaffOrShopmanager = createStaffOrShopmanager;
         }
 
@@ -179,6 +185,35 @@ namespace API.Controllers
             {
                 var errorResponse = new MessageRespondDTO<object>(null, false, "An error occurred: " + ex.Message);
                 return BadRequest(errorResponse);
+            }
+        }
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginReq loginDTO)
+        {
+            try
+            {
+                var response = await _authservice.AuthenticateAsync(loginDTO.email, loginDTO.Password);
+
+                if (response == null)
+                {
+                    // Không tìm thấy user hoặc thông tin đăng nhập không chính xác
+                    return NotFound(new ResponseDTO<object>(null, false, "Tài khoản hoặc mật khẩu không chính xác!"));
+                }
+
+                // Giả sử response.Account có thuộc tính IsActive để xác định trạng thái tài khoản
+                if (response.Account == null || response.Account.IsActive != true)
+                {
+                    return StatusCode(403, new ResponseDTO<object>(null, false, "Tài khoản đang bị vô hiệu hóa!"));
+                }
+
+
+                // Đăng nhập thành công
+                return Ok(new ResponseDTO<object>(response, true, "Đăng nhập thành công!"));
+            }
+            catch (Exception ex)
+            {
+                // Ở đây bạn có thể log exception (ex) vào hệ thống log của doanh nghiệp
+                return StatusCode(500, new ResponseDTO<object>(null, false, "Đã có lỗi xảy ra từ phía server. Vui lòng thử lại sau!"));
             }
         }
     }
