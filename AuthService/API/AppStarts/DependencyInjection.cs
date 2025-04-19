@@ -1,6 +1,8 @@
 ﻿
 
 using Application.Interfaces;
+using Application.UseCases;
+using Domain.Interfaces;
 using Infrastructure;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
@@ -26,9 +28,11 @@ namespace API.AppStarts
             // use DI here
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
+            services.AddScoped<AuthAdminHandler>();
 
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IAccountRepos, AccountRepos>();
+            services.AddScoped<IUserManagementRepository, UserManagementRepository>();
 
 
 
