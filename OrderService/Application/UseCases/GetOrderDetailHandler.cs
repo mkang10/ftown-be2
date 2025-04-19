@@ -65,18 +65,23 @@ namespace Application.UseCases
             {
                 if (variantDetailsDict.TryGetValue(detail.ProductVariantId, out var variantDetails))
                 {
+                    detail.ProductId = variantDetails.ProductId;
                     detail.ProductName = variantDetails.ProductName;
                     detail.Color = variantDetails.Color;
                     detail.Size = variantDetails.Size;
                     detail.ImageUrl = variantDetails.ImagePath;
-                   
+                    detail.Price = variantDetails.Price;
+                    detail.DiscountApplied = variantDetails.DiscountedPrice;
                 }
                 else
                 {
+                    detail.ProductId = 0;
                     detail.ProductName = "Không xác định";
                     detail.Color = "Không xác định";
                     detail.Size = "Không xác định";
                     detail.ImageUrl = "Không xác định";
+                    detail.Price = 0;
+                    detail.DiscountApplied = 0;
                 }
 
             }
