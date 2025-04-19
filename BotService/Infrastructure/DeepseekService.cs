@@ -8,10 +8,9 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Domain.Interfaces;
 using System.Net.Http.Headers;
-using Application.DTO.Response;
 using Domain.DTO.Request;
 using Domain.DTO.Response;
-namespace Infrastructure.Services
+namespace Infrastructure
 {
     public class DeepSeekService : IChatServices
     {
@@ -120,7 +119,7 @@ namespace Infrastructure.Services
                    ?? throw new InvalidOperationException("No reply");
         }
 
-       
+
     }
 }
 

@@ -122,7 +122,86 @@ namespace API.AppStarts
                            .ForMember(dest => dest.DispatchReferenceNumber,
                                       opt => opt.MapFrom(src => src.DispatchReferenceNumber))
                             .ForMember(dest => dest.CreatedByName,
-                           opt => opt.MapFrom(src => src.CreatedByName)); 
+                           opt => opt.MapFrom(src => src.CreatedByName));
+
+            //================Dispatch============
+            CreateMap<Dispatch, JSONDispatchDTO>()
+                .ForMember(dest => dest.CreatedByUser,
+                           opt => opt.MapFrom(src => src.CreatedByNavigation.FullName))
+                .ForMember(dest => dest.Details,
+                           opt => opt.MapFrom(src => src.DispatchDetails)).ReverseMap();
+
+            // Mapping DispatchDetail -> JSONDispatchDetailDTO
+            CreateMap<DispatchDetail, JSONDispatchDetailDTO>()
+                .ForMember(dest => dest.VariantName,
+                           opt => opt.MapFrom(src => src.Variant.Product.Name))
+                .ForMember(dest => dest.PriceProductVariant,
+           opt => opt.MapFrom(src => src.Variant.Price))
+                .ForMember(dest => dest.StoreExportDetail,
+                           opt => opt.MapFrom(src => src.StoreExportStoreDetails)).ReverseMap(); //
+            CreateMap<StoreExportStoreDetail, JSONStoreExportDetailDTO>()
+                .ForMember(dest => dest.WarehouseName,
+                           opt => opt.MapFrom(src => src.Warehouse.WarehouseName))
+                .ForMember(dest => dest.Staff,
+                           opt => opt.MapFrom(src => src.StaffDetail.Account.FullName))
+                .ForMember(dest => dest.HandleBy,
+                           opt => opt.MapFrom(src => src.HandleByNavigation.Account.FullName))
+                .ReverseMap();
+
+            CreateMap<StoreExportStoreDetail, JSONStoreExportStoreDetailByIdHandlerDTO>()
+                .ForMember(dest => dest.WarehouseName,
+                           opt => opt.MapFrom(src => src.Warehouse.WarehouseName))
+                .ForMember(dest => dest.Staff,
+                           opt => opt.MapFrom(src => src.StaffDetail.Account.FullName))
+                .ForMember(dest => dest.HandleBy,
+                           opt => opt.MapFrom(src => src.HandleByNavigation.Account.FullName))
+                .ForMember(dest => dest.ReferenceNumber,
+                           opt => opt.MapFrom(src => src.DispatchDetail.Dispatch.ReferenceNumber));
+
+            // Import ========
+            CreateMap<ImportStoreDetail, JSONImportStoreDetailDTO>()
+                .ForMember(dest => dest.Staff,
+                           opt => opt.MapFrom(src => src.StaffDetail.Account.FullName))
+                .ForMember(dest => dest.WarehouseName,
+                           opt => opt.MapFrom(src => src.Warehouse.WarehouseName))
+                .ForMember(dest => dest.HandleBy,
+                           opt => opt.MapFrom(src => src.HandleByNavigation.Account.FullName))
+                .ForMember(dest => dest.ReferenceNumber,
+                           opt => opt.MapFrom(src => src.ImportDetail.Import.ReferenceNumber))
+                .ForMember(dest => dest.CostPrice,
+                           opt => opt.MapFrom(src => src.ImportDetail.CostPrice))
+                .ForMember(dest => dest.AuditLogs, opt => opt.Ignore()).ReverseMap();
+            //Iport json
+            CreateMap<Import, JSONImportDTO>()
+                .ForMember(dest => dest.CreatedBy,
+                           opt => opt.MapFrom(src => src.CreatedByNavigation.FullName))
+                .ForMember(dest => dest.Details,
+                           opt => opt.MapFrom(src => src.ImportDetails)).ReverseMap();
+            CreateMap<ImportDetail, JSONImportDetailDTO>()
+                .ForMember(dest => dest.ProductVariantName,
+                           opt => opt.MapFrom(src => src.ProductVariant.Product.Name))
+                .ForMember(dest => dest.PriceProductVariant,
+                           opt => opt.MapFrom(src => src.ProductVariant.Price))
+                .ForMember(dest => dest.StoreImportDetail,
+                           opt => opt.MapFrom(src => src.ImportStoreDetails)).ReverseMap(); //
+            CreateMap<ImportStoreDetail, JSONImportStoreDetailGetDTO>()
+                .ForMember(dest => dest.Staff,
+                           opt => opt.MapFrom(src => src.StaffDetail.Account.FullName))
+                .ForMember(dest => dest.WarehouseName,
+                           opt => opt.MapFrom(src => src.Warehouse.WarehouseName))
+                .ForMember(dest => dest.HandleBy,
+                           opt => opt.MapFrom(src => src.HandleByNavigation.Account.FullName)).ReverseMap();
+
+            // Transfer
+            CreateMap<Transfer, JSONTransferOrderDTO>()
+                .ForMember(dest => dest.CreatedBy,
+                           opt => opt.MapFrom(src => src.Import.CreatedByNavigation.FullName))
+                .ForMember(dest => dest.DetailsTransferOrder,
+                           opt => opt.MapFrom(src => src.TransferDetails)).ReverseMap();
+
+            CreateMap<TransferDetail, JSONTransferOrderDetailDTO>()
+                .ForMember(dest => dest.Product,
+                           opt => opt.MapFrom(src => src.Variant.Product.Name)).ReverseMap();
 
         }
     }

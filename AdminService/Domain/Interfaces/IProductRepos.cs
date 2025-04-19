@@ -10,6 +10,7 @@ namespace Domain.Interfaces
     public interface IProductRepos
     {
         Task<Product> CreateAsync(Product product);
+        Task<IEnumerable<Product>> GetAllAsync();
 
     }
 }

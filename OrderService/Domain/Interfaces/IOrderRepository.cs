@@ -26,5 +26,10 @@ namespace Domain.Interfaces
         Task<List<Order>> GetCompletedOrdersAsync(DateTime? from, DateTime? to);
         Task<List<Order>> GetCompletedOrdersWithDetailsAsync(DateTime? from, DateTime? to);
 
+        Task<Order?> GetOrderByIdGHNAsync(string orderId);
+        Task UpdateOrderStatusGHNIdAsync(string orderId, string newStatus);
+
+
+
     }
 }

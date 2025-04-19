@@ -11,7 +11,7 @@ public partial class Account
 
     public string Email { get; set; } = null!;
 
-    public string PasswordHash { get; set; } = null!;
+    public string? PasswordHash { get; set; } = null!;
 
     public string? PhoneNumber { get; set; }
 
@@ -35,7 +35,11 @@ public partial class Account
 
     public virtual ICollection<CustomerDetail> CustomerDetails { get; set; } = new List<CustomerDetail>();
 
+    public virtual ICollection<Dispatch> Dispatches { get; set; } = new List<Dispatch>();
+
     public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
+
+    public virtual ICollection<Import> Imports { get; set; } = new List<Import>();
 
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 

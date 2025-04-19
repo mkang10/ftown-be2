@@ -12,10 +12,12 @@ namespace API.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly CreateProductHandler _createProductHandler;
+        private readonly GetAllProductHandler  _getallProductHandler;
 
-        public ProductsController(CreateProductHandler createProductHandler)
+        public ProductsController(CreateProductHandler createProductHandler, GetAllProductHandler getAllProductHandler)
         {
             _createProductHandler = createProductHandler;
+            _getallProductHandler = getAllProductHandler;
         }
 
         // POST: api/Products
@@ -67,6 +69,36 @@ namespace API.Controllers
                 );
                 return StatusCode(500, response);
             }
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<PaginatedResponseDTO<ProductDto>>>
+            GetAll(
+                [FromQuery] string? name,
+                [FromQuery] string? description,
+                [FromQuery] int? category,
+                [FromQuery] string? origin,
+                [FromQuery] string? model,
+                [FromQuery] string? occasion,
+                [FromQuery] string? style,
+                [FromQuery] string? material,
+                [FromQuery] string? status,
+                [FromQuery] int page = 1,
+                [FromQuery] int pageSize = 10)
+        {
+            var result = await _getallProductHandler.GetAllProductsAsync(
+                name,
+                description,
+                category,
+                origin,
+                model,
+                occasion,
+                style,
+                material,
+                status,
+                page,
+                pageSize);
+            return Ok(result);
         }
     }
 }

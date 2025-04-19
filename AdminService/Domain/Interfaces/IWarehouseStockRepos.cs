@@ -10,6 +10,7 @@ namespace Domain.Interfaces
     public interface IWarehouseStockRepos
     {
         Task<WareHousesStock?> GetByIdWithDetailsAsync(int id);
+        Task<IEnumerable<WareHousesStock>> GetByWarehouseIdAsync(int warehouseId);
 
     }
 }

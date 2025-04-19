@@ -8,7 +8,7 @@ namespace Application.DTO.Request
 {
     public class CreateMultipleFeedBackRequest
     {
-        public List<CreateFeedBackRequestDTO> Feedbacks { get; set; }
+        public List<CreateFeedBackArrayRequestDTO> Feedbacks { get; set; }
     }
 
 }

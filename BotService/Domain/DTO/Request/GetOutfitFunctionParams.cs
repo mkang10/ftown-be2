@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Application.DTOs.Request
+namespace Domain.DTO.Request
 {
     /// <summary>
     /// Tham số để gợi ý phối đồ.

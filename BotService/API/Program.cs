@@ -2,7 +2,6 @@
 using API.Chathub;
 using Domain.Interfaces;
 using Infrastructure;
-using Infrastructure.Services;
 using System.Net.WebSockets;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,7 +19,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin", policy =>
     {
-        policy.WithOrigins("http://localhost:5000", "http://localhost:3000")
+        policy.WithOrigins(
+                                "http://127.0.0.1:5500",
+                                "http://localhost:5500",
+                                "https://localhost:7009",
+                                "http://localhost:5000"
+                            )
+       
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
