@@ -63,14 +63,10 @@ namespace Application.UseCases
             if (subTotal <= 0) return null;
 
             // Tính phí vận chuyển nếu có địa chỉ mặc định, ngược lại gán = 0
-            decimal shippingCost = 0;
-            int? shippingAddressId = null;
+            int flatShippingCost = int.TryParse(_configuration["Shipping:FlatRate"], out var value) ? value : 30000;
 
-            if (defaultAddress != null)
-            {
-                shippingCost = _shippingCostHandler.CalculateShippingCost(defaultAddress.City, defaultAddress.District);
-                shippingAddressId = defaultAddress.AddressId;
-            }
+            decimal shippingCost = flatShippingCost;
+            int? shippingAddressId = defaultAddress?.AddressId;
 
             var availablePaymentMethods = new List<string> { "COD", "PAYOS" };
 

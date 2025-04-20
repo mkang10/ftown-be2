@@ -39,6 +39,26 @@ namespace Application.UseCases
                 comment: comment
             );
         }
+        public async Task LogReturnOrderActionAsync(
+                                                int returnOrderId,
+                                                AuditOperation operation,
+                                                object? changeDetails,
+                                                int changedBy,
+                                                string comment)
+        {
+            string? changeData = changeDetails != null
+                ? JsonConvert.SerializeObject(changeDetails)
+                : null;
+
+            await _auditLogRepository.AddAuditLogAsync(
+                tableName: "ReturnOrders",
+                recordId: returnOrderId.ToString(),
+                operation: operation.ToString(),
+                changedBy: changedBy,
+                changeData: changeData,
+                comment: comment
+            );
+        }
 
 
     }

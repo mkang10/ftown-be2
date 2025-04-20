@@ -18,12 +18,14 @@ namespace Application.UseCases
         private readonly IDistributedCache _cache;
         private readonly IReturnOrderRepository _returnOrderRepository;
         private readonly ICloudinaryService _cloudinaryService;
-
-        public SubmitReturnRequestHandler(IDistributedCache cache, IReturnOrderRepository returnOrderRepository, ICloudinaryService cloudinaryService)
+        private readonly IOrderProcessingHelper _orderProcessingHelper;
+        public SubmitReturnRequestHandler(IDistributedCache cache, IReturnOrderRepository returnOrderRepository,
+                                            ICloudinaryService cloudinaryService, IOrderProcessingHelper orderProcessingHelper)
         {
             _cache = cache;
             _returnOrderRepository = returnOrderRepository;
             _cloudinaryService = cloudinaryService;
+            _orderProcessingHelper = orderProcessingHelper;
         }
 
         public async Task<SubmitReturnResponse?> Handle(SubmitReturnRequest request)
@@ -58,7 +60,7 @@ namespace Application.UseCases
                 ReturnOption = request.ReturnOption,
                 RefundMethod = request.RefundMethod,
                 ReturnDescription = request.ReturnDescription,
-                Status = "Pending",
+                Status = "Pending Processing",
                 CreatedDate = DateTime.UtcNow,
                 ReturnImages = mediaUrls.Any() ? JsonConvert.SerializeObject(mediaUrls) : null // ✅ Lưu URL ảnh/video vào JSON
             };
@@ -74,7 +76,14 @@ namespace Application.UseCases
 
             // ✅ 4️⃣ Lưu đơn đổi trả vào DB
             await _returnOrderRepository.CreateReturnOrderAsync(returnOrder);
-
+            await _orderProcessingHelper.LogPendingReturnStatusAsync(returnOrder.ReturnOrderId, returnOrder.AccountId);
+            await _orderProcessingHelper.SendReturnOrderNotificationAsync(
+                                    returnOrder.AccountId,
+                                    returnOrder.ReturnOrderId,
+                                    "Yêu cầu đổi trả ",
+                                    $"Yêu cầu đổi trả #{returnOrder.ReturnOrderId} đã được tạo thành công và đang chờ xử lí ."
+                                );
+            await _orderProcessingHelper.AssignOrderToManagerAsync(orderId: returnOrder.OrderId, assignedBy: returnOrder.AccountId);
             // ✅ 5️⃣ Lưu danh sách sản phẩm đổi trả vào `ReturnOrderItem`
             var returnOrderItems = returnCheckoutData.Items.Select(item => new ReturnOrderItem
             {
@@ -92,7 +101,7 @@ namespace Application.UseCases
             return new SubmitReturnResponse
             {
                 ReturnOrderId = returnOrder.ReturnOrderId,
-                Status = "Pending",
+                Status = "Pending Processing",
             };
         }
 
