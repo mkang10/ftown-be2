@@ -150,7 +150,7 @@ namespace API.Controllers
 
                         if (fallbackStatus == "delivered")
                         {
-                            await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "completed");
+                            await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "Delivered");
                         }
 
                         return Ok(fallbackResult);
@@ -208,7 +208,7 @@ namespace API.Controllers
 
                     if (latestStatus != null && latestStatus.status == "delivered")
                     {
-                        await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "completed");
+                        await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "Delivered");
                     }
 
                     return Ok(latestStatus);
