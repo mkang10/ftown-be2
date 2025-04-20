@@ -1,3 +1,4 @@
+
 using Application.DTO.Request;
 using AutoMapper;
 using Domain.DTO.Request;
@@ -124,8 +125,7 @@ namespace API.AppStarts
                                       opt => opt.MapFrom(src => src.DispatchReferenceNumber))
                             .ForMember(dest => dest.CreatedByName,
                            opt => opt.MapFrom(src => src.CreatedByName));
-<<<<<<< HEAD
-=======
+
 
             //================Dispatch============
             CreateMap<Dispatch, JSONDispatchDTO>()
@@ -205,7 +205,6 @@ namespace API.AppStarts
             CreateMap<TransferDetail, JSONTransferOrderDetailDTO>()
                 .ForMember(dest => dest.Product,
                            opt => opt.MapFrom(src => src.Variant.Product.Name)).ReverseMap();
->>>>>>> fb46dd54f30ae571fa7513f201a545b0eb5765ce
 
 
             CreateMap<Product, ProductDto>()
@@ -218,3 +217,4 @@ namespace API.AppStarts
         }
     }
 }       
+

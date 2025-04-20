@@ -26,7 +26,7 @@ namespace Domain.Commons
             PageSize = pageSize;
             CurrentPage = pageNumber;
             TotalPages = (int)Math.Ceiling(count / (double)pageSize);
-            Items = items ?? new List<T>(); // Gán giá trị cho Items
+            AddRange(items);
         }
     }
 }

@@ -44,6 +44,18 @@ namespace Infrastructure
             return result;
         }
 
+        public async Task<List<Product>> GetAllProductList()
+        {
+            var products = await _context.Products
+                .Include(o=>o.ProductImages)
+                .Include(o=>o.ProductVariants)
+                                .ThenInclude(od=>od.Color)
+                .Include(o => o.ProductVariants)
+                                .ThenInclude(od => od.Size)
+                .Include(o=>o.Category)
+                .ToListAsync();
+            return products;
+        }
 
     }
 }

@@ -103,28 +103,64 @@ namespace API.Controllers
                 var responseData = await response.Content.ReadAsStringAsync();
                 var jsonResponse = JObject.Parse(responseData);
 
-                // Lấy danh sách log
-                var logs = jsonResponse["data"]["log"].ToObject<List<Application.DTO.Request.LogEntry>>();
+                var data = jsonResponse["data"];
 
-                // Lấy trạng thái mới nhất theo thời gian
-                var latestStatuses = logs
-                        .OrderByDescending(log => log.updated_date) // sắp xếp toàn bộ theo thời gian giảm dần
-                        .GroupBy(log => log.status) // group theo trạng thái
-                        .Select(g => g.First()) // Lấy log đầu tiên trong mỗi nhóm (log mới nhất)
-                        .Select(log => new
-                        {
-                            log.status,
-                            UpdatedDate = log.updated_date.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") // Định dạng DATE TIME
-                        })
-                        .ToList();
-                if (latestStatuses.Any(s => s.status == "delivered"))
+                if (data == null)
                 {
-                    // Gọi hàm cập nhật nếu trạng thái là "delivered"
-                    var update = await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "completed");
+                    return BadRequest("Dữ liệu không tồn tại trong phản hồi từ GHN.");
                 }
-                return Ok(new { latestStatuses });
-            }
 
+                // Kiểm tra nếu có log
+                var logsToken = data["log"];
+                if (logsToken != null && logsToken.Type == JTokenType.Array)
+                {
+                    var logs = logsToken.ToObject<List<Application.DTO.Request.LogEntry>>();
+
+                    var latestStatuses = logs
+         .OrderByDescending(log => log.updated_date) // sắp xếp toàn bộ theo thời gian giảm dần
+         .GroupBy(log => log.status) // group theo trạng thái
+         .Select(g => g.First()) // Lấy log đầu tiên trong mỗi nhóm (log mới nhất)
+         .Select(log => new
+         {
+             log.status,
+             UpdatedDate = log.updated_date.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") // Định dạng DATE TIME
+         })
+         .ToList();
+                    if (latestStatuses.Any(s => s.status == "delivered"))
+                    {
+                        // Gọi hàm cập nhật nếu trạng thái là "delivered"
+                        var update = await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "completed");
+                    }
+                    return Ok(new { latestStatuses });
+                }
+
+                else
+                {
+                    // Không có log → fallback dùng created_date và status
+                    var fallbackStatus = data["status"]?.ToString();
+                    var fallbackDate = data["created_date"]?.ToObject<DateTime?>();
+
+                    if (!string.IsNullOrEmpty(fallbackStatus) && fallbackDate.HasValue)
+                    {
+                        var fallbackResult = new
+                        {
+                            status = fallbackStatus,
+                            UpdatedDate = fallbackDate.Value.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+                        };
+
+                        if (fallbackStatus == "delivered")
+                        {
+                            await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "completed");
+                        }
+
+                        return Ok(fallbackResult);
+                    }
+
+                    var er = await response.Content.ReadAsStringAsync();
+                    return BadRequest(er);
+                }
+
+            }
             var errorResponseData = await response.Content.ReadAsStringAsync();
             return BadRequest(errorResponseData);
         }
@@ -148,28 +184,66 @@ namespace API.Controllers
             {
                 var responseData = await response.Content.ReadAsStringAsync();
                 var jsonResponse = JObject.Parse(responseData);
-                var logs = jsonResponse["data"]["log"].ToObject<List<Application.DTO.Request.LogEntry>>();
+                var data = jsonResponse["data"];
 
-                // Lấy trạng thái mới nhất
-                var latestStatus = logs
-                    .OrderByDescending(log => log.updated_date)
-                    .Select(log => new
-                    {
-                        log.status,
-                        UpdatedDate = log.updated_date.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
-                    }) // Định dạng DATE TIME                    
-                    .FirstOrDefault(); // Lấy trạng thái mới nhất
-                if (latestStatus != null && latestStatus.status == "delivered")
+                if (data == null)
                 {
-                    // Gọi hàm cập nhật nếu trạng thái là "delivered"
-                    var update = await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "completed");
+                    return BadRequest("Dữ liệu không tồn tại trong phản hồi từ GHN.");
                 }
-                return Ok(latestStatus);
-            }
 
+                // Kiểm tra nếu có log
+                var logsToken = data["log"];
+                if (logsToken != null && logsToken.Type == JTokenType.Array)
+                {
+                    var logs = logsToken.ToObject<List<Application.DTO.Request.LogEntry>>();
+
+                    var latestStatus = logs?
+                        .OrderByDescending(log => log.updated_date)
+                        .Select(log => new
+                        {
+                            log.status,
+                            UpdatedDate = log.updated_date.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+                        })
+                        .FirstOrDefault();
+
+                    if (latestStatus != null && latestStatus.status == "delivered")
+                    {
+                        await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "completed");
+                    }
+
+                    return Ok(latestStatus);
+                }
+                else
+                {
+                    // Không có log → fallback dùng created_date và status
+                    var fallbackStatus = data["status"]?.ToString();
+                    var fallbackDate = data["created_date"]?.ToObject<DateTime?>();
+
+                    if (!string.IsNullOrEmpty(fallbackStatus) && fallbackDate.HasValue)
+                    {
+                        var fallbackResult = new
+                        {
+                            status = fallbackStatus,
+                            UpdatedDate = fallbackDate.Value.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+                        };
+
+                        if (fallbackStatus == "delivered")
+                        {
+                            await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "completed");
+                        }
+
+                        return Ok(fallbackResult);
+                    }
+
+                    var er = await response.Content.ReadAsStringAsync();
+                    return BadRequest(er);
+                }
+
+            }
             var errorResponseData = await response.Content.ReadAsStringAsync();
             return BadRequest(errorResponseData);
         }
+
 
         [HttpPost("order-detail")]
         public async Task<IActionResult> GetOrderDetailWithData([FromBody] OrderDetailRequest orderDetailRequest)

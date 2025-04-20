@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using OfficeOpenXml;
+using OfficeOpenXml.Style;
+using System.Drawing;
 
 namespace API.Controllers
 {
@@ -86,60 +88,80 @@ namespace API.Controllers
         {
             try
             {
-                var result = await _repo.GetAllProduct(paginationParameter);
+                var products = await _repo.GetAllProductList();
 
-                // LicenseContext de lach luat
+                if (products == null || !products.Any())
+                {
+                    return NotFound(new MessageRespondDTO<object>(null, false, "Không có sản phẩm nào để xuất."));
+                }
+
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-                // create excel
-                using (var package = new ExcelPackage())
+                using var package = new ExcelPackage();
+                var worksheet = package.Workbook.Worksheets.Add("Danh sách sản phẩm");
+
+                // Header tiếng Việt
+                var headers = new[]
                 {
-                    var worksheet = package.Workbook.Worksheets.Add("Products");
+            "Mã sản phẩm", "Tên sản phẩm", "Mô tả", "Danh mục", "Xuất xứ", "Model", "Dịp sử dụng", "Phong cách", "Chất liệu",
+            "Trạng thái", "Giá", "Ảnh đại diện", "SKU", "Mã vạch", "Khối lượng", "Kích cỡ", "Màu sắc", "Mã màu"
+        };
 
-                    // Dat ten cho chung
-                    worksheet.Cells[1, 1].Value = "ProductId";
-                    worksheet.Cells[1, 2].Value = "Name";
-                    worksheet.Cells[1, 3].Value = "Description";
-                    worksheet.Cells[1, 4].Value = "CategoryId";
-                    worksheet.Cells[1, 5].Value = "ImagePath";
-                    worksheet.Cells[1, 6].Value = "Origin";
-                    worksheet.Cells[1, 7].Value = "Model";
-                    worksheet.Cells[1, 8].Value = "Occasion";
-                    worksheet.Cells[1, 9].Value = "Style";
-                    worksheet.Cells[1, 10].Value = "Material";
-
-                    // Bat dau add du lieu
-                    // luon nho rang Paginnation neu muon su dung gia tri Item thi can phai cau hinh lai Pagination o trong 
-                    // o trong Domain chinh AddRange => thanh List<T> de lay duoc gia tri trong result 
-                    for (int i = 0; i < result.Items.Count; i++)
-                    {
-                        worksheet.Cells[i + 2, 1].Value = result.Items[i].ProductId;
-                        worksheet.Cells[i + 2, 2].Value = result.Items[i].Name;
-                        worksheet.Cells[i + 2, 3].Value = result.Items[i].Description;
-                        worksheet.Cells[i + 2, 4].Value = result.Items[i].CategoryId;
-                        //worksheet.Cells[i + 2, 5].Value = result.Items[i].ImagePath;
-                        worksheet.Cells[i + 2, 6].Value = result.Items[i].Origin;
-                        worksheet.Cells[i + 2, 7].Value = result.Items[i].Model;
-                        worksheet.Cells[i + 2, 8].Value = result.Items[i].Occasion;
-                        worksheet.Cells[i + 2, 9].Value = result.Items[i].Style;
-                        worksheet.Cells[i + 2, 10].Value = result.Items[i].Material;
-                    }
-
-                    // dat kieu du lieu cho cac cot, bit, string, int ,....
-                    worksheet.Cells.AutoFitColumns();
-
-                    // Create file Excel dưới dạng mảng byte
-                    var excelData = package.GetAsByteArray();
-
-                    // trai file
-                    return File(excelData, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Products.xlsx");
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    var cell = worksheet.Cells[1, i + 1];
+                    cell.Value = headers[i];
+                    cell.Style.Font.Bold = true;
+                    cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    cell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGoldenrodYellow);
                 }
+
+                var row = 2;
+                foreach (var product in products)
+                {
+                    foreach (var variant in product.ProductVariants)
+                    {
+                        var sizeName = variant.Size?.SizeName;
+                        var colorName = variant.Color?.ColorName;
+                        var colorCode = variant.Color?.ColorCode;
+
+                        worksheet.Cells[row, 1].Value = product.ProductId;
+                        worksheet.Cells[row, 2].Value = product.Name;
+                        worksheet.Cells[row, 3].Value = product.Description;
+                        worksheet.Cells[row, 4].Value = product.Category?.Name;
+                        worksheet.Cells[row, 5].Value = product.Origin;
+                        worksheet.Cells[row, 6].Value = product.Model;
+                        worksheet.Cells[row, 7].Value = product.Occasion;
+                        worksheet.Cells[row, 8].Value = product.Style;
+                        worksheet.Cells[row, 9].Value = product.Material;
+                        worksheet.Cells[row, 10].Value = product.Status;
+                        worksheet.Cells[row, 11].Value = variant.Price;
+                        worksheet.Cells[row, 12].Value = variant.ImagePath;
+                        worksheet.Cells[row, 13].Value = variant.Sku;
+                        worksheet.Cells[row, 14].Value = variant.Barcode;
+                        worksheet.Cells[row, 15].Value = variant.Weight;
+                        worksheet.Cells[row, 16].Value = sizeName;
+                        worksheet.Cells[row, 17].Value = colorName;
+                        worksheet.Cells[row, 18].Value = colorCode;
+
+                        row++;
+                    }
+                }
+
+                worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+
+                var fileContents = package.GetAsByteArray();
+                var fileName = $"DanhSachSanPham_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+                return File(fileContents, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
             catch (Exception ex)
             {
-                return BadRequest(new MessageRespondDTO<object>(null, false, "An error occurred: " + ex.Message));
+                return BadRequest(new MessageRespondDTO<object>(null, false, $"Đã xảy ra lỗi: {ex.Message}"));
             }
         }
+
+
         [HttpPost("import-excel")]
         public async Task<IActionResult> ImportExcel([FromForm] IFormFile file)
         {

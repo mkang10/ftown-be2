@@ -25,7 +25,6 @@ namespace Application.DTO.Request
         public DateTime? CreatedDate { get; set; }
         [JsonIgnore]
         public IFormFile? ImageFile { get; set; }
-        public string? ImagePath { get; set; }
 
     }
     public class CreateFeedBackRequestDTO
@@ -44,8 +43,6 @@ namespace Application.DTO.Request
 
         public DateTime? CreatedDate { get; set; }
         public IFormFile ImgFile { get; set; }
-        [JsonIgnore]
-        public string? ImagePath { get; set; }
 
     }
     public class UpdateFeedbackRequestDTO

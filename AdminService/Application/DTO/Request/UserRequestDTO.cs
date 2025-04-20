@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Domain.Entities;
+using Microsoft.AspNetCore.Http;
+using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,9 +34,16 @@ namespace Application.DTO.Request
 
         
     }
+    public class CreateUserFullResponseDTO
+    {
+        public UserRequestDTO User { get; set; } = null!;
+        public string? Token { get; set; }
+    }
+
 
     public class CreateUserRequestWithPasswordDTO
     {
+        
         public string FullName { get; set; } = null!;
 
         public string Email { get; set; } = null!;
