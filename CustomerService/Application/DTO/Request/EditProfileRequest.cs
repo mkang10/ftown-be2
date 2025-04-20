@@ -21,7 +21,7 @@ namespace Application.DTO.Request
         [SwaggerSchema("string", Format = "binary")]
         public IFormFile? AvatarImage { get; set; }
         [SwaggerSchema("string", Format = "date")]
-        public DateTime? DateOfBirth { get; set; }
+        public DateOnly? DateOfBirth { get; set; }
         public string? Gender { get; set; }
         public string? PreferredPaymentMethod { get; set; }
     }
