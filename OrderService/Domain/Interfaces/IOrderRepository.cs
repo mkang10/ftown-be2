@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Domain.Common_Model;
+using Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +16,7 @@ namespace Domain.Interfaces
         Task UpdateOrderAsync(Order order);  
         Task<Order?> GetOrderWithDetailsAsync(int orderId); 
         Task SaveOrderDetailsAsync(List<OrderDetail> orderDetails);
-        Task<List<Order>> GetOrdersByStatusAsync(string? status, int? accountId);
+        Task<PaginatedResult<Order>> GetOrdersByStatusPagedAsync(string? status, int? accountId, int pageNumber, int pageSize);
         Task<Order?> GetOrderByIdAsync(long orderId);
         Task<Order> GetOrderItemsWithOrderIdAsync(int orderId);
         Task<List<Order>> GetReturnableOrdersAsync(int accountId);
