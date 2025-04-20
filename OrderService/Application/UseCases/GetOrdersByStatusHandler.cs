@@ -1,6 +1,7 @@
 ﻿using Application.DTO.Response;
 using Application.Interfaces;
 using AutoMapper;
+using Domain.Common_Model;
 using Domain.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -23,15 +24,15 @@ namespace Application.UseCases
             _inventoryServiceClient = inventoryServiceClient;
         }
 
-        public async Task<List<OrderResponse>> HandleAsync(string? status, int? accountId)
+        public async Task<PaginatedResult<OrderResponse>> HandleAsync(string? status, int? accountId, int pageNumber, int pageSize)
         {
-            var orders = await _orderRepository.GetOrdersByStatusAsync(status, accountId);
-            var orderResponses = _mapper.Map<List<OrderResponse>>(orders);
+            var paginatedOrders = await _orderRepository.GetOrdersByStatusPagedAsync(status, accountId, pageNumber, pageSize);
 
-            // Enrich từng order item với thông tin chi tiết từ ProductVariant thông qua InventoryServiceClient
-            foreach (var orderResponse in orderResponses)
+            var orderResponses = _mapper.Map<List<OrderResponse>>(paginatedOrders.Items);
+
+            foreach (var order in orderResponses)
             {
-                foreach (var item in orderResponse.Items)
+                foreach (var item in order.Items)
                 {
                     var variantDetails = await _inventoryServiceClient.GetProductVariantByIdAsync(item.ProductVariantId);
                     if (variantDetails != null)
@@ -44,8 +45,14 @@ namespace Application.UseCases
                 }
             }
 
-            return orderResponses;
+            return new PaginatedResult<OrderResponse>(
+                orderResponses,
+                paginatedOrders.TotalCount,
+                paginatedOrders.PageNumber,
+                paginatedOrders.PageSize
+            );
         }
+
     }
 
 }

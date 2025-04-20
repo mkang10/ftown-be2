@@ -1,12 +1,15 @@
 ﻿using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure.DBContext;
+using Infrastructure.HelperServices.Models;
+using Infrastructure.HelperServices;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Domain.Common_Model;
 
 namespace Infrastructure.Repositories
 {
@@ -67,7 +70,7 @@ namespace Infrastructure.Repositories
             _context.OrderDetails.AddRange(orderDetails);
             await _context.SaveChangesAsync();
         }
-        public async Task<List<Order>> GetOrdersByStatusAsync(string? status, int? accountId)
+        public async Task<PaginatedResult<Order>> GetOrdersByStatusPagedAsync(string? status, int? accountId, int pageNumber, int pageSize)
         {
             var query = _context.Orders
                 .Include(o => o.OrderDetails)
@@ -85,8 +88,9 @@ namespace Infrastructure.Repositories
                 query = query.Where(o => o.AccountId == accountId);
             }
 
-            return await query.ToListAsync();
+            return await query.ToPaginatedResultAsync(pageNumber, pageSize); // ✅ Reuse!
         }
+
         public async Task<List<Order>> GetReturnableOrdersAsync(int accountId)
         {
             var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
