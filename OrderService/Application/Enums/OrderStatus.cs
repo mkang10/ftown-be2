@@ -16,5 +16,9 @@ namespace Application.Enums
         Completed,
         Cancelled
     }
-
+    public enum ReturnOrderStatus
+    {
+        Pending,
+        Confirmed,
+    }
 }

@@ -100,7 +100,19 @@ namespace Infrastructure.HelperServices
                 "Đặt hàng thành công và đang đợi thanh toán."
             );
         }
-
+        public async Task LogPendingReturnStatusAsync(int returnOrderId, int accountId)
+        {
+            await _auditLogHandler.LogReturnOrderActionAsync(
+                returnOrderId,
+                AuditOperation.CreateReturnOrder,
+                new
+                {
+                    InitialStatus = ReturnOrderStatus.Pending.ToString()
+                },
+                accountId,
+                "Yêu cầu đổi/trả đã được tạo và đang chờ xử lý."
+            );
+        }
         public OrderResponse BuildOrderResponse(Order order, string paymentMethod, string? paymentUrl = null)
 		{
 			var response = _mapper.Map<OrderResponse>(order);
@@ -130,7 +142,28 @@ namespace Infrastructure.HelperServices
                 "Đơn hàng được phân công cho Shop Manager mặc định."
             );
         }
+        public async Task AssignReturnOrderToManagerAsync(int orderId, int assignedBy)
+        {
+            const int DefaultShopManagerId = 1;
 
+            var assignment = new OrderAssignment
+            {
+                OrderId = orderId,
+                ShopManagerId = DefaultShopManagerId,
+                AssignmentDate = DateTime.UtcNow,
+                Comments = "Phân công xử lí đổi trả."
+            };
+
+            await _orderRepository.CreateAssignmentAsync(assignment);
+
+            await _auditLogHandler.LogOrderActionAsync(
+                orderId,
+                AuditOperation.AssignToManager,
+                new { ShopManagerID = DefaultShopManagerId },
+                assignedBy,
+                "Đơn hàng đổi trả được phân công cho Shop Manager mặc định."
+            );
+        }
         public async Task SendOrderNotificationAsync(int accountId, int orderId, string title, string message)
         {
             var notificationRequest = new SendNotificationRequest
@@ -146,7 +179,20 @@ namespace Infrastructure.HelperServices
             await _notificationClient.SendNotificationAsync(notificationRequest);
         }
 
+        public async Task SendReturnOrderNotificationAsync(int accountId, int returnOrderId, string title, string message)
+        {
+            var notificationRequest = new SendNotificationRequest
+            {
+                AccountId = accountId,
+                Title = title,
+                Message = message,
+                NotificationType = "ReturnOrder",
+                TargetId = returnOrderId,
+                TargetType = "ReturnOrder"
+            };
 
+            await _notificationClient.SendNotificationAsync(notificationRequest);
+        }
     }
 
 }
