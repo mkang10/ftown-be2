@@ -22,7 +22,7 @@ namespace Infrastructure
         public async Task<int> GetStockQuantityAsync(int warehouseId, int variantId)
         {
             var warehouseStock = await _context.WareHousesStocks
-                .FirstOrDefaultAsync(ss => ss.WarehouseId == warehouseId && ss.VariantId == variantId);
+                .FirstOrDefaultAsync(ss => ss.WareHouseId == warehouseId && ss.VariantId == variantId);
             return warehouseStock?.StockQuantity ?? 0;
         }
 
@@ -37,7 +37,7 @@ namespace Infrastructure
         public async Task<List<WareHousesStock>> GetWareHouseStocksByVariantAsync(int variantId)
         {
             return await _context.WareHousesStocks
-                .Include(ss => ss.Warehouse)
+                .Include(ss => ss.WareHouse)
                 .Where(ss => ss.VariantId == variantId)
                 .ToListAsync();
         }
@@ -53,7 +53,7 @@ namespace Infrastructure
             foreach (var update in stockUpdates)
             {
                 // Kiểm tra tồn kho tại cửa hàng khách chọn
-                var storeStock = warehouseStocks.FirstOrDefault(s => s.WarehouseId == warehouseId && s.VariantId == update.VariantId);
+                var storeStock = warehouseStocks.FirstOrDefault(s => s.WareHouseId == warehouseId && s.VariantId == update.VariantId);
 
                 if (storeStock != null && storeStock.StockQuantity >= update.Quantity)
                 {
