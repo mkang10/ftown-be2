@@ -35,9 +35,11 @@ public partial class Account
 
     public virtual ICollection<CustomerDetail> CustomerDetails { get; set; } = new List<CustomerDetail>();
 
-    public virtual ICollection<FavoriteProduct> FavoriteProducts { get; set; } = new List<FavoriteProduct>();
+    public virtual ICollection<Dispatch> Dispatches { get; set; } = new List<Dispatch>();
 
     public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
+
+    public virtual ICollection<Import> Imports { get; set; } = new List<Import>();
 
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
@@ -56,4 +58,6 @@ public partial class Account
     public virtual ICollection<ShoppingCart> ShoppingCarts { get; set; } = new List<ShoppingCart>();
 
     public virtual ICollection<StaffDetail> StaffDetails { get; set; } = new List<StaffDetail>();
+
+    public virtual ICollection<WishList> WishLists { get; set; } = new List<WishList>();
 }

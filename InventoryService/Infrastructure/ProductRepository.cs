@@ -43,6 +43,7 @@ namespace Infrastructure
                 .Include(p => p.ProductImages) 
                 .FirstOrDefaultAsync(p => p.ProductId == productId);
         }
+
 		public async Task<bool> IsProductFavoriteAsync(int accountId, int productId)
 		{
 			return await _context.FavoriteProducts
@@ -222,6 +223,15 @@ namespace Infrastructure
                 query = query.Where(o => o.CreatedDate.Value.Date <= to.Value.Date);
 
             return await query.ToListAsync();
+        }
+        public async Task<List<ProductVariant>> GetPublishedVariantsByProductIdAsync(int productId)
+        {
+            return await _context.ProductVariants
+                .Where(v => v.ProductId == productId && v.Status == "Published")
+                .Include(v => v.Size)   
+                .Include(v => v.Color)  
+                .Include(v => v.WareHousesStocks) 
+                .ToListAsync();
         }
 
 

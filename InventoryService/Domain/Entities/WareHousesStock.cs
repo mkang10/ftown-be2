@@ -11,11 +11,11 @@ public partial class WareHousesStock
 
     public int StockQuantity { get; set; }
 
-    public int WarehouseId { get; set; }
+    public int WareHouseId { get; set; }
 
     public virtual ProductVariant Variant { get; set; } = null!;
 
-    public virtual ICollection<WareHouseStockAudit> WareHouseStockAudits { get; set; } = new List<WareHouseStockAudit>();
+    public virtual Warehouse WareHouse { get; set; } = null!;
 
-    public virtual Warehouse Warehouse { get; set; } = null!;
+    public virtual ICollection<WareHouseStockAudit> WareHouseStockAudits { get; set; } = new List<WareHouseStockAudit>();
 }

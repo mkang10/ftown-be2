@@ -82,7 +82,12 @@ namespace API.Controllers
                 true,
                 $"Danh sách đơn hàng với trạng thái {status} {(accountId.HasValue ? $"và accountId {accountId}" : "")} được lấy thành công."));
         }
-
+        [HttpGet("returnable")]
+        public async Task<ActionResult<ResponseDTO<List<OrderResponse>>>> GetReturnableOrders([FromQuery] int accountId)
+        {
+            var orders = await _getReturnableOrdersHandler.HandleAsync(accountId);
+            return Ok(new ResponseDTO<List<OrderResponse>>(orders, true, "Danh sách đơn hàng có thể hoàn trả được lấy thành công."));
+        }
 
         [HttpGet("{orderId}/details")]
         public async Task<IActionResult> GetOrderDetails(int orderId)

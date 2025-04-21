@@ -25,8 +25,6 @@ public partial class Feedback
 
     public virtual Account Account { get; set; } = null!;
 
-    public virtual OrderDetail? OrderDetail { get; set; }
-
     public virtual Product Product { get; set; } = null!;
 
     public virtual ICollection<ReplyFeedback> ReplyFeedbacks { get; set; } = new List<ReplyFeedback>();
