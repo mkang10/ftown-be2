@@ -70,7 +70,7 @@ namespace Infrastructure.HelperServices
                 amount: (int)amount,
                 description: $"Thanh toán đơn hàng {orderId}",
                 items: items,
-                cancelUrl: "http://localhost:7266/api/payment/cancel",
+                cancelUrl: "https://b347-116-110-41-44.ngrok-free.app/api/payment/cancel",
                 returnUrl: $"https://ftown-client-pro-n8x7.vercel.app/profile/order"
             );
 

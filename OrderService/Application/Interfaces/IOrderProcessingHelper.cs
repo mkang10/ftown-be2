@@ -15,7 +15,7 @@ namespace Application.Interfaces
 		Task LogPendingConfirmedStatusAsync(int orderId, int accountId);
 		Task LogPendingPaymentStatusAsync(int orderId, int accountId);
 		Task LogPendingReturnStatusAsync(int returnOrderId, int accountId);
-
+		Task LogCancelStatusAsync(int returnOrderId, int accountId);
         OrderResponse BuildOrderResponse(Order order, string paymentMethod, string? paymentUrl = null);
 		Task AssignOrderToManagerAsync(int orderId, int assignedBy);
 		Task SendOrderNotificationAsync(int accountId, int orderId, string title, string message);

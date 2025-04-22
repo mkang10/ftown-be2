@@ -100,6 +100,19 @@ namespace Infrastructure.HelperServices
                 "Đặt hàng thành công và đang đợi thanh toán."
             );
         }
+        public async Task LogCancelStatusAsync(int returnOrderId, int accountId)
+        {
+            await _auditLogHandler.LogReturnOrderActionAsync(
+                returnOrderId,
+                AuditOperation.CancelOrder,
+                new
+                {
+                    InitialStatus = OrderStatus.Cancelled.ToString()
+                },
+                accountId,
+                "Thanh toán đã bị hủy."
+            );
+        }
         public async Task LogPendingReturnStatusAsync(int returnOrderId, int accountId)
         {
             await _auditLogHandler.LogReturnOrderActionAsync(
