@@ -47,7 +47,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
+app.UseWebSockets();
 await app.UseOcelot();
 
 app.UseHttpsRedirection();
