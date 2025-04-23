@@ -86,7 +86,7 @@ namespace Application.UseCases
                 AccountId = request.AccountId,
                 ReturnItems = selectedOrderItems, // ✅ Chỉ chứa thông tin sản phẩm mà KHÁCH HÀNG ĐÃ CHỌN
                 TotalRefundAmount = totalRefundAmount, // ✅ Hiển thị tổng tiền có thể hoàn
-                RefundMethods = new List<string> { "Bank" },
+                RefundMethods = new List<string> { "Hoàn tiền qua ngân hàng" },
                 ReturnReasons = new List<string>
                 {
                     "Sản phẩm bị lỗi",

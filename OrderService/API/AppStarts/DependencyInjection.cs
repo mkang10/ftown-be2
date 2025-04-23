@@ -84,6 +84,7 @@ namespace API.AppStarts
             services.AddScoped<RedisHandler>();
             services.AddScoped<AuditLogHandler>();
             services.AddScoped<RevenueHandler>();
+            services.AddScoped<GetAllReturnRequestsHandler>();
 
             services.AddScoped<EmailHandler>();
 

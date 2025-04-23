@@ -1,6 +1,8 @@
-﻿using Domain.Entities;
+﻿using Domain.Common_Model;
+using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure.DBContext;
+using Infrastructure.HelperServices;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -44,6 +46,35 @@ namespace Infrastructure.Repositories
                 returnOrder.UpdatedDate = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
+        }
+        public async Task<PaginatedResult<ReturnOrder>> GetReturnOrdersAsync(
+        string? status,
+        string? returnOption,
+        DateTime? dateFrom,
+        DateTime? dateTo,
+        int? orderId,
+        int pageNumber,
+        int pageSize)
+        {
+            IQueryable<ReturnOrder> query = _context.ReturnOrders
+                .Include(ro => ro.Order).ThenInclude(o => o.OrderDetails)
+                .Include(ro => ro.ReturnOrderItems);
+
+            if (!string.IsNullOrEmpty(status))
+                query = query.Where(ro => ro.Status == status);
+
+            if (!string.IsNullOrEmpty(returnOption))
+                query = query.Where(ro => ro.ReturnOption == returnOption);
+
+            if (dateFrom.HasValue)
+                query = query.Where(ro => ro.CreatedDate >= dateFrom.Value);
+
+            if (dateTo.HasValue)
+                query = query.Where(ro => ro.CreatedDate <= dateTo.Value);
+            if (orderId.HasValue)
+                query = query.Where(ro => ro.OrderId == orderId.Value);
+            query = query.OrderByDescending(ro => ro.CreatedDate);
+            return await query.ToPaginatedResultAsync(pageNumber, pageSize);
         }
     }
 }
