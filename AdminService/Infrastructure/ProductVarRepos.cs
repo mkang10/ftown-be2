@@ -58,6 +58,43 @@ namespace Infrastructure
 
         public async Task<ProductVariant[]> GetAllVariantsByProductIdAsync(int productId)
             => await _context.ProductVariants.Where(v => v.ProductId == productId).ToArrayAsync();
+
+        public async Task<ProductVariant?> GetByIdWithDetailsAsync(int variantId)
+        {
+            return await _context.ProductVariants
+                .Include(pv => pv.Product)
+                .Include(pv => pv.Size)
+                .Include(pv => pv.Color)
+                .FirstOrDefaultAsync(pv => pv.VariantId == variantId);
+        }
+
+        public async Task<ProductVariant?> GetByIdAsync(int variantId)
+        {
+            return await _context.ProductVariants
+                .Include(v => v.Color)
+                .Include(v => v.Size)
+                .FirstOrDefaultAsync(v => v.VariantId == variantId);
+        }
+
+        public async Task UpdateAsync(ProductVariant variant)
+        {
+            _context.ProductVariants.Update(variant);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<Color>> GetColorsByProductIdAsync()
+        {
+            return await _context.Colors
+            
+                .ToListAsync();
+        }
+
+        public async Task<List<Size>> GetSizesByProductIdAsync()
+        {
+            return await _context.Sizes
+              
+                .ToListAsync();
+        }
     }
     
 }

@@ -13,6 +13,10 @@ namespace Domain.Interfaces
         Task<IEnumerable<Product>> GetAllAsync();
         Task<Product?> GetByIdAsync(int productId);
         Task<Product?> GetByIdWithVariantsAsync(int productId);
+        void Update(Product product);
+        Task<int> SaveChangesAsync();
+
+        void RemoveImage(ProductImage image);
 
     }
 }

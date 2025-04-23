@@ -87,7 +87,6 @@ namespace Application.UseCases
         }
         public async Task<int> CreateVariantAsync(ProductVariantCreateDto dto)
         {
-            // 1. Kiểm tra tồn tại và trạng thái product
             var sku = GenerateSku(dto.ProductId, (int)dto.SizeId, (int)dto.ColorId);
 
             var bar = GenerateBar(dto.ProductId, (int)dto.SizeId, (int)dto.ColorId);
@@ -95,10 +94,6 @@ namespace Application.UseCases
             var product = await _productRepo.GetByIdAsync(dto.ProductId);
             if (product == null)
                 throw new InvalidOperationException("Product không tồn tại");
-
-            // 2. Kiểm tra trạng thái product phải là Draft
-            if (!string.Equals(product.Status, "Draft", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException("Chỉ được phép thêm biến thể khi sản phẩm đang ở trạng thái Draft");
 
             // 3. Kiểm tra trùng biến thể (ProductId + SizeId + ColorId)
             var existingVariant = await _variantRepo.GetByProductSizeColorAsync(dto.ProductId, (int)dto.SizeId, (int)dto.ColorId);
@@ -120,7 +115,9 @@ namespace Application.UseCases
                 ImagePath = imagePath,
                 Sku = sku,
                 Barcode = bar,
-                Weight = dto.Weight
+                Weight = dto.Weight,
+                Status = "Draft"
+                
             };
 
             var created = await _variantRepo.CreateAsync(variant);

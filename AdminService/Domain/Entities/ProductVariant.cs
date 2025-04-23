@@ -23,6 +23,8 @@ public partial class ProductVariant
 
     public decimal? Weight { get; set; }
 
+    public string? Status { get; set; }
+
     public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
 
     public virtual Color? Color { get; set; }

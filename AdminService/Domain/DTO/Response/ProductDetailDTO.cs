@@ -8,13 +8,7 @@ namespace Domain.DTO.Response
 {
     public class ProductDetailDTO
     {
-        public class ProductDTO
-        {
-            public int ProductId { get; set; }
-            public string Name { get; set; } = string.Empty;
-            public string Status { get; set; } = string.Empty;
-            // ... các field cần thiết khác
-        }
+     
 
         public class ProductVariantDto
         {

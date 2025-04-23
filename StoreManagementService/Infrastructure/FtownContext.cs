@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Domain.Entities;
+namespace Infrastructure;
 
 public partial class FtownContext : DbContext
 {
@@ -816,6 +817,9 @@ public partial class FtownContext : DbContext
             entity.Property(e => e.Sku)
                 .HasMaxLength(100)
                 .HasColumnName("SKU");
+            entity.Property(e => e.Status)
+                .HasMaxLength(10)
+                .IsFixedLength();
             entity.Property(e => e.Weight).HasColumnType("decimal(10, 2)");
 
             entity.HasOne(d => d.Color).WithMany(p => p.ProductVariants)
@@ -1133,6 +1137,10 @@ public partial class FtownContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.WareHouseStockId).HasColumnName("WareHouseStockID");
+
+            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.WareHouseStockAudits)
+                .HasForeignKey(d => d.ChangedBy)
+                .HasConstraintName("FK_WareHouseStockAudit_StaffDetail");
 
             entity.HasOne(d => d.WareHouseStock).WithMany(p => p.WareHouseStockAudits)
                 .HasForeignKey(d => d.WareHouseStockId)

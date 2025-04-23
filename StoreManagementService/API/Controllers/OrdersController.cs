@@ -4,7 +4,6 @@ using Domain.DTO.Response;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Domain.DTO.Request;
-using static Domain.DTO.Response.OrderDTO;
 
 namespace API.Controllers
 {
@@ -25,36 +24,13 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllOrdersWithAssignments(
-              [FromQuery] int page = 1,
-              [FromQuery] int pageSize = 10,
-              [FromQuery] string? orderStatus = null,
-              [FromQuery] DateTime? orderStartDate = null,
-              [FromQuery] DateTime? orderEndDate = null,
-              [FromQuery] int? shopManagerId = null,
-              [FromQuery] int? staffId = null,
-              [FromQuery] DateTime? assignmentStartDate = null,
-              [FromQuery] DateTime? assignmentEndDate = null)
+        public async Task<ActionResult<PaginatedResponseDTO<OrderAssignmentDto>>> GetAll(
+       [FromQuery] OrderAssignmentFilterDto filter,
+       [FromQuery] int page = 1,
+       [FromQuery] int pageSize = 10)
         {
-            var response = await _getOrderHandler.GetAllOrdersWithAssignmentsAsync(
-                page,
-                pageSize,
-                orderStatus,
-                orderStartDate,
-                orderEndDate,
-                shopManagerId,
-                staffId,
-                assignmentStartDate,
-                assignmentEndDate);
-
-            if (response.Status)
-            {
-                return Ok(response);
-            }
-            else
-            {
-                return BadRequest(response);
-            }
+            var result = await _getOrderHandler.GetAllAsync(filter, page, pageSize);
+            return Ok(result);
         }
 
         [HttpPut("assign")]
@@ -72,6 +48,16 @@ namespace API.Controllers
                 return NotFound(result);
 
             return Ok(result);
+        }
+
+        [HttpGet("{assignmentId}")]
+        public async Task<ActionResult<OrderAssignmentDto>> GetById(int assignmentId)
+        {
+            var dto = await _getOrderHandler.GetByIdAsync(assignmentId);
+            if (dto == null)
+                return NotFound(new { Message = $"OrderAssignment {assignmentId} không tồn tại." });
+
+            return Ok(dto);
         }
     }
 }

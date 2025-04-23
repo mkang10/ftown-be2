@@ -97,7 +97,8 @@ namespace Infrastructure
                 Include(o => o.TransferDetails).
                 Include(o => o.Import).
                     ThenInclude(od => od.ImportDetails).
-                    ThenInclude(oc => oc.ImportStoreDetails).
+                    ThenInclude(oc => oc.ImportStoreDetails).ThenInclude(oc => oc.Warehouse).
+
                 Include(O => O.Dispatch).
                     ThenInclude(od => od.DispatchDetails).
                     ThenInclude(oc => oc.StoreExportStoreDetails).

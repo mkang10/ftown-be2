@@ -124,8 +124,7 @@ namespace API.AppStarts
                                       opt => opt.MapFrom(src => src.DispatchReferenceNumber))
                             .ForMember(dest => dest.CreatedByName,
                            opt => opt.MapFrom(src => src.CreatedByName));
-<<<<<<< HEAD
-=======
+
 
             //================Dispatch============
             CreateMap<Dispatch, JSONDispatchDTO>()
@@ -205,7 +204,7 @@ namespace API.AppStarts
             CreateMap<TransferDetail, JSONTransferOrderDetailDTO>()
                 .ForMember(dest => dest.Product,
                            opt => opt.MapFrom(src => src.Variant.Product.Name)).ReverseMap();
->>>>>>> fb46dd54f30ae571fa7513f201a545b0eb5765ce
+
 
 
             CreateMap<Product, ProductDto>()
@@ -214,7 +213,18 @@ namespace API.AppStarts
                        opt => opt.MapFrom(src => src.ProductImages
                                                    .FirstOrDefault(pi => pi.IsMain)
                                                    .ImagePath));
+
+            CreateMap<Product, ProductDto>()
+    .ForMember(dest => dest.ImagePath,
+               opt => opt.MapFrom(src => src.ProductImages.Select(img => img.ImagePath).ToList()));
             CreateMap<ProductVariant, ProductVariantDto>();
+
+            CreateMap<ProductEditDto, Product>()
+            .ForMember(dest => dest.ProductImages, opt => opt.Ignore()); // Bỏ qua Images vì bạn xử lý riêng
+
+            
+          
+
         }
     }
 }       

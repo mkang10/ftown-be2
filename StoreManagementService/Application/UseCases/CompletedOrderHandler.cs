@@ -36,7 +36,7 @@ namespace Application.UseCases
             }
 
             // Cập nhật trạng thái
-            order.Status = "completed";
+            order.Status = "Confirmed";
 
             // Lưu vào DB
             await _orderRepo.SaveChangesAsync();
