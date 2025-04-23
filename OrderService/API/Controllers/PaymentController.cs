@@ -104,8 +104,54 @@ namespace API.Controllers
 			// 7. Trả về 200 OK để PayOS biết bạn đã nhận callback
 			return Ok();
 		}
+        [HttpGet("cancel")]
+        public async Task<IActionResult> CancelPayment([FromQuery] long orderCode)
+        {
+            _logger.LogWarning("Yêu cầu huỷ thanh toán từ PayOS với OrderCode: {OrderCode}", orderCode);
 
-		private bool IsValidSignature(PayOSCallbackRoot callbackData)
+            // Tìm bản ghi thanh toán theo orderCode
+            var payment = await _paymentRepository.GetPaymentByOrderCodeAsync(orderCode);
+            if (payment == null)
+            {
+                _logger.LogError("Không tìm thấy thanh toán nào với OrderCode: {OrderCode}", orderCode);
+                return NotFound();
+            }
+
+            // Nếu đã Paid rồi thì không huỷ nữa
+            if (payment.PaymentStatus == "Paid")
+            {
+                _logger.LogWarning("Không thể huỷ thanh toán vì đã ở trạng thái Paid.");
+                return Redirect("https://ftown-client-pro-n8x7.vercel.app");
+            }
+
+            // Cập nhật trạng thái thanh toán
+            payment.PaymentStatus = "Canceled";
+            await _paymentRepository.UpdatePaymentAsync(payment);
+
+            // Cập nhật trạng thái đơn hàng tương ứng
+            var orderId = payment.OrderId;
+            await _orderRepository.UpdateOrderStatusAsync(orderId, "Canceled");
+
+            _logger.LogInformation("Huỷ thanh toán và đơn hàng thành công: OrderId={OrderId}, OrderCode={OrderCode}", orderId, orderCode);
+
+            // Lấy order để ghi log hoặc gửi thông báo
+            var order = await _orderRepository.GetOrderByIdAsync(orderId);
+            if (order != null)
+            {
+                await _orderProcessingHelper.LogCancelStatusAsync(orderId, order.AccountId);
+                await _orderProcessingHelper.SendOrderNotificationAsync(
+                    order.AccountId,
+                    order.OrderId,
+                    "Đơn hàng đã huỷ",
+                    $"Bạn đã huỷ thanh toán cho đơn hàng #{order.OrderId}."
+                );
+            }
+
+            // Điều hướng về frontend
+            return Redirect("https://ftown-client-pro-n8x7.vercel.app");
+        }
+
+        private bool IsValidSignature(PayOSCallbackRoot callbackData)
 		{
 			// TODO: Triển khai logic kiểm tra chữ ký (signature) với secret/key 
 			// mà PayOS cung cấp cho bạn

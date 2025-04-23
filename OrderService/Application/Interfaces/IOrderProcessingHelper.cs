@@ -14,9 +14,11 @@ namespace Application.Interfaces
 		Task ClearCartAsync(int accountId, List<int> productVariantIds);
 		Task LogPendingConfirmedStatusAsync(int orderId, int accountId);
 		Task LogPendingPaymentStatusAsync(int orderId, int accountId);
-
+		Task LogPendingReturnStatusAsync(int returnOrderId, int accountId);
+		Task LogCancelStatusAsync(int returnOrderId, int accountId);
         OrderResponse BuildOrderResponse(Order order, string paymentMethod, string? paymentUrl = null);
 		Task AssignOrderToManagerAsync(int orderId, int assignedBy);
 		Task SendOrderNotificationAsync(int accountId, int orderId, string title, string message);
+		Task SendReturnOrderNotificationAsync(int accountId, int returnOrderId, string title, string message);
     }
 }

@@ -34,7 +34,7 @@ namespace API.Controllers
 
                 if (result == null)
                 {
-                    var notFoundResponse = new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString());
+                    var notFoundResponse = new MessageRespondDTO<object>(Array.Empty<object>(), true, StatusSuccess.Success.ToString());
                     return NotFound(notFoundResponse);
                 }
                 else
@@ -56,7 +56,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                var errorResponse = new MessageRespondDTO<object>(null, false, "An error occurred: " + ex.Message);
+                var errorResponse = new MessageRespondDTO<object>(Array.Empty<object>(), true, "No data");
                 return BadRequest(errorResponse);
             }
         }
@@ -69,7 +69,7 @@ namespace API.Controllers
 
                 if (result == null)
                 {
-                    var notFoundResponse = new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString());
+                    var notFoundResponse = new MessageRespondDTO<object>(Array.Empty<object>(), false, StatusSuccess.Wrong.ToString());
                     return NotFound(notFoundResponse);
                 }
                 else
@@ -91,7 +91,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                var errorResponse = new MessageRespondDTO<object>(null, false, "An error occurred: " + ex.Message);
+                var errorResponse = new MessageRespondDTO<object>(Array.Empty<object>(), true, "No object!");
                 return BadRequest(errorResponse);
             }
         }
@@ -113,7 +113,7 @@ namespace API.Controllers
                     return BadRequest(new MessageRespondDTO<string>(null, false, "Không thể tạo feedback."));
                 }
 
-                return Ok(new MessageRespondDTO<List<CreateFeedBackArrayRequestDTO>>(createdFeedbacks, true, StatusSuccess.Success.ToString()));
+                return Ok(new MessageRespondDTO<List<FeedbackRequestDTO>>(createdFeedbacks, true, StatusSuccess.Success.ToString()));
             }
             catch (Exception ex)
             {
@@ -137,7 +137,7 @@ namespace API.Controllers
                     return BadRequest(new MessageRespondDTO<string>(null, false, "Không thể tạo feedback."));
                 }
 
-                return Ok(new MessageRespondDTO<CreateFeedBackRequestDTO>(createdFeedbacks, true, StatusSuccess.Success.ToString()));
+                return Ok(new MessageRespondDTO<FeedbackRequestDTO>(createdFeedbacks, true, StatusSuccess.Success.ToString()));
             }
             catch (Exception ex)
             {

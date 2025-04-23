@@ -43,8 +43,7 @@ namespace API.AppStarts
             CreateMap<Product, ProductDetailResponse>()
                  .ForMember(dest => dest.CategoryName,
                             opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : "Uncategorized"))
-                 .ForMember(dest => dest.Variants,
-                            opt => opt.MapFrom(src => src.ProductVariants))
+                 .ForMember(dest => dest.Variants, opt => opt.Ignore())
                  .ForMember(dest => dest.ImagePath, // Ảnh chính
                             opt => opt.MapFrom(src => src.ProductImages
                                                        .Where(i => i.IsMain)
@@ -64,7 +63,7 @@ namespace API.AppStarts
             .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.Color != null ? src.Color.ColorCode : null))
             .ForMember(dest => dest.StockQuantity, opt => opt.MapFrom(src =>
                 src.WareHousesStocks
-                    .Where(ws => ws.WarehouseId == 2) // ✅ Lọc WarehouseId = 2
+                    .Where(ws => ws.WareHouseId == 2) // ✅ Lọc WarehouseId = 2
                     .Sum(ws => ws.StockQuantity))); // ✅ Tính tổng số lượng;
             CreateMap<Warehouse, WarehouseResponse>();
 
@@ -94,6 +93,13 @@ namespace API.AppStarts
                                 .Distinct()
                                 .ToList()
                         ));
+            CreateMap<ColorDTO, Color>().ReverseMap();
+            CreateMap<CreateColorDTO, Color>().ReverseMap();
+            CreateMap<SizeDTO, Size>().ReverseMap();
+            CreateMap<CreateSizeDTO, Size>().ReverseMap();
+            CreateMap<CategoryDTO, Category>().ReverseMap();
+            CreateMap<CreateCategoryDTO, Category>().ReverseMap();
+
 
         }
     }

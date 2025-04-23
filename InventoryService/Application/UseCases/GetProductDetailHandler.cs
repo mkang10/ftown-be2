@@ -35,59 +35,64 @@ namespace Application.UseCases
             _promotionService = promotionService;
         }
 
-		public async Task<ProductDetailResponse?> Handle(int productId, int? accountId = null)
-		{
-			string instanceName = "ProductInstance";
-			string cacheKey = $"{instanceName}:product:{productId}";
+        public async Task<ProductDetailResponse?> Handle(int productId, int? accountId = null)
+        {
+            string cacheKey = $"ProductInstance:product:{productId}";
 
-			var cachedProduct = await _cacheService.GetCacheAsync<ProductDetailResponse>(cacheKey);
-			if (cachedProduct != null)
-			{
-				cachedProduct.IsFavorite = false;
+            // 1. Try cache
+            var cached = await _cacheService.GetCacheAsync<ProductDetailResponse>(cacheKey);
+            if (cached != null)
+            {
+                if (accountId.HasValue)
+                    cached.IsFavorite = await _productRepository.IsProductFavoriteAsync(accountId.Value, productId);
+                return cached;
+            }
 
-				if (accountId.HasValue)
-				{
-					var isFavorite = await _productRepository.IsProductFavoriteAsync(accountId.Value, productId);
-					cachedProduct.IsFavorite = isFavorite;
-				}
+            // 2. Lấy product (không quan tâm variants)
+            var product = await _productRepository.GetProductByIdAsync(productId);
+            if (product == null) return null;
 
-				return cachedProduct;
-			}
+            var promotions = await _promotionRepository.GetActiveProductPromotionsAsync();
 
-			var product = await _productRepository.GetProductByIdAsync(productId);
-			if (product == null) return null;
+            // 3. Map phần chung
+            var productDetail = _mapper.Map<ProductDetailResponse>(product);
 
-			var promotions = await _promotionRepository.GetActiveProductPromotionsAsync();
+            // 4. Lấy riêng variants đã publish
+            var publishedVariants = await _productRepository
+                .GetPublishedVariantsByProductIdAsync(productId);
 
-			var productDetail = _mapper.Map<ProductDetailResponse>(product);
+            // 5. Map sang DTO
+            var variantDtos = _mapper.Map<List<ProductVariantResponse>>(publishedVariants);
 
-			foreach (var variant in productDetail.Variants)
-			{
-				_promotionService.ApplyPromotion(
-					productId,
-					variant.Price,
-					promotions,
-					out var discountedPrice,
-					out var promotionTitle);
+            // 6. Áp khuyến mãi
+            foreach (var v in variantDtos)
+            {
+                _promotionService.ApplyPromotion(
+                    productId,
+                    v.Price,
+                    promotions,
+                    out var discountedPrice,
+                    out var promotionTitle);
 
-				variant.DiscountedPrice = discountedPrice;
-				variant.PromotionTitle = promotionTitle;
-			}
+                v.DiscountedPrice = discountedPrice;
+                v.PromotionTitle = promotionTitle;
+            }
 
-			productDetail.IsFavorite = false;
+            // 7. Gán lại vào response
+            productDetail.Variants = variantDtos;
 
-			if (accountId.HasValue)
-			{
-				productDetail.IsFavorite = await _productRepository.IsProductFavoriteAsync(accountId.Value, productId);
-			}
+            // 8. Xử lý favorite
+            productDetail.IsFavorite = false;
+            if (accountId.HasValue)
+                productDetail.IsFavorite = await _productRepository.IsProductFavoriteAsync(accountId.Value, productId);
 
-			productDetail.IsFavorite = false;
-			await _cacheService.SetCacheAsync(cacheKey, productDetail, TimeSpan.FromMinutes(30));
+            // 9. Lưu cache và return
+            await _cacheService.SetCacheAsync(cacheKey, productDetail, TimeSpan.FromMinutes(30));
+            return productDetail;
+        }
 
-			return productDetail;
-		}
 
 
-	}
+    }
 
 }

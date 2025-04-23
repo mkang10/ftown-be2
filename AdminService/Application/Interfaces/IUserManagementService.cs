@@ -12,7 +12,7 @@ namespace Application.Interfaces
     public interface IUserManagementService
     {
         public Task<Pagination<UserRequestDTO>> GetAllUserAscyn(PaginationParameter paginationParameter);
-        public Task<CreateUserRequestWithPasswordDTO> createUser(CreateUserRequestWithPasswordDTO user);
+        public Task<UserRequestDTO> createUser(CreateUserRequestWithPasswordDTO user);
         public Task<bool> deleteUser(int id);
         public Task<bool> updateUser(int id, CreateUserRequestWithPasswordDTO user);
         public Task<bool> banUser(int id, BanUserRequestDTO user);

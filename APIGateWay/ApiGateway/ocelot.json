@@ -18,6 +18,23 @@
       "UpstreamHttpMethod": [ "Post" ]
     },
     {
+      "DownstreamPathTemplate": "/api/auth/google-login",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7261
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7261
+        }
+
+      ],
+      "UpstreamPathTemplate": "/auth/google-login",
+      "UpstreamHttpMethod": [ "Post" ]
+    },
+    {
       "DownstreamPathTemplate": "/api/auth/register",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
@@ -216,6 +233,18 @@
       ],
       "UpstreamPathTemplate": "/orders",
       "UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/ghn/order-status-newest",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7266
+        }
+      ],
+      "UpstreamPathTemplate": "/ghn/order-status-newest",
+      "UpstreamHttpMethod": [ "Post" ]
     },
     {
       "DownstreamPathTemplate": "/api/orders/{orderId}/details",
@@ -427,6 +456,19 @@
       "UpstreamHttpMethod": [ "Get" ]
     },
     {
+      "DownstreamPathTemplate": "/notificationHub/negotiate",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7270
+        }
+      ],
+      "UpstreamPathTemplate": "/notificationHub/negotiate",
+      "UpstreamHttpMethod": [ "Post" ],
+      "RateLimitOptions": { "EnableRateLimiting": false }
+    },
+    {
       "DownstreamPathTemplate": "/notificationHub",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
@@ -436,7 +478,8 @@
         }
       ],
       "UpstreamPathTemplate": "/notificationHub",
-      "UpstreamHttpMethod": [ "Get", "Post" ]
+      "UpstreamHttpMethod": [ "Get", "Post" ],
+      "EnableWebSockets": true
     },
     {
       "DownstreamPathTemplate": "/api/cart/{accountId}/remove/{productVariantId}",

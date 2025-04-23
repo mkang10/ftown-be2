@@ -33,6 +33,7 @@ namespace Application.UseCases
         private readonly AuditLogHandler _auditLogHandler;
         private readonly INotificationClient _notificationClient;
         private readonly IOrderProcessingHelper _orderHelper;
+        private readonly EmailHandler _emailService;
         public CreateOrderHandler(
             IDistributedCache cache,
             IOrderRepository orderRepository,
@@ -47,7 +48,8 @@ namespace Application.UseCases
             ILogger<CreateOrderHandler> logger,
             AuditLogHandler auditLogHandler,
             INotificationClient notificationClient,
-            IOrderProcessingHelper orderHelper)
+            IOrderProcessingHelper orderHelper,
+            EmailHandler emailService)
         {
             _cache = cache;
             _mapper = mapper;
@@ -63,7 +65,7 @@ namespace Application.UseCases
             _auditLogHandler = auditLogHandler;
             _notificationClient = notificationClient;
             _orderHelper = orderHelper;
-
+            _emailService = emailService;
         }
 
         public async Task<OrderResponse?> Handle(CreateOrderRequest request)
@@ -101,15 +103,8 @@ namespace Application.UseCases
                     await _unitOfWork.RollbackAsync();
                     return null;
                 }
-                decimal shippingCost;
-                if (request.ShippingAddressId.HasValue && request.ShippingAddressId.Value != checkoutData.ShippingAddressId)
-                {
-                    shippingCost = _shippingCostHandler.CalculateShippingCost(shippingAddress.City, shippingAddress.District);
-                }
-                else
-                {
-                    shippingCost = checkoutData.ShippingCost;
-                }
+
+                decimal shippingCost = checkoutData.ShippingCost;
 
                 // Lấy lại danh sách sản phẩm đã chọn từ phiên checkout (để đảm bảo số lượng, giá cả chưa thay đổi)
                 var orderItems = checkoutData.Items;
@@ -119,7 +114,7 @@ namespace Application.UseCases
                     return null;
                 }
 
-                // Lấy tổng tiền và phí vận chuyển đã tính từ phiên checkout
+                // Lấy tổng tiền đã tính từ phiên checkout
                 var subTotal = checkoutData.SubTotal;
                 if (subTotal <= 0)
                 {
@@ -182,7 +177,7 @@ namespace Application.UseCases
                                 );
                     // Commit transaction
                     await _unitOfWork.CommitAsync();
-
+                    await _emailService.InvoiceForEmail(newOrder.OrderId);
                     return _orderHelper.BuildOrderResponse(newOrder, request.PaymentMethod, paymentResult.CheckoutUrl);
                 }
                 else if (request.PaymentMethod == "COD")
@@ -210,6 +205,7 @@ namespace Application.UseCases
                                     );
 
                     await _unitOfWork.CommitAsync();
+                    await _emailService.InvoiceForEmail(newOrder.OrderId);
                     return _orderHelper.BuildOrderResponse(newOrder, request.PaymentMethod);
                 }
 

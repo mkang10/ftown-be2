@@ -2,9 +2,13 @@
 using Application.DTO.Response;
 using Application.Enum;
 using Application.Interfaces;
+using Application.UseCases;
 using Domain.Commons;
+using Domain.DTO.Request;
+using Domain.DTO.Response;
 using Infrastructure;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using static Application.DTO.Response.MessageRespondDTO<T>;
@@ -20,11 +24,17 @@ namespace API.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IUserManagementService _service;
+        private readonly AuthAdminHandler _authservice;
 
-        public AccountController(IUserManagementService service)
+        private readonly CreateAccountShopManagerDetail _createStaffOrShopmanager;
+
+        public AccountController(IUserManagementService service, AuthAdminHandler authservice, CreateAccountShopManagerDetail createStaffOrShopmanager)
         {
             _service = service;
+            _authservice = authservice;
+            _createStaffOrShopmanager = createStaffOrShopmanager;
         }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUserById(int id)
         {
@@ -86,12 +96,12 @@ namespace API.Controllers
         {
             try
             {
-                var data = await _service.createUser(user);
+                var data = await _createStaffOrShopmanager.createUserStaffOrShopManager(user);
                 if (data == null)
                 {
                     return BadRequest(new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString()));
                 }
-                return Ok(new MessageRespondDTO<CreateUserRequestWithPasswordDTO>(data, true, StatusSuccess.Success.ToString()));
+                return Ok(new MessageRespondDTO<CreateUserFullResponseDTO>(data, true, StatusSuccess.Success.ToString()));
             }
             catch (Exception ex)
             {
@@ -177,5 +187,46 @@ namespace API.Controllers
                 return BadRequest(errorResponse);
             }
         }
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginReq loginDTO)
+        {
+            try
+            {
+                var response = await _authservice.AuthenticateAsync(loginDTO.email, loginDTO.Password);
+
+                if (response == null)
+                {
+                    // Không tìm thấy user hoặc thông tin đăng nhập không chính xác
+                    return NotFound(new ResponseDTO<object>(null, false, "Tài khoản hoặc mật khẩu không chính xác!"));
+                }
+
+                // Giả sử response.Account có thuộc tính IsActive để xác định trạng thái tài khoản
+                if (response.Account == null || response.Account.IsActive != true)
+                {
+                    return StatusCode(403, new ResponseDTO<object>(null, false, "Tài khoản đang bị vô hiệu hóa!"));
+                }
+
+
+                // Đăng nhập thành công
+                return Ok(new ResponseDTO<object>(response, true, "Đăng nhập thành công!"));
+            }
+            catch (Exception ex)
+            {
+                // Ở đây bạn có thể log exception (ex) vào hệ thống log của doanh nghiệp
+                return StatusCode(500, new ResponseDTO<object>(null, false, "Đã có lỗi xảy ra từ phía server. Vui lòng thử lại sau!"));
+            }
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestCapcha ps)
+        {
+            var success = await _authservice.ForgotPasswordAsync(ps);
+            if (!success)
+                return NotFound("Email không tồn tại trong hệ thống.");
+
+            return Ok("Mật khẩu mới đã được gửi về email của bạn.");
+        }
+
+
     }
 }

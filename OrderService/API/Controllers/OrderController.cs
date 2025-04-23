@@ -1,6 +1,7 @@
 ﻿using Application.DTO.Request;
 using Application.DTO.Response;
 using Application.UseCases;
+using Domain.Common_Model;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -67,14 +68,19 @@ namespace API.Controllers
                 return StatusCode(500, new ResponseDTO<OrderResponse>(null, false, "Có lỗi xảy ra trong quá trình tạo đơn hàng."));
             }
         }
-        
+
         [HttpGet]
-        public async Task<ActionResult<ResponseDTO<List<OrderResponse>>>> GetOrdersByStatus(
-                [FromQuery] string? status,
-                [FromQuery] int? accountId = null) 
+        public async Task<ActionResult<ResponseDTO<PaginatedResult<OrderResponse>>>> GetOrdersByStatus(
+                                                                                        [FromQuery] string? status,
+                                                                                        [FromQuery] int? accountId = null,
+                                                                                        [FromQuery] int pageNumber = 1,
+                                                                                        [FromQuery] int pageSize = 10)
         {
-            var orders = await _getOrdersByStatusHandler.HandleAsync(status, accountId);
-            return Ok(new ResponseDTO<List<OrderResponse>>(orders, true, $"Danh sách đơn hàng với trạng thái {status} {(accountId.HasValue ? $"và accountId {accountId}" : "")} được lấy thành công."));
+            var pagedOrders = await _getOrdersByStatusHandler.HandleAsync(status, accountId, pageNumber, pageSize);
+            return Ok(new ResponseDTO<PaginatedResult<OrderResponse>>(
+                pagedOrders,
+                true,
+                $"Danh sách đơn hàng với trạng thái {status} {(accountId.HasValue ? $"và accountId {accountId}" : "")} được lấy thành công."));
         }
         [HttpGet("returnable")]
         public async Task<ActionResult<ResponseDTO<List<OrderResponse>>>> GetReturnableOrders([FromQuery] int accountId)

@@ -50,16 +50,17 @@ namespace Application.UseCases
             // 📌 1️⃣ Lấy thông tin đơn hàng
             var order = await _orderRepository.GetOrderByIdGHNAsync(orderId);
             if (order == null)
-            {
                 return false;
-            }
+
+            // MỚI: nếu order đã ở trạng thái Completed thì không thay đổi nữa
+            if (string.Equals(order.Status, "Completed", StringComparison.OrdinalIgnoreCase))
+                return false;
 
             // 📌 2️⃣ Cập nhật trạng thái đơn hàng
             await _orderRepository.UpdateOrderStatusGHNIdAsync(orderId, newStatus);
 
             // 📌 3️⃣ Ghi log vào AuditLog
-            var previousStatus = order.Status; // Lấy trạng thái cũ
-
+            var previousStatus = order.Status;
             var changeData = System.Text.Json.JsonSerializer.Serialize(new
             {
                 OldStatus = previousStatus,
@@ -71,14 +72,13 @@ namespace Application.UseCases
                 orderId.ToString(),
                 newStatus,
                 order.AccountId,
-                changeData, // ✅ Lưu dữ liệu thay đổi
-               "CHANGE STATUS"
+                changeData,
+                "CHANGE STATUS"
             );
-
-
 
             return true;
         }
+
         public async Task<OrderRequest> AutoCreateOrderGHN(int id)
         {
             var dataModel = await _ghNLogRepository.GetDataOrder(id);

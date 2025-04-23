@@ -28,6 +28,7 @@ namespace Domain.Interfaces
 		Task<List<Product>> GetFavoritePagedProductsAsync(int accountId, int page, int pageSize);
         Task<List<Product>> GetProductsByCategoryNameAsync(string categoryName);
         Task<List<Order>> GetCompletedOrdersWithDetailsAsync(DateTime? from, DateTime? to);
+        Task<List<ProductVariant>> GetPublishedVariantsByProductIdAsync(int productId);
 
     }
 }
