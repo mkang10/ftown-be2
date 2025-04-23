@@ -2,8 +2,10 @@
 using Application.DTO.Response;
 using Application.UseCases;
 using Azure;
+using Domain.Common_Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Reflection.Metadata;
 
 namespace API.Controllers
 {
@@ -14,14 +16,17 @@ namespace API.Controllers
         private readonly GetOrderItemsForReturnHandler _getOrderItemsForReturnHandler;
         private readonly ProcessReturnCheckoutHandler _processReturnCheckoutHandler;
         private readonly SubmitReturnRequestHandler _submitReturnRequestHandler;
+        private readonly GetAllReturnRequestsHandler _getAllReturnRequestsHandler;
         public ReturnRequestController(
             GetOrderItemsForReturnHandler getOrderItemsForReturnHandler,
             ProcessReturnCheckoutHandler processReturnCheckoutHandler,
-            SubmitReturnRequestHandler submitReturnRequestHandler)
+            SubmitReturnRequestHandler submitReturnRequestHandler,
+            GetAllReturnRequestsHandler getAllReturnRequestsHandler)
         {
             _getOrderItemsForReturnHandler = getOrderItemsForReturnHandler;
             _processReturnCheckoutHandler = processReturnCheckoutHandler;
             _submitReturnRequestHandler = submitReturnRequestHandler;
+            _getAllReturnRequestsHandler = getAllReturnRequestsHandler;
         }
 
         /// <summary>
@@ -96,5 +101,33 @@ namespace API.Controllers
                 : Ok(new ResponseDTO<SubmitReturnResponse>(submitResponse, true, "Yêu cầu đổi trả đã được tạo thành công."));
         }
 
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAll(
+            [FromQuery] string? status,
+            [FromQuery] string? returnOption,
+            [FromQuery] DateTime? dateFrom,
+            [FromQuery] DateTime? dateTo,
+            [FromQuery] int? orderId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            var pagedResult = await _getAllReturnRequestsHandler.HandleAsync(
+                status,
+                returnOption,
+                dateFrom,
+                dateTo,
+                orderId,
+                pageNumber,
+                pageSize
+            );
+
+            var response = new ResponseDTO<PaginatedResult<ReturnRequestResponse>>(
+                pagedResult,
+                true,
+                "Lấy danh sách yêu cầu đổi trả thành công."
+            );
+
+            return Ok(response);
+        }
     }
 }

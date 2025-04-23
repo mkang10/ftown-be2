@@ -70,7 +70,7 @@ namespace Application.UseCases
 
             // ✅ 3️⃣ Nếu chọn phương thức hoàn tiền qua ngân hàng, lưu thông tin ngân hàng
             var refundMethodLower = request.RefundMethod.Trim().ToLower();
-            if (refundMethodLower == "Hoàn tiền")
+            if (refundMethodLower == "hoàn tiền qua ngân hàng")
             {
                 returnOrder.BankName = request.BankName;
                 returnOrder.BankAccountNumber = request.BankAccountNumber;
