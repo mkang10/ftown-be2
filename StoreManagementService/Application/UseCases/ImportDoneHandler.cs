@@ -57,6 +57,7 @@ namespace Application.UseCases
                 // và cập nhật trạng thái Import thành "Success" hoặc "Partial Success"
                 await UpdateWarehouseForSuccessDetailsAsync(import, staffId);
             }
+            await UpdateVariantPricesAsync(import, staffId);
 
             // Lưu các thay đổi: Import, WarehouseStock và AuditLog
             await _importRepos.SaveChangesAsync();
@@ -302,6 +303,57 @@ namespace Application.UseCases
             }
 
             await Task.CompletedTask;
+        }
+
+        private async Task UpdateVariantPricesAsync(Import import, int staffId)
+        {
+            // Lấy danh sách variant đã có trong import này
+            var variantIds = import.ImportDetails
+                                   .Select(d => d.ProductVariantId)
+                                   .Distinct();
+
+            foreach (var variantId in variantIds)
+            {
+                // 1) Lấy tất cả ImportDetail cho variant này
+                var allDetails = await _importRepos.QueryImportDetails()
+                    .Include(d => d.Import)
+                    .Where(d => d.ProductVariantId == variantId)
+                    .ToListAsync();
+
+                // 2) Loại trừ detail từ những Import gắn với Transfer
+                var validDetails = new List<ImportDetail>();
+                foreach (var det in allDetails)
+                {
+                    var isFromTransfer = await _importRepos.HasTransferForImportAsync(det.ImportId);
+                    if (!isFromTransfer)
+                        validDetails.Add(det);
+                }
+
+                // 3) Tính tổng số lượng và tổng giá trị
+                var totalQty = validDetails.Sum(d => d.Quantity);
+                if (totalQty == 0)
+                    continue;   // không có data để cập nhật
+
+                var totalCost = validDetails.Sum(d => (d.CostPrice ?? 0m) * d.Quantity);
+                var avgCost = totalCost / totalQty;
+
+                // 4) Cập nhật vào bảng ProductVariant
+                var variant = await _importRepos.GetProductVariantByIdAsync(variantId);
+                variant.Price = avgCost;
+
+                // 5) Tạo AuditLog cho thay đổi giá
+                var log = new AuditLog
+                {
+                    TableName = "ProductVariant",
+                    RecordId = variantId.ToString(),
+                    Operation = "UPDATE",
+                    ChangeDate = DateTime.UtcNow,
+                    ChangedBy = staffId,
+                    ChangeData = $"{{ \"OldPrice\": ..., \"NewPrice\": {avgCost} }}",
+                    Comment = "Cập nhật giá trung bình sau khi hoàn thành nhập"
+                };
+                _auditLogRepos.Add(log);
+            }
         }
 
 

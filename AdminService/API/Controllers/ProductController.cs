@@ -12,15 +12,22 @@ namespace API.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly CreateProductHandler _createProductHandler;
-        private readonly GetAllProductHandler  _getallProductHandler;
+        private readonly GetAllProductHandler _getallProductHandler;
         private readonly GetProductDetailHandler _detailHandler;
+        private readonly EditProductHandler _editProductHandler;
+        private readonly GetVariantHandler _getVariantHandler;
+        private readonly EditVariantHandler _editVariantHandler;
 
 
-        public ProductsController(GetProductDetailHandler detailHandler, CreateProductHandler createProductHandler, GetAllProductHandler getAllProductHandler)
+
+        public ProductsController(EditVariantHandler editVariantHandler ,GetVariantHandler getVariantHandler, EditProductHandler editProductHandler, GetProductDetailHandler detailHandler, CreateProductHandler createProductHandler, GetAllProductHandler getAllProductHandler)
         {
             _createProductHandler = createProductHandler;
             _getallProductHandler = getAllProductHandler;
             _detailHandler = detailHandler;
+            _editProductHandler = editProductHandler;
+            _getVariantHandler = getVariantHandler;
+            _editVariantHandler = editVariantHandler;
         }
 
         // POST: api/Products
@@ -85,6 +92,16 @@ namespace API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("variant-detail")]
+        public async Task<IActionResult> GetDetail(int variantId)
+        {
+            var response = await _getVariantHandler.GetProductVariantDetailAsync(variantId);
+            if (!response.Status)
+                return NotFound(response);
+
+            return Ok(response);
+        }
+
         [HttpGet]
         public async Task<ActionResult<PaginatedResponseDTO<ProductDto>>>
             GetAll(
@@ -114,5 +131,64 @@ namespace API.Controllers
                 pageSize);
             return Ok(result);
         }
+
+        [HttpPut]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Edit([FromForm] EditProductVariantDto dto)
+        {
+            var result = await _editVariantHandler.EditProductVariantAsync(dto);
+            if (!result.Status) return NotFound(result);
+            return Ok(result);
+        }
+
+
+        [HttpGet("color")]
+        public async Task<IActionResult> GetColors()
+        {
+            var result = await _editVariantHandler.GetAllColorsByProductAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("size")]
+        public async Task<IActionResult> GetSizes()
+        {
+            var result = await _editVariantHandler.GetAllSizesByProductAsync();
+            return Ok(result);
+        }
+        [HttpPut("{id}")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Edit(int id, [FromForm] ProductEditDto dto)
+        {
+            try
+            {
+                await _editProductHandler.EditAsync(id, dto);
+
+                var response = new ResponseDTO<string>(
+                    "Product updated successfully.",
+                    true,
+                    "Product updated successfully."
+                );
+
+                return Ok(response);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new ResponseDTO<string>(
+                    null,
+                    false,
+                    $"Product with id={id} not found"
+                ));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<string>(
+                    null,
+                    false,
+                    $"An error occurred: {ex.Message}"
+                ));
+            }
+        }
+
     }
+
 }

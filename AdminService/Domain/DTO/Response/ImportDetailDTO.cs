@@ -29,6 +29,8 @@ namespace Domain.DTO.Response
         public int ImportDetailId { get; set; }
         public int ProductVariantId { get; set; }
         public int Quantity { get; set; }
+        public int CostPrice { get; set; }
+
         public string ProductVariantName { get; set; }  // Lấy từ ProductVariant.Name
 
         public List<InventoryImportStoreDetailDto> StoreDetails { get; set; } = new();

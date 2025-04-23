@@ -36,6 +36,13 @@ namespace Application.UseCases
             productDto.ImagePath = product.ProductImages
                                         .FirstOrDefault(pi => pi.IsMain)
                                         ?.ImagePath;
+            productDto.Image = product.ProductImages
+     .Select(pi => new ProductDto.Images
+     {
+         ProductImageId = pi.ProductImageId,
+         ImagePath = pi.ImagePath,
+         IsMain = pi.IsMain
+     }).ToList();
 
             var variantDtos = _mapper.Map<List<ProductVariantDto>>(product.ProductVariants);
 

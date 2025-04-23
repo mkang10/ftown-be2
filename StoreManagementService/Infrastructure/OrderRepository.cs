@@ -1,4 +1,5 @@
-﻿using Domain.DTO.Response.Domain.DTO.Response;
+﻿using Domain.DTO.Response;
+using Domain.DTO.Response.Domain.DTO.Response;
 using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Domain.DTO.Response.OrderDTO;
 
 namespace Infrastructure
 {
@@ -19,83 +19,69 @@ namespace Infrastructure
             _context = context;
         }
 
-        public async Task<PaginatedResponseDTO<OrderWithBuyerDTO>>
-     GetAllOrdersWithAssignmentsAsync(
-         int page,
-         int pageSize,
-         string? orderStatus = null,
-         DateTime? orderStartDate = null,
-         DateTime? orderEndDate = null,
-         int? shopManagerId = null,
-         int? staffId = null,
-         DateTime? assignmentStartDate = null,
-         DateTime? assignmentEndDate = null)
+        public async Task<(List<OrderAssignment>, int)> GetAllWithFilterAsync(
+    OrderAssignmentFilterDto f,
+    int page,
+    int pageSize)
         {
-            // 2.1. Build base query, include cả Account và OrderAssignments
-            var query = _context.Orders
-                                .Include(o => o.Account)            // để lấy tên người mua
-                                .Include(o => o.OrderAssignments)   // để lấy assignments
-                                .AsQueryable();
+            var q = _context.OrderAssignments
+                // Include Order → OrderDetails → ProductVariant → Product
+                .Include(oa => oa.Order)
+                    .ThenInclude(o => o.OrderDetails)
+                        .ThenInclude(od => od.ProductVariant)
+                            .ThenInclude(pv => pv.Product)
+                // Include ProductVariant → Size
+                .Include(oa => oa.Order)
+                    .ThenInclude(o => o.OrderDetails)
+                        .ThenInclude(od => od.ProductVariant)
+                            .ThenInclude(pv => pv.Size)
+                // Include ProductVariant → Color
+                .Include(oa => oa.Order)
+                    .ThenInclude(o => o.OrderDetails)
+                        .ThenInclude(od => od.ProductVariant)
+                            .ThenInclude(pv => pv.Color)
+                .AsNoTracking()
+                .AsQueryable();
 
-            // 2.2. Filter theo Order
-            if (!string.IsNullOrEmpty(orderStatus))
-                query = query.Where(o => o.Status == orderStatus);
+            // 1. Filter OrderAssignment
+            if (f.AssignmentId.HasValue)
+                q = q.Where(oa => oa.AssignmentId == f.AssignmentId);
+            if (f.ShopManagerId.HasValue)
+                q = q.Where(oa => oa.ShopManagerId == f.ShopManagerId);
+            if (f.StaffId.HasValue)
+                q = q.Where(oa => oa.StaffId == f.StaffId);
+            if (f.AssignmentDateFrom.HasValue)
+                q = q.Where(oa => oa.AssignmentDate >= f.AssignmentDateFrom);
+            if (f.AssignmentDateTo.HasValue)
+                q = q.Where(oa => oa.AssignmentDate <= f.AssignmentDateTo);
+            if (!string.IsNullOrWhiteSpace(f.CommentsContains))
+                q = q.Where(oa => oa.Comments.Contains(f.CommentsContains));
 
-            if (orderStartDate.HasValue)
-                query = query.Where(o => o.CreatedDate >= orderStartDate.Value);
+            // 2. Filter Order
+            if (f.OrderCreatedDateFrom.HasValue)
+                q = q.Where(oa => oa.Order.CreatedDate >= f.OrderCreatedDateFrom);
+            if (f.OrderCreatedDateTo.HasValue)
+                q = q.Where(oa => oa.Order.CreatedDate <= f.OrderCreatedDateTo);
+            if (!string.IsNullOrWhiteSpace(f.OrderStatus))
+                q = q.Where(oa => oa.Order.Status == f.OrderStatus);
+            if (f.MinOrderTotal.HasValue)
+                q = q.Where(oa => oa.Order.OrderTotal >= f.MinOrderTotal);
+            if (f.MaxOrderTotal.HasValue)
+                q = q.Where(oa => oa.Order.OrderTotal <= f.MaxOrderTotal);
+            if (!string.IsNullOrWhiteSpace(f.FullNameContains))
+                q = q.Where(oa => oa.Order.FullName.Contains(f.FullNameContains));
 
-            if (orderEndDate.HasValue)
-                query = query.Where(o => o.CreatedDate <= orderEndDate.Value);
-
-            // 2.3. Filter theo Assignment nếu có
-            if (shopManagerId.HasValue || staffId.HasValue ||
-                assignmentStartDate.HasValue || assignmentEndDate.HasValue)
-            {
-                query = query.Where(o => o.OrderAssignments.Any(oa =>
-                       (!shopManagerId.HasValue || oa.ShopManagerId == shopManagerId.Value)
-                    && (!staffId.HasValue || oa.StaffId == staffId.Value)
-                    && (!assignmentStartDate.HasValue || oa.AssignmentDate >= assignmentStartDate.Value)
-                    && (!assignmentEndDate.HasValue || oa.AssignmentDate <= assignmentEndDate.Value)
-                ));
-            }
-
-            // 2.4. Tổng số record
-            var totalRecords = await query.CountAsync();
-
-            // 2.5. Phân trang và project ra DTO
-            var items = await query
-                .OrderBy(o => o.CreatedDate)
+            // 3. Count & Paging
+            var total = await q.CountAsync();
+            var data = await q
+                .OrderBy(oa => oa.AssignmentId)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(o => new OrderWithBuyerDTO
-                {
-                    OrderId = o.OrderId,
-                    CreatedDate = o.CreatedDate,
-                    Status = o.Status,
-                    BuyerName = o.Account.FullName,  // hoặc o.FullName nếu bạn muốn dùng cột này
-                    Assignments = o.OrderAssignments
-                        .Where(oa =>
-                            (!shopManagerId.HasValue || oa.ShopManagerId == shopManagerId.Value)
-                         && (!staffId.HasValue || oa.StaffId == staffId.Value)
-                         && (!assignmentStartDate.HasValue || oa.AssignmentDate >= assignmentStartDate.Value)
-                         && (!assignmentEndDate.HasValue || oa.AssignmentDate <= assignmentEndDate.Value)
-                        )
-                        .Select(oa => new AssignmentDTO
-                        {
-                            ShopManagerId = oa.ShopManagerId,
-                            StaffId = oa.StaffId,
-                            AssignmentDate = oa.AssignmentDate,
-                            Comments = oa.Comments
-                        })
-                        .ToList()
-                })
                 .ToListAsync();
 
-            // 2.6. Trả về PaginatedResponseDTO
-            return new PaginatedResponseDTO<OrderWithBuyerDTO>(
-                items, totalRecords, page, pageSize
-            );
+            return (data, total);
         }
+
         public async Task<OrderAssignment?> GetByOrderIdAsync(int orderId)
         {
             return await _context.OrderAssignments
@@ -113,6 +99,25 @@ namespace Infrastructure
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<OrderAssignment?> GetByIdWithDetailsAsync(int assignmentId)
+        {
+            return await _context.OrderAssignments
+                .Include(oa => oa.Order)
+                    .ThenInclude(o => o.OrderDetails)
+                        .ThenInclude(od => od.ProductVariant)
+                            .ThenInclude(pv => pv.Product)
+                .Include(oa => oa.Order)
+                    .ThenInclude(o => o.OrderDetails)
+                        .ThenInclude(od => od.ProductVariant)
+                            .ThenInclude(pv => pv.Size)
+                .Include(oa => oa.Order)
+                    .ThenInclude(o => o.OrderDetails)
+                        .ThenInclude(od => od.ProductVariant)
+                            .ThenInclude(pv => pv.Color)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(oa => oa.AssignmentId == assignmentId);
         }
     }
 }

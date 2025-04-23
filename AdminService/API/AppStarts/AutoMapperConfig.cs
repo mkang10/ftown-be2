@@ -1,4 +1,3 @@
-
 using Application.DTO.Request;
 using AutoMapper;
 using Domain.DTO.Request;
@@ -207,14 +206,25 @@ namespace API.AppStarts
                            opt => opt.MapFrom(src => src.Variant.Product.Name)).ReverseMap();
 
 
+
             CreateMap<Product, ProductDto>()
             // map ImagePath từ bộ ProductImages
             .ForMember(dest => dest.ImagePath,
                        opt => opt.MapFrom(src => src.ProductImages
                                                    .FirstOrDefault(pi => pi.IsMain)
                                                    .ImagePath));
+
+            CreateMap<Product, ProductDto>()
+    .ForMember(dest => dest.ImagePath,
+               opt => opt.MapFrom(src => src.ProductImages.Select(img => img.ImagePath).ToList()));
             CreateMap<ProductVariant, ProductVariantDto>();
+
+            CreateMap<ProductEditDto, Product>()
+            .ForMember(dest => dest.ProductImages, opt => opt.Ignore()); // Bỏ qua Images vì bạn xử lý riêng
+
+            
+          
+
         }
     }
 }       
-

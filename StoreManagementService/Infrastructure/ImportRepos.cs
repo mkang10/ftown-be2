@@ -76,16 +76,21 @@ namespace Infrastructure
         }
         public async Task<PaginatedResponseDTO<ProductVariant>> GetAllAsync(int page, int pageSize)
         {
+            // Xây dựng query và chỉ lọc status = "Draft"
             var query = _context.ProductVariants
                 .Include(pv => pv.Product)
-                    .ThenInclude(p => p.ProductImages) // Để lấy hình ảnh, ví dụ: IsMain = true
+                    .ThenInclude(p => p.ProductImages)
                 .Include(pv => pv.Size)
                 .Include(pv => pv.Color)
+                .Where(pv => pv.Status == "Draft")        // <-- Lọc Draft ở đây
                 .AsQueryable();
 
+            // Tổng số bản ghi sau khi lọc
             int totalRecords = await query.CountAsync();
 
-            var data = await query.OrderBy(pv => pv.VariantId)
+            // Áp dụng phân trang
+            var data = await query
+                .OrderBy(pv => pv.VariantId)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -93,7 +98,8 @@ namespace Infrastructure
             return new PaginatedResponseDTO<ProductVariant>(data, totalRecords, page, pageSize);
         }
 
-        
+
+
 
         public async Task<Import?> GetByIdAssignAsync(int importId)
         {
@@ -258,6 +264,41 @@ namespace Infrastructure
                 .ToListAsync();
 
             return new PaginatedResponseDTO<ImportStoreDetail>(data, totalCount, filter.Page, filter.PageSize);
+        }
+
+        /// <summary>
+        /// Trả về một IQueryable để truy vấn tất cả ImportDetail, bao gồm navigation Import.
+        /// </summary>
+        public IQueryable<ImportDetail> QueryImportDetails()
+        {
+            return _context.ImportDetails
+                .AsNoTracking()
+                .Include(d => d.Import);
+        }
+
+        /// <summary>
+        /// Kiểm tra xem Import có phát sinh từ Transfer hay không.
+        /// Xem trong bảng TransferOrder.
+        /// </summary>
+        public async Task<bool> HasTransferForImportAsync(int importId)
+        {
+            return await _context.Transfers
+                .AsNoTracking()
+                .AnyAsync(t => t.ImportId == importId);
+        }
+
+        /// <summary>
+        /// Lấy ProductVariant theo ID, ném ngoại lệ nếu không tồn tại.
+        /// </summary>
+        public async Task<ProductVariant> GetProductVariantByIdAsync(int variantId)
+        {
+            var variant = await _context.ProductVariants
+                .FirstOrDefaultAsync(v => v.VariantId == variantId);
+
+            if (variant == null)
+                throw new KeyNotFoundException($"ProductVariant with ID {variantId} was not found.");
+
+            return variant;
         }
 
     }

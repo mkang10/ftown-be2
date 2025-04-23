@@ -9,7 +9,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static Domain.DTO.Response.OrderAssigmentRes;
-using static Domain.DTO.Response.OrderDTO;
 
 namespace Application.UseCases
 {
@@ -34,67 +33,79 @@ namespace Application.UseCases
 
         public async Task<ResponseDTO<bool>> AssignStaffAccountAsync(int importId, int staffId)
         {
-            // Lấy InventoryImport theo importId (bao gồm quan hệ từ Detail -> StoreDetail -> StaffDetail -> Account)
+            // 1. Load import kèm ImportDetails → ImportStoreDetails
             var inventoryImport = await _invenRepos.GetByIdAssignAsync(importId);
             if (inventoryImport == null)
-            {
                 return new ResponseDTO<bool>(false, false, "Inventory import not found");
-            }
 
-            // Lấy StaffDetail dựa trên accountId
+            // 2. Load staffDetail (trong đó có StoreId)
             var staffDetail = await _staffDetailRepos.GetByIdAsync(staffId);
             if (staffDetail == null)
+                return new ResponseDTO<bool>(false, false, "Staff detail not found");
+
+            // 3. Lọc ra chỉ những ImportStoreDetail có ImportStoreId giống StoreId của nhân viên
+            var targetStoreDetails = inventoryImport
+                .ImportDetails
+                .SelectMany(d => d.ImportStoreDetails)
+                .Where(sd => sd.WarehouseId == staffDetail.StoreId)
+                .ToList();
+
+            if (!targetStoreDetails.Any())
+                return new ResponseDTO<bool>(false, false, "Không có store detail phù hợp để gán");
+
+            // 4. Gán staff và cập nhật status cho đúng những store details đó
+            foreach (var sd in targetStoreDetails)
             {
-                return new ResponseDTO<bool>(false, false, "Staff detail not found for the given staff id");
+                sd.StaffDetailId = staffDetail.StaffDetailId;
+                sd.Status = "Processing";
             }
 
-            // Gán StaffDetail cho các StoreDetail trong từng InventoryImportDetail
-            foreach (var detail in inventoryImport.ImportDetails)
-            {
-                foreach (var storeDetail in detail.ImportStoreDetails)
-                {
-                    storeDetail.StaffDetailId = staffDetail.StaffDetailId;
-                    storeDetail.Status = "Processing"; // Cập nhật status của store detail
-                }
-            }
-
-            // Cập nhật status của InventoryImport
+            // 5. (Tùy chọn) Cập nhật status chung của import
             inventoryImport.Status = "Processing";
 
+            // 6. Lưu thay đổi vào DB
             await _invenRepos.UpdateAsync(inventoryImport);
-            return new ResponseDTO<bool>(true, true, "Staff assigned and statuses updated successfully");
+
+            return new ResponseDTO<bool>(true, true, "Staff đã được gán cho đúng store detail");
         }
+
 
         public async Task<ResponseDTO<bool>> AssignStaffDispatchAccountAsync(int dispatchId, int staffId)
         {
-            // Lấy dispach theo importId (bao gồm quan hệ từ Detail -> StoreDetail -> StaffDetail -> Account)
+            // 1. Load dispatch kèm các DispatchDetails -> StoreExportStoreDetails
             var dispatch = await _dispatchRepos.GetByIdDispatchAssignAsync(dispatchId);
             if (dispatch == null)
-            {
                 return new ResponseDTO<bool>(false, false, "Dispatch not found");
-            }
 
-            // Lấy StaffDetail dựa trên accountId
+            // 2. Load staffDetail (có StoreId)
             var staffDetail = await _staffDetailRepos.GetByIdAsync(staffId);
             if (staffDetail == null)
-            {
                 return new ResponseDTO<bool>(false, false, "Staff detail not found for the given staff id");
-            }
 
-            // Gán StaffDetail cho các StoreDetail trong từng InventoryImportDetail
-            foreach (var detail in dispatch.DispatchDetails)
+            // 3. Lọc ra chỉ những export-detail có ExportStoreId == staffDetail.StoreId
+            var targetStoreDetails = dispatch
+                .DispatchDetails
+                .SelectMany(d => d.StoreExportStoreDetails)
+                .Where(sd => sd.WarehouseId == staffDetail.StoreId)  // ⚠️ Thay ExportStoreId bằng tên FK đúng của bạn
+                .ToList();
+
+            if (!targetStoreDetails.Any())
+                return new ResponseDTO<bool>(false, false, "No matching store export details to assign");
+
+            // 4. Gán staff và cập nhật status cho đúng những detail đó
+            foreach (var sd in targetStoreDetails)
             {
-                foreach (var storeDetail in detail.StoreExportStoreDetails)
-                {
-                    storeDetail.StaffDetailId = staffDetail.StaffDetailId;
-                    storeDetail.Status = "Processing"; // Cập nhật status của store detail
-                }
+                sd.StaffDetailId = staffDetail.StaffDetailId;
+                sd.Status = "Processing";
             }
 
+            // 5. (Tùy chọn) cập nhật trạng thái chung của dispatch
             dispatch.Status = "Processing";
 
+            // 6. Lưu vào DB
             await _dispatchRepos.UpdateAsync(dispatch);
-            return new ResponseDTO<bool>(true, true, "Staff assigned and statuses updated successfully");
+
+            return new ResponseDTO<bool>(true, true, "Staff assigned to matching export store details successfully");
         }
 
         public async Task<ResponseDTO<OrderAssignmentResponseDTO>> AssignStaffAsync(AssignStaffDTO dto)
@@ -110,7 +121,7 @@ namespace Application.UseCases
             }
 
             _mapper.Map(dto, assignment);
-            assignment.Order.Status = "Confirmed";
+            assignment.Order.Status = "Processing";
 
             await _orderRepository.SaveChangesAsync();
 

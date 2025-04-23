@@ -6,7 +6,6 @@ using Domain.DTO.Response.Application.Imports.Dto;
 using Domain.Entities;
 using static Domain.DTO.Response.OrderAssigmentRes;
 using static Domain.DTO.Response.OrderDoneRes;
-using static Domain.DTO.Response.OrderDTO;
 
 namespace API.AppStarts
 {
@@ -86,7 +85,7 @@ namespace API.AppStarts
               .ForMember(dest => dest.SizeName, opt => opt.MapFrom(src => src.Size == null ? string.Empty : src.Size.SizeName))
               .ForMember(dest => dest.ColorName, opt => opt.MapFrom(src => src.Color == null ? string.Empty : src.Color.ColorName))
               .ForMember(dest => dest.MainImagePath, opt => opt.MapFrom(src =>
-                  src.Product.ProductImages.Where(pi => pi.IsMain).Select(pi => pi.ImagePath).FirstOrDefault()));
+                  src.ImagePath));
 
              CreateMap<Dispatch, DispatchResponseDto>()
             .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByNavigation.FullName))
@@ -103,8 +102,6 @@ namespace API.AppStarts
             .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.StaffDetail != null ? src.StaffDetail.Account.FullName : null))
             .ForMember(dest => dest.DispatchId, opt => opt.MapFrom(src => src.DispatchDetail != null ? src.DispatchDetail.DispatchId : 0))
 ;
-            CreateMap<Order, OrderDTO>();
-            CreateMap<OrderAssignment, OrderAssignmentDTO>();
 
             CreateMap<AssignStaffDTO, OrderAssignment>()
             .ForMember(dest => dest.StaffId, opt => opt.MapFrom(src => src.StaffId))

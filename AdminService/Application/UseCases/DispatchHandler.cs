@@ -55,10 +55,10 @@ namespace Application.UseCases
             var data = await _dispatchRepos.GetStoreExportStoreDetailById(id);
             if (data == null)
             {
-                throw new Exception("Import Store Detail does not exsist!");
+                throw new Exception("Dispatch Store Detail does not exsist!");
             }
             var dataModel = _mapper.Map<JSONStoreExportStoreDetailByIdHandlerDTO>(data);
-            var audit = await _auditRepos.GetAuditLogsByTableAndRecordIdAsync(TableEnumEXE.ImportStoreDetail.ToString(), id.ToString());
+            var audit = await _auditRepos.GetAuditLogsByTableAndRecordIdAsync(TableEnumEXE.StoreExportStoreDetail.ToString(), id.ToString());
             dataModel.AuditLogs = _mapper.Map<List<AuditLogRes>>(audit);
             return dataModel;
         }

@@ -7,56 +7,107 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Domain.DTO.Response.OrderDTO;
 
 namespace Application.UseCases
 {
-  
-        public class GetOrderHandler
+
+    public class GetOrderHandler
+    {
+        private readonly IOrderRepository _orderRepository;
+        private readonly IMapper _mapper;
+        public GetOrderHandler(IOrderRepository orderRepository, IMapper mapper)
         {
-            private readonly IOrderRepository _orderRepository;
-            private readonly IMapper _mapper;
-            public GetOrderHandler(IOrderRepository orderRepository, IMapper mapper)
+            _orderRepository = orderRepository;
+            _mapper = mapper;
+        }
+
+        public async Task<PaginatedResponseDTO<OrderAssignmentDto>> GetAllAsync(
+    OrderAssignmentFilterDto filter,
+    int page,
+    int pageSize)
+        {
+            var (entities, total) = await _orderRepository
+                .GetAllWithFilterAsync(filter, page, pageSize);
+
+            var dtos = entities.Select(oa => new OrderAssignmentDto
             {
-                _orderRepository = orderRepository;
-                _mapper = mapper;
-            }
+                AssignmentId = oa.AssignmentId,
+                ShopManagerId = oa.ShopManagerId,
+                StaffId = oa.StaffId,
+                AssignmentDate = oa.AssignmentDate,
+                Comments = oa.Comments,
+                Order = new OrderDto
+                {
+                    OrderId = oa.Order.OrderId,
+                    CreatedDate = oa.Order.CreatedDate,
+                    Status = oa.Order.Status,
+                    OrderTotal = oa.Order.OrderTotal,
+                    ShippingCost = oa.Order.ShippingCost,
+                    FullName = oa.Order.FullName,
+                    Email = oa.Order.Email,
+                    PhoneNumber = oa.Order.PhoneNumber,
+                    Address = oa.Order.Address,
+                    City = oa.Order.City,
+                    District = oa.Order.District,
+                    Country = oa.Order.Country,
+                    Province = oa.Order.Province,
+                    OrderDetails = oa.Order.OrderDetails.Select(od => new OrderDetailDto
+                    {
+                        OrderDetailId = od.OrderDetailId,
+                        ProductVariantId = od.ProductVariantId,
+                        ProductName = od.ProductVariant.Product.Name,
+                        SizeName = od.ProductVariant.Size?.SizeName,
+                        ColorName = od.ProductVariant.Color?.ColorName,
+                        Quantity = od.Quantity,
+                        PriceAtPurchase = od.PriceAtPurchase,
+                        DiscountApplied = od.DiscountApplied
+                    }).ToList()
+                }
+            }).ToList();
 
-        public async Task<ResponseDTO<PaginatedResponseDTO<OrderWithBuyerDTO>>> GetAllOrdersWithAssignmentsAsync(
-         int page,
-         int pageSize,
-         string? orderStatus = null,
-         System.DateTime? orderStartDate = null,
-         System.DateTime? orderEndDate = null,
-         int? shopManagerId = null,
-         int? staffId = null,
-         System.DateTime? assignmentStartDate = null,
-         System.DateTime? assignmentEndDate = null)
+            return new PaginatedResponseDTO<OrderAssignmentDto>(
+                dtos, total, page, pageSize);
+        }
+        public async Task<OrderAssignmentDto?> GetByIdAsync(int assignmentId)
         {
-            // Gọi repository để lấy danh sách Order theo filter và phân trang
-            var paginatedOrders = await _orderRepository.GetAllOrdersWithAssignmentsAsync(
-                page,
-                pageSize,
-                orderStatus,
-                orderStartDate,
-                orderEndDate,
-                shopManagerId,
-                staffId,
-                assignmentStartDate,
-                assignmentEndDate);
+            var oa = await _orderRepository.GetByIdWithDetailsAsync(assignmentId);
+            if (oa == null) return null;
 
-            // Sử dụng AutoMapper ánh xạ từ Order entity sang OrderDTO
-            var orderDTOs = _mapper.Map<List<OrderWithBuyerDTO>>(paginatedOrders.Data);
-
-            // Đóng gói lại kết quả phân trang sử dụng DTO
-            var paginatedResult = new PaginatedResponseDTO<OrderWithBuyerDTO>(
-                orderDTOs,
-                paginatedOrders.TotalRecords,
-                paginatedOrders.Page,
-                paginatedOrders.PageSize);
-
-            return new ResponseDTO<PaginatedResponseDTO<OrderWithBuyerDTO>>(
-                paginatedResult, true, "Lấy dữ liệu thành công");
+            return new OrderAssignmentDto
+            {
+                AssignmentId = oa.AssignmentId,
+                ShopManagerId = oa.ShopManagerId,
+                StaffId = oa.StaffId,
+                AssignmentDate = oa.AssignmentDate,
+                Comments = oa.Comments,
+                Order = new OrderDto
+                {
+                    OrderId = oa.Order.OrderId,
+                    CreatedDate = oa.Order.CreatedDate,
+                    Status = oa.Order.Status,
+                    OrderTotal = oa.Order.OrderTotal,
+                    ShippingCost = oa.Order.ShippingCost,
+                    FullName = oa.Order.FullName,
+                    Email = oa.Order.Email,
+                    PhoneNumber = oa.Order.PhoneNumber,
+                    Address = oa.Order.Address,
+                    City = oa.Order.City,
+                    District = oa.Order.District,
+                    Country = oa.Order.Country,
+                    Province = oa.Order.Province,
+                    OrderDetails = oa.Order.OrderDetails.Select(od => new OrderDetailDto
+                    {
+                        OrderDetailId = od.OrderDetailId,
+                        ProductVariantId = od.ProductVariantId,
+                        ProductName = od.ProductVariant.Product.Name,
+                        SizeName = od.ProductVariant.Size?.SizeName,
+                        ColorName = od.ProductVariant.Color?.ColorName,
+                        Quantity = od.Quantity,
+                        PriceAtPurchase = od.PriceAtPurchase,
+                        DiscountApplied = od.DiscountApplied
+                    }).ToList()
+                }
+            };
         }
     }
 }

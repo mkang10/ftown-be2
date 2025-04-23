@@ -10,6 +10,7 @@ namespace Application.Enum
     {
         Dispatch,
         ImportStoreDetail,
-        Transfer
+        Transfer,
+        StoreExportStoreDetail
     }
 }

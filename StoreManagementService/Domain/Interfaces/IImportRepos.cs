@@ -27,6 +27,18 @@ namespace Domain.Interfaces
         Task ReloadAsync(Import import);
 
         Task<Transfer> GetTransferByImportIdAsync(int importId);
+
+        IQueryable<ImportDetail> QueryImportDetails();
+
+        /// <summary>
+        /// Kiểm tra xem Import có liên quan đến bất kỳ Transfer nào.
+        /// </summary>
+        Task<bool> HasTransferForImportAsync(int importId);
+
+        /// <summary>
+        /// Lấy đối tượng ProductVariant theo ID.
+        /// </summary>
+        Task<ProductVariant> GetProductVariantByIdAsync(int variantId);
     }
 
 }

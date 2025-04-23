@@ -19,10 +19,8 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins", policy =>
     {
-        policy.WithOrigins("http://localhost:3000"
-            , "http://localhost:5000"
-            , "https://ftown-admin.vercel.app/",
-            "http://127.0.0.1:5500")
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-admin.vercel.app", "https://ftown-admin-dhww.vercel.app")
+
               .AllowAnyMethod()
               .AllowAnyHeader()
               .WithExposedHeaders("Content-Disposition");

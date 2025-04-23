@@ -39,6 +39,8 @@ namespace Domain.DTO.Request
         public int? ColorId { get; set; }
         public IFormFile? ImageFile { get; set; }
         public decimal? Weight { get; set; }
+
+
     }
 
 }

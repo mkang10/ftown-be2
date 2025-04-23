@@ -33,15 +33,31 @@ namespace Infrastructure
                 .ToListAsync();
         }
 
-        public Task<Product?> GetByIdAsync(int productId)
-          => _context.Products.FindAsync(productId).AsTask();
+        public async Task<Product?> GetByIdAsync(int productId)
+        {
+            return await _context.Products
+                .Include(p => p.ProductImages)
+                .AsSplitQuery() // ✅ Thêm dòng này để tránh lỗi tracking duplicate entity
+                .FirstOrDefaultAsync(p => p.ProductId == productId);
+        }
 
-       
+
+
+
         public async Task<Product?> GetByIdWithVariantsAsync(int productId)
             => await _context.Products.Include(p => p.ProductVariants)
             .Include(c => c.Category)
             .Include(p => p.ProductImages)
                                        .FirstOrDefaultAsync(p => p.ProductId == productId);
+
+        public void Update(Product product) => _context.Products.Update(product);
+
+        public Task<int> SaveChangesAsync() => _context.SaveChangesAsync();
+
+        public void RemoveImage(ProductImage image)
+        {
+            _context.ProductImages.Remove(image);
+        }
     }
     
 }

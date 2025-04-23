@@ -34,7 +34,7 @@ namespace Application.Services
                     AddParagraph(body, "PHIẾU NHẬP KHO", true, "32", JustificationValues.Center);
                     AddParagraph(body, $"Reference Number: {import.ReferenceNumber}", false, "24", JustificationValues.Center);
                     AddParagraph(body, $"Ngày nhập: {(import.CreatedDate.HasValue ? import.CreatedDate.Value.ToString("dd/MM/yyyy HH:mm:ss") : "N/A")}", false, "24", JustificationValues.Center);
-                    AddParagraph(body, $"Tổng tiền: {import.TotalCost:C}", false, "24", JustificationValues.Center);
+                    AddParagraph(body, $"Tổng tiền: {string.Format(new System.Globalization.CultureInfo("vi-VN"), "{0:c0}", import.TotalCost)}", false, "24", JustificationValues.Center);
                     AddParagraph(body, " ", false, "24");
 
                     // Bảng chi tiết nhập kho
@@ -114,7 +114,14 @@ namespace Application.Services
                     AddParagraph(body, " ", false, "24");
 
                     // PHẦN 3: TỔNG KẾT (nếu cần – ví dụ tổng tiền đơn bổ sung)
-                    AddParagraph(body, $"Tổng tiền đơn bổ sung: {supplementImport.TotalCost:C}", true, "24", JustificationValues.Right);
+
+                    AddParagraph(
+                        body,
+                        $"Tổng tiền đơn bổ sung: {string.Format(new System.Globalization.CultureInfo("vi-VN"), "{0:c0}", supplementImport.TotalCost)}",
+                        true,
+                        "24",
+                        JustificationValues.Right
+                    );
                     AddParagraph(body, " ", false, "24");
 
                     // PHẦN KÝ TÊN
@@ -230,8 +237,8 @@ namespace Application.Services
                 row.Append(CreateTableCell(stt.ToString()));
                 row.Append(CreateTableCell(productName));
                 row.Append(CreateTableCell(detail.Quantity.ToString()));
-                row.Append(CreateTableCell(detail.CostPrice.HasValue ? $"{detail.CostPrice.Value:#,##0.00}" : "0"));
-                row.Append(CreateTableCell($"{detail.Quantity * (detail.CostPrice ?? 0):#,##0.00}"));
+                row.Append(CreateTableCell(detail.CostPrice.HasValue ? $"{detail.CostPrice.Value:#,## VND}" : "0"));
+                row.Append(CreateTableCell($"{detail.Quantity * (detail.CostPrice ?? 0):#,## VND}"));
                 row.Append(CreateTableCell(warehouseNames));
                 table.Append(row);
                 stt++;
