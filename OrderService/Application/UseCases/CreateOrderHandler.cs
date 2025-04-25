@@ -190,6 +190,8 @@ namespace Application.UseCases
                         await _unitOfWork.RollbackAsync();
                         return null;
                     }
+                    await _orderHelper.LogWarehouseStockChangeAsync(newOrder.OrderId, request.AccountId, orderDetails, warehouseId);
+
 
                     await _orderHelper.ClearCartAsync(request.AccountId, orderItems.Select(i => i.ProductVariantId).ToList());
 

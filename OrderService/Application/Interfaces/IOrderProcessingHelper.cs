@@ -20,5 +20,10 @@ namespace Application.Interfaces
 		Task AssignOrderToManagerAsync(int orderId, int assignedBy);
 		Task SendOrderNotificationAsync(int accountId, int orderId, string title, string message);
 		Task SendReturnOrderNotificationAsync(int accountId, int returnOrderId, string title, string message);
+		Task LogWarehouseStockChangeAsync(
+										int orderId,
+										int accountId,
+										List<OrderDetail> orderDetails,
+										int warehouseId);
     }
 }
