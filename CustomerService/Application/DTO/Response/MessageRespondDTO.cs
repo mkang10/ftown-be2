@@ -24,4 +24,22 @@ namespace Application.DTO.Response
         }
     }
 
+    public class MessageRespondDTOStatus200<T>
+    {
+        public T Data { get; set; }
+        public int Status { get; set; }
+        public string Message { get; set; }
+        public MessageRespondDTOStatus200(T data, int status, string message)
+        {
+            Data = data;
+            Status = status;
+            Message = message;
+        }
+        public class MessageResponseButNoData
+        {
+            public string Message { get; set; }
+            public bool Success { get; set; }
+        }
+    }
+
 }

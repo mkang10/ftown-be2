@@ -4,6 +4,7 @@ using Application.Enum;
 using Application.Interfaces;
 using Domain.Commons;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using static Application.DTO.Response.MessageRespondDTO<T>;
@@ -34,7 +35,7 @@ namespace API.Controllers
 
                 if (result == null)
                 {
-                    var notFoundResponse = new MessageRespondDTO<object>(Array.Empty<object>(), true, StatusSuccess.Success.ToString());
+                    var notFoundResponse = new MessageRespondDTOStatus200<object>(Array.Empty<object>(), 200, StatusSuccess.Success.ToString());
                     return NotFound(notFoundResponse);
                 }
                 else
@@ -56,7 +57,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                var errorResponse = new MessageRespondDTO<object>(Array.Empty<object>(), true, "No data");
+                var errorResponse = new MessageRespondDTOStatus200<object>(Array.Empty<object>(), 200, "No data");
                 return BadRequest(errorResponse);
             }
         }
@@ -69,7 +70,7 @@ namespace API.Controllers
 
                 if (result == null)
                 {
-                    var notFoundResponse = new MessageRespondDTO<object>(Array.Empty<object>(), false, StatusSuccess.Wrong.ToString());
+                    var notFoundResponse = new MessageRespondDTOStatus200<object>(Array.Empty<object>(), 200, StatusSuccess.Wrong.ToString());
                     return NotFound(notFoundResponse);
                 }
                 else
@@ -91,7 +92,7 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                var errorResponse = new MessageRespondDTO<object>(Array.Empty<object>(), true, "No object!");
+                var errorResponse = new MessageRespondDTOStatus200<object>(Array.Empty<object>(), 200, "No object!");
                 return BadRequest(errorResponse);
             }
         }
