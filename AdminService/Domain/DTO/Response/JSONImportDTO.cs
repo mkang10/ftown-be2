@@ -91,6 +91,10 @@ namespace Domain.DTO.Response
         public int ImportStoreId { get; set; }
 
         public string? WarehouseName { get; set; }
+        public string? ProductName { get; set; }
+        public string? SizeName { get; set; }
+        public string? ColorName { get; set; }
+
 
         public string? HandleBy { get; set; }
 

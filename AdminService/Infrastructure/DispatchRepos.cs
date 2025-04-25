@@ -62,7 +62,13 @@ namespace Infrastructure
                         .ThenInclude(od => od.Variant.Product).
                 Include(o => o.DispatchDetails)
                         .ThenInclude(od => od.StoreExportStoreDetails)
-                        .ThenInclude(od => od.Warehouse).
+                        .ThenInclude(od => od.Warehouse)
+                .Include(d => d.DispatchDetails)
+                    .ThenInclude(dd => dd.Variant)
+                        .ThenInclude(v => v.Color)
+                .Include(d => d.DispatchDetails)
+                    .ThenInclude(dd => dd.Variant)
+                        .ThenInclude(v => v.Size).
                 Include(o => o.DispatchDetails)
                         .ThenInclude(od => od.StoreExportStoreDetails)
                         .ThenInclude(od => od.StaffDetail).
@@ -80,6 +86,10 @@ namespace Infrastructure
                                    .ThenInclude(c => c.Dispatch).
                             Include(o => o.DispatchDetail)
                                     .ThenInclude(od => od.Variant.Product)
+                            .Include(o => o.DispatchDetail)
+                                    .ThenInclude(od => od.Variant.Size)
+                                     .Include(o => o.DispatchDetail)
+                                    .ThenInclude(od => od.Variant.Color)
                            .FirstOrDefaultAsync(o => o.DispatchStoreDetailId == importId);
             return data;
         }

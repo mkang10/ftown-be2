@@ -24,11 +24,13 @@ namespace API.Controllers
         private readonly ImportShortageHandler _importShortageHandler;
 
         private readonly GetAllStaffImportHandler _getAllStaffImport;
+        private readonly GetAllImportStoreHandler _getAllImportStore;
 
 
 
 
-        public InventoryImportController(ImportShortageHandler importShortageHandler, GetAllStaffImportHandler getAllStaffImport, ImportDoneHandler importDoneHandler, ImportIncompletedHandler importIncompletedHandler, AssignStaffHandler assignStaff, GetAllStaffHandler getAllStaff, CreateImportHandler createhandler, GetImportHandler Gethandler, GetAllProductHandler getProductVar)
+
+        public InventoryImportController(GetAllImportStoreHandler getAllImportStore, ImportShortageHandler importShortageHandler, GetAllStaffImportHandler getAllStaffImport, ImportDoneHandler importDoneHandler, ImportIncompletedHandler importIncompletedHandler, AssignStaffHandler assignStaff, GetAllStaffHandler getAllStaff, CreateImportHandler createhandler, GetImportHandler Gethandler, GetAllProductHandler getProductVar)
         {
             _createhandler = createhandler;
             _gethandler = Gethandler;
@@ -39,16 +41,17 @@ namespace API.Controllers
             _importIncompletedHandler = importIncompletedHandler;
             _importShortageHandler = importShortageHandler;
             _getAllStaffImport = getAllStaffImport;
+            _getAllImportStore = getAllImportStore;
         }
 
 
 
         [HttpGet("product")]
-        public async Task<IActionResult> GetAllProductVariants([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAllProductVariants([FromQuery] int page = 1, [FromQuery] int pageSize = 10, string search = null)
         {
             try
             {
-                var pagedVariants = await _getProductVar.GetAllProductVariantsAsync(page, pageSize);
+                var pagedVariants = await _getProductVar.GetAllProductVariantsAsync(page, pageSize,   search );
                 var response = new ResponseDTO<PaginatedResponseDTO<ProductVariantResponseDto>>(pagedVariants, true, "Lấy danh sách Product Variant thành công.");
                 return Ok(response);
             }
@@ -235,6 +238,19 @@ namespace API.Controllers
             {
                 var errorResponse = new ResponseDTO<string>(null, false, "Đã có lỗi xảy ra, vui lòng thử lại sau");
                 return StatusCode(500, errorResponse);
+            }
+        }
+        [HttpGet("assign-staff")]
+        public async Task<IActionResult> GetImportStoreDetail([FromQuery] ImportStoreDetailFilterDtO filter)
+        {
+            try
+            {
+                var response = await _getAllImportStore.GetStoreExportByStaffDetailAsync(filter);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>(null, false, $"Server error: {ex.Message}"));
             }
         }
 

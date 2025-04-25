@@ -18,10 +18,11 @@ namespace API.Controllers
         private readonly DispatchDoneHandler _dispatchDoneHandler;
         private readonly GetAllDispatchHandler _getAllDispatchHandler;
         private readonly AssignStaffHandler _assignStaff;
-        private readonly GetAllStaffDispatchHandler _getDispatchByStaff;
+        //private readonly GetAllStaffDispatchHandler _getDispatchByStaff;
 
+        private readonly GetAllExportByStaffHandler _getDispatchByStaff;
 
-        public DispatchController(GetAllStaffDispatchHandler getDispatchByStaff ,AssignStaffHandler assignStaff, DispatchDoneHandler dispatchDoneHandler, GetAllDispatchHandler getAllDispatchHandler)
+        public DispatchController(GetAllExportByStaffHandler getDispatchByStaff ,AssignStaffHandler assignStaff, DispatchDoneHandler dispatchDoneHandler, GetAllDispatchHandler getAllDispatchHandler)
         {
 
             _dispatchDoneHandler = dispatchDoneHandler;
@@ -81,15 +82,29 @@ namespace API.Controllers
             }
         }
 
+        //[HttpGet("by-staff")]
+        //public async Task<IActionResult> GetExportDetailsByStaffDetail([FromQuery] int page = 1,
+        //[FromQuery] int pageSize = 10,
+        //[FromQuery] StoreExportStoreDetailFilterDto filter = null)
+        //{
+        //    var paged = await _getDispatchByStaff.HandleAsync(page, pageSize, filter);
+        //    var response = new ResponseDTO<PaginatedResponseDTO<ExportDetailDto>>(
+        //        paged, true, "Lấy danh sách export store details thành công");
+        //    return Ok(response);
+        //}
+
         [HttpGet("by-staff")]
-        public async Task<IActionResult> GetExportDetailsByStaffDetail([FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] StoreExportStoreDetailFilterDto filter = null)
+        public async Task<IActionResult> GetStoreDetailsByStaffDetail([FromQuery] StoreExportStoreDetailFilterDtO filter)
         {
-            var paged = await _getDispatchByStaff.HandleAsync(page, pageSize, filter);
-            var response = new ResponseDTO<PaginatedResponseDTO<ExportDetailDto>>(
-                paged, true, "Lấy danh sách export store details thành công");
-            return Ok(response);
+            try
+            {
+                var response = await _getDispatchByStaff.GetStoreExportByStaffDetailAsync(filter);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>(null, false, $"Server error: {ex.Message}"));
+            }
         }
     }
 }

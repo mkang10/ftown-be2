@@ -1,5 +1,6 @@
 ﻿using Domain.DTO.Request;
 using Domain.DTO.Response;
+using Domain.DTO.Response.Application.Imports.Dto;
 using Domain.DTO.Response.Domain.DTO.Response;
 using Domain.Entities;
 using Domain.Interfaces;
@@ -27,6 +28,105 @@ namespace Infrastructure
             await _context.SaveChangesAsync();
             return inventoryImport;
         }
+
+        public async Task<PaginatedResponseDTO<ImportStoreDetailDto>> GetImportStoreDetailByStaffDetailAsync(ImportStoreDetailFilterDtO filter)
+        {
+            // 1. Build base query (AsNoTracking + filter HandleBy + optional Status)
+            var baseQuery = _context.ImportStoreDetails
+                .AsNoTracking()
+                .Where(x => x.HandleBy == filter.HandleBy);
+
+            if (!string.IsNullOrWhiteSpace(filter.Status))
+            {
+                var pattern = $"%{filter.Status}%";
+                baseQuery = baseQuery.Where(x => EF.Functions.Like(x.Status, pattern));
+            }
+
+            // 2. Count trên baseQuery (không join)
+            var total = await baseQuery.CountAsync();
+
+            // 3. Apply sorting
+            bool desc = filter.IsDescending;
+            IQueryable<ImportStoreDetail> orderedQuery = filter.SortBy?.Trim().ToLower() switch
+            {
+                "actualreceivedquantity" => desc
+                    ? baseQuery.OrderByDescending(x => x.ActualReceivedQuantity)
+                    : baseQuery.OrderBy(x => x.ActualReceivedQuantity),
+
+                "allocatedquantity" => desc
+                    ? baseQuery.OrderByDescending(x => x.AllocatedQuantity)
+                    : baseQuery.OrderBy(x => x.AllocatedQuantity),
+
+                "status" => desc
+                    ? baseQuery.OrderByDescending(x => x.Status)
+                    : baseQuery.OrderBy(x => x.Status),
+
+                "comments" => desc
+                    ? baseQuery.OrderByDescending(x => x.Comments)
+                    : baseQuery.OrderBy(x => x.Comments),
+
+                "warehouseid" => desc
+                    ? baseQuery.OrderByDescending(x => x.WarehouseId)
+                    : baseQuery.OrderBy(x => x.WarehouseId),
+
+                "handleby" => desc
+                    ? baseQuery.OrderByDescending(x => x.HandleBy)
+                    : baseQuery.OrderBy(x => x.HandleBy),
+
+                "productname" => desc
+                    ? baseQuery.OrderByDescending(x => x.ImportDetail.ProductVariant.Product.Name)
+                    : baseQuery.OrderBy(x => x.ImportDetail.ProductVariant.Product.Name),
+
+                "sizename" => desc
+                    ? baseQuery.OrderByDescending(x => x.ImportDetail.ProductVariant.Size.SizeName)
+                    : baseQuery.OrderBy(x => x.ImportDetail.ProductVariant.Size.SizeName),
+
+                "colorname" => desc
+                    ? baseQuery.OrderByDescending(x => x.ImportDetail.ProductVariant.Color.ColorName)
+                    : baseQuery.OrderBy(x => x.ImportDetail.ProductVariant.Color.ColorName),
+
+                _ => desc
+                    ? baseQuery.OrderByDescending(x => x.ImportDetailId)
+                    : baseQuery.OrderBy(x => x.ImportDetailId),
+            };
+
+            // 4. Paging
+            var pagedQuery = orderedQuery
+                .Skip((filter.Page - 1) * filter.PageSize)
+                .Take(filter.PageSize);
+
+            // 5. Projection
+            var items = await pagedQuery
+                .Select(x => new ImportStoreDetailDto
+                {
+                    ImportId = x.ImportDetail.ImportId,
+                    ImportDetailId = x.ImportDetailId,
+                    ImportStoreId = x.ImportStoreId,
+                    ActualReceivedQuantity = x.ActualReceivedQuantity,
+                    AllocatedQuantity = x.AllocatedQuantity,
+                    Status = x.Status,
+                    Comments = x.Comments,
+                    WareHouseId = (int)x.WarehouseId,
+                    WarehouseName = x.Warehouse != null
+                                                ? x.Warehouse.WarehouseName
+                                                : null,
+                    HandleBy = x.HandleBy,
+                    HandleByName = x.HandleByNavigation.Account.FullName,
+                    ProductName = x.ImportDetail.ProductVariant.Product.Name,
+                    SizeName = x.ImportDetail.ProductVariant.Size.SizeName,
+                    ColorName = x.ImportDetail.ProductVariant.Color.ColorName,
+                })
+                .ToListAsync();
+
+            // 6. Trả về kết quả phân trang
+            return new PaginatedResponseDTO<ImportStoreDetailDto>(
+                items,
+                total,
+                filter.Page,
+                filter.PageSize
+            );
+        }
+
 
         public async Task<(IEnumerable<Import>, int)> GetAllImportsAsync(ImportFilterDto filter, CancellationToken cancellationToken)
         {
@@ -74,7 +174,7 @@ namespace Infrastructure
 
             return (imports, totalRecords);
         }
-        public async Task<PaginatedResponseDTO<ProductVariant>> GetAllAsync(int page, int pageSize)
+        public async Task<PaginatedResponseDTO<ProductVariant>> GetAllAsync(int page, int pageSize, string? search = null)
         {
             // Xây dựng query và chỉ lọc status = "Draft"
             var query = _context.ProductVariants
@@ -82,8 +182,19 @@ namespace Infrastructure
                     .ThenInclude(p => p.ProductImages)
                 .Include(pv => pv.Size)
                 .Include(pv => pv.Color)
-                .Where(pv => pv.Status == "Draft")        // <-- Lọc Draft ở đây
+                .Where(pv => pv.Status == "Draft")
                 .AsQueryable();
+
+            // Nếu có từ khóa tìm kiếm, lọc theo tên sản phẩm, màu sắc, kích thước
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string keyword = search.Trim().ToLower();
+                query = query.Where(pv =>
+                    pv.Product.Name.ToLower().Contains(keyword) ||
+                    pv.Color.ColorName.ToLower().Contains(keyword) ||
+                    pv.Size.SizeName.ToLower().Contains(keyword)
+                );
+            }
 
             // Tổng số bản ghi sau khi lọc
             int totalRecords = await query.CountAsync();
@@ -97,6 +208,7 @@ namespace Infrastructure
 
             return new PaginatedResponseDTO<ProductVariant>(data, totalRecords, page, pageSize);
         }
+
 
 
 
@@ -180,91 +292,117 @@ namespace Infrastructure
 
 
 
-        public async Task<PaginatedResponseDTO<ImportStoreDetail>> GetStoreDetailsByStaffDetailAsync(ImportStoreDetailFilterDto filter)
+        public async Task<PaginatedResponseDTO<ImportStoreDetailDto>> GetStoreDetailsByStaffDetailAsync(
+    ImportStoreDetailFilterDto filter)
         {
+            // Base query: filter by staff
             var query = _context.ImportStoreDetails
-                .Include(s => s.Warehouse)
-                .Include(s => s.StaffDetail)
-                .Include(s => s.ImportDetail)
-                    .ThenInclude(d => d.Import) // Thêm Include để lấy ImportId
-                .Where(s => s.StaffDetailId == filter.StaffDetailId)
-                .AsQueryable();
+                .AsNoTracking()
+                .Where(s => s.StaffDetailId == filter.StaffDetailId);
 
-            // Áp dụng filter theo Status nếu có
-            if (!string.IsNullOrEmpty(filter.Status))
+            // Apply Status filter (case-insensitive using SQL LIKE)
+            if (!string.IsNullOrWhiteSpace(filter.Status))
             {
-                query = query.Where(s => s.Status.ToLower().Contains(filter.Status.ToLower()));
+                var statusPattern = $"%{filter.Status}%";
+                query = query.Where(s => EF.Functions.Like(s.Status, statusPattern));
             }
 
-            // Sắp xếp theo trường được chỉ định
-            switch (filter.SortBy?.ToLower())
+            // Project into DTO with null-safe assignments matching DTO types
+            var baseQuery = query.Select(s => new ImportStoreDetailDto
             {
-                case "importstoreid":
-                    query = filter.IsDescending
-                        ? query.OrderByDescending(s => s.ImportStoreId)
-                        : query.OrderBy(s => s.ImportStoreId);
-                    break;
-                case "importdetailid":
-                    query = filter.IsDescending
-                        ? query.OrderByDescending(s => s.ImportDetailId)
-                        : query.OrderBy(s => s.ImportDetailId);
-                    break;
-                case "warehouseid":
-                    query = filter.IsDescending
-                        ? query.OrderByDescending(s => s.WarehouseId)
-                        : query.OrderBy(s => s.WarehouseId);
-                    break;
-                case "allocatedquantity":
-                    query = filter.IsDescending
-                        ? query.OrderByDescending(s => s.AllocatedQuantity)
-                        : query.OrderBy(s => s.AllocatedQuantity);
-                    break;
-                case "status":
-                    query = filter.IsDescending
-                        ? query.OrderByDescending(s => s.Status)
-                        : query.OrderBy(s => s.Status);
-                    break;
-                case "comments":
-                    query = filter.IsDescending
-                        ? query.OrderByDescending(s => s.Comments)
-                        : query.OrderBy(s => s.Comments);
-                    break;
-                case "staffdetailid":
-                    query = filter.IsDescending
-                        ? query.OrderByDescending(s => s.StaffDetailId)
-                        : query.OrderBy(s => s.StaffDetailId);
-                    break;
-                case "storeimportstoreid":
-                    query = filter.IsDescending
-                        ? query.OrderByDescending(s => s.ImportStoreId) // Giả sử trường này dùng ImportStoreId
-                        : query.OrderBy(s => s.ImportStoreId);
-                    break;
-                case "warehousename":
-                    query = filter.IsDescending
-                        ? query.OrderByDescending(s => s.Warehouse.WarehouseName)
-                        : query.OrderBy(s => s.Warehouse.WarehouseName);
-                    break;
-                case "staffname":
-                    query = filter.IsDescending
-                        ? query.OrderByDescending(s => s.StaffDetail != null ? s.StaffDetail.Account.FullName : "")
-                        : query.OrderBy(s => s.StaffDetail != null ? s.StaffDetail.Account.FullName : "");
-                    break;
-                default:
-                    query = query.OrderBy(s => s.ImportStoreId);
-                    break;
+                ImportId = s.ImportDetail.ImportId,
+                ImportDetailId = s.ImportDetailId,
+                WareHouseId = (int)s.WarehouseId,
+                ActualReceivedQuantity = s.ActualReceivedQuantity,
+
+                AllocatedQuantity = s.AllocatedQuantity,
+                Status = s.Status,
+                Comments = s.Comments,
+                StaffDetailId = s.StaffDetailId,
+                ImportStoreId = s.ImportStoreId,
+
+                HandleBy = s.HandleBy,
+                HandleByName = s.HandleByNavigation != null && s.HandleByNavigation.Account != null
+                                           ? s.HandleByNavigation.Account.FullName
+                                           : null,
+
+                ProductName = s.ImportDetail.ProductVariant.Product.Name,
+                SizeName = s.ImportDetail.ProductVariant.Size.SizeName,
+                ColorName = s.ImportDetail.ProductVariant.Color.ColorName
+            });
+
+            // Apply sorting
+            if (!string.IsNullOrEmpty(filter.SortBy))
+            {
+                bool desc = filter.IsDescending;
+                switch (filter.SortBy.Trim().ToLower())
+                {
+                    case "warehouseid":
+                        baseQuery = desc
+                            ? baseQuery.OrderByDescending(dto => dto.WareHouseId)
+                            : baseQuery.OrderBy(dto => dto.WareHouseId);
+                        break;
+                    case "actualreceivedquantity":
+                        baseQuery = desc
+                            ? baseQuery.OrderByDescending(dto => dto.ActualReceivedQuantity)
+                            : baseQuery.OrderBy(dto => dto.ActualReceivedQuantity);
+                        break;
+                    case "allocatedquantity":
+                        baseQuery = desc
+                            ? baseQuery.OrderByDescending(dto => dto.AllocatedQuantity)
+                            : baseQuery.OrderBy(dto => dto.AllocatedQuantity);
+                        break;
+                    case "status":
+                        baseQuery = desc
+                            ? baseQuery.OrderByDescending(dto => dto.Status)
+                            : baseQuery.OrderBy(dto => dto.Status);
+                        break;
+                    case "comments":
+                        baseQuery = desc
+                            ? baseQuery.OrderByDescending(dto => dto.Comments)
+                            : baseQuery.OrderBy(dto => dto.Comments);
+                        break;
+                    case "staffdetailid":
+                        baseQuery = desc
+                            ? baseQuery.OrderByDescending(dto => dto.StaffDetailId)
+                            : baseQuery.OrderBy(dto => dto.StaffDetailId);
+                        break;
+                    case "importstoreid":
+                        baseQuery = desc
+                            ? baseQuery.OrderByDescending(dto => dto.ImportStoreId)
+                            : baseQuery.OrderBy(dto => dto.ImportStoreId);
+                        break;
+                    case "handleby":
+                        baseQuery = desc
+                            ? baseQuery.OrderByDescending(dto => dto.HandleBy)
+                            : baseQuery.OrderBy(dto => dto.HandleBy);
+                        break;
+                    default:
+                        baseQuery = desc
+                            ? baseQuery.OrderByDescending(dto => dto.ImportDetailId)
+                            : baseQuery.OrderBy(dto => dto.ImportDetailId);
+                        break;
+                }
+            }
+            else
+            {
+                // Default sort by ImportDetailId
+                baseQuery = baseQuery.OrderBy(dto => dto.ImportDetailId);
             }
 
-            // Lấy tổng số bản ghi thỏa filter
-            var totalCount = await query.CountAsync();
+            // Get total count before pagination
+            var totalCount = await baseQuery.CountAsync();
 
-            // Áp dụng phân trang
-            var data = await query
+            // Apply pagination and fetch data
+            var items = await baseQuery
                 .Skip((filter.Page - 1) * filter.PageSize)
                 .Take(filter.PageSize)
                 .ToListAsync();
 
-            return new PaginatedResponseDTO<ImportStoreDetail>(data, totalCount, filter.Page, filter.PageSize);
+            // Return paginated response
+            return new PaginatedResponseDTO<ImportStoreDetailDto>(items, totalCount, filter.Page, filter.PageSize);
         }
+
 
         /// <summary>
         /// Trả về một IQueryable để truy vấn tất cả ImportDetail, bao gồm navigation Import.

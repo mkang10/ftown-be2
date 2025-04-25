@@ -148,6 +148,7 @@ namespace API.AppStarts
                            opt => opt.MapFrom(src => src.StaffDetail.Account.FullName))
                 .ForMember(dest => dest.HandleBy,
                            opt => opt.MapFrom(src => src.HandleByNavigation.Account.FullName))
+                
                 .ReverseMap();
 
             CreateMap<StoreExportStoreDetail, JSONStoreExportStoreDetailByIdHandlerDTO>()
@@ -158,7 +159,14 @@ namespace API.AppStarts
                 .ForMember(dest => dest.HandleBy,
                            opt => opt.MapFrom(src => src.HandleByNavigation.Account.FullName))
                 .ForMember(dest => dest.ReferenceNumber,
-                           opt => opt.MapFrom(src => src.DispatchDetail.Dispatch.ReferenceNumber));
+                           opt => opt.MapFrom(src => src.DispatchDetail.Dispatch.ReferenceNumber))
+                 .ForMember(dest => dest.ColorName,
+                           opt => opt.MapFrom(src => src.DispatchDetail.Variant.Color.ColorName))
+                 .ForMember(dest => dest.SizeName,
+                           opt => opt.MapFrom(src => src.DispatchDetail.Variant.Size.SizeName))
+                 .ForMember(dest => dest.ProductName,
+                           opt => opt.MapFrom(src => src.DispatchDetail.Variant.Product.Name));
+
 
             // Import ========
             CreateMap<ImportStoreDetail, JSONImportStoreDetailDTO>()
@@ -172,6 +180,12 @@ namespace API.AppStarts
                            opt => opt.MapFrom(src => src.ImportDetail.Import.ReferenceNumber))
                 .ForMember(dest => dest.CostPrice,
                            opt => opt.MapFrom(src => src.ImportDetail.CostPrice))
+                .ForMember(dest => dest.ProductName,
+                           opt => opt.MapFrom(src => src.ImportDetail.ProductVariant.Product.Name))
+                .ForMember(dest => dest.SizeName,
+                           opt => opt.MapFrom(src => src.ImportDetail.ProductVariant.Size.SizeName))
+                .ForMember(dest => dest.ColorName,
+                           opt => opt.MapFrom(src => src.ImportDetail.ProductVariant.Color.ColorName))
                 .ForMember(dest => dest.AuditLogs, opt => opt.Ignore()).ReverseMap();
             //Iport json
             CreateMap<Import, JSONImportDTO>()

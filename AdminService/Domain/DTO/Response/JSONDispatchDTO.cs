@@ -36,6 +36,10 @@ namespace Domain.DTO.Response
         public int DispatchId { get; set; }
 
         public string VariantName { get; set; }
+        public string SizeName { get; set; }
+
+        public string ColorName { get; set; }
+
 
         public int Quantity { get; set; }
         public decimal PriceProductVariant { get; set; }
@@ -49,6 +53,7 @@ namespace Domain.DTO.Response
         public string WarehouseName { get; set; }
 
         public int AllocatedQuantity { get; set; }
+        
 
         public string? Status { get; set; }
 
@@ -92,7 +97,9 @@ namespace Domain.DTO.Response
 
         public int? ActualQuantity { get; set; }
         public string? ReferenceNumber { get; set; }
-
+        public string ProductName { get; set; }
+        public string ColorName { get; set; }
+        public string SizeName { get; set; }
         public List<AuditLogRes> AuditLogs { get; set; } = new List<AuditLogRes>();
 
 

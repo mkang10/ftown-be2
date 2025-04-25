@@ -17,6 +17,8 @@ namespace Domain.DTO.Request
         public string? Status { get; set; }
         public string? Comments { get; set; }
         public int? StaffDetailId { get; set; }
+        public string ProductName { get; set; }
+
         public string WareHouseName { get; set; } = string.Empty;
         public string? StaffName { get; set; }
     }

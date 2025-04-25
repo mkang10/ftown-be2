@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Application.UseCases.GetAllStaffImportHandler;
 
 namespace Application.UseCases
 {
@@ -24,12 +23,10 @@ namespace Application.UseCases
                 _mapper = mapper;
             }
 
-        public async Task<ResponseDTO<PaginatedResponseDTO<InventoryImportStoreDetailDto>>> GetStoreDetailsByStaffDetailAsync(ImportStoreDetailFilterDto filter)
+        public async Task<ResponseDTO<PaginatedResponseDTO<ImportStoreDetailDto>>> GetStoreDetailsByStaffDetailAsync(ImportStoreDetailFilterDto filter)
         {
-            var pagedResult = await _repository.GetStoreDetailsByStaffDetailAsync(filter);
-            var dtos = _mapper.Map<List<InventoryImportStoreDetailDto>>(pagedResult.Data);
-            var response = new PaginatedResponseDTO<InventoryImportStoreDetailDto>(dtos, pagedResult.TotalRecords, pagedResult.Page, pagedResult.PageSize);
-            return new ResponseDTO<PaginatedResponseDTO<InventoryImportStoreDetailDto>>(response, true, "Data fetched successfully");
+            var result = await _repository.GetStoreDetailsByStaffDetailAsync(filter);
+            return new ResponseDTO<PaginatedResponseDTO<ImportStoreDetailDto>>(result, true, "Data fetched successfully");
         }
 
     }

@@ -68,12 +68,13 @@ namespace API.AppStarts
             services.AddScoped<GetAllCategoryHandler>();
             services.AddScoped<GetVariantHandler>();
             services.AddScoped<EditVariantHandler>();
+            services.AddScoped<DashboardHandler>();
 
             //ducanh
             services.AddScoped<DispatchHandler>();
             services.AddScoped<ImportStoreDetailHandler>();
             services.AddScoped<RedisHandler>();
-
+            services.AddScoped<IDashboardRepository, DashboardRepository>();
 
             services.AddScoped<IUserManagementRepository, UserManagementRepository>();
             services.AddScoped<IRedisRepository, RedisRepository>();

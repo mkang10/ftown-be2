@@ -217,5 +217,69 @@ namespace Infrastructure
 
             return new PaginatedResponseDTO<ExportDetailDto>(items, totalCount, page, pageSize);
         }
+
+        public async Task<PaginatedResponseDTO<StoreExportStoreDetailDto>> GetStoreExportStoreDetailByStaffDetailAsync(
+    StoreExportStoreDetailFilterDtO filter)
+        {
+            var query = _context.StoreExportStoreDetails
+                .AsNoTracking()
+                .Where(s => s.StaffDetailId == filter.StaffDetailId);
+
+            if (!string.IsNullOrWhiteSpace(filter.Status))
+            {
+                var pattern = $"%{filter.Status}%";
+                query = query.Where(s => EF.Functions.Like(s.Status, pattern));
+            }
+
+            var projected = query.Select(s => new StoreExportStoreDetailDto
+            {
+                DispatchId = s.DispatchDetail.Dispatch.DispatchId,
+                DispatchStoreDetailId = s.DispatchStoreDetailId,
+                WarehouseId = s.WarehouseId,
+                WarehouseName = s.Warehouse.WarehouseName,
+                ActualQuantity = s.ActualQuantity,
+                AllocatedQuantity = s.AllocatedQuantity,
+                Status = s.Status,
+                Comments = s.Comments,
+                StaffDetailId = s.StaffDetailId,
+                DispatchDetailId = s.DispatchDetailId,
+                HandleBy = s.HandleBy,
+                HandleByName = s.HandleByNavigation != null && s.HandleByNavigation.Account != null
+                                           ? s.HandleByNavigation.Account.FullName : null,
+                ProductName = s.DispatchDetail != null && s.DispatchDetail.Variant != null
+                                           ? s.DispatchDetail.Variant.Product.Name : string.Empty,
+                SizeName = s.DispatchDetail != null && s.DispatchDetail.Variant != null
+                                           ? s.DispatchDetail.Variant.Size.SizeName : string.Empty,
+                ColorName = s.DispatchDetail != null && s.DispatchDetail.Variant != null
+                                           ? s.DispatchDetail.Variant.Color.ColorName : string.Empty
+            });
+
+            // Apply sorting
+            bool desc = filter.IsDescending;
+            projected = filter.SortBy?.Trim().ToLower() switch
+            {
+                "warehouseid" => desc ? projected.OrderByDescending(x => x.WarehouseId) : projected.OrderBy(x => x.WarehouseId),
+                "actualquantity" => desc ? projected.OrderByDescending(x => x.ActualQuantity) : projected.OrderBy(x => x.ActualQuantity),
+                "allocatedquantity" => desc ? projected.OrderByDescending(x => x.AllocatedQuantity) : projected.OrderBy(x => x.AllocatedQuantity),
+                "status" => desc ? projected.OrderByDescending(x => x.Status) : projected.OrderBy(x => x.Status),
+                "comments" => desc ? projected.OrderByDescending(x => x.Comments) : projected.OrderBy(x => x.Comments),
+                "dispatchdetailid" => desc ? projected.OrderByDescending(x => x.DispatchDetailId) : projected.OrderBy(x => x.DispatchDetailId),
+                "handleby" => desc ? projected.OrderByDescending(x => x.HandleBy) : projected.OrderBy(x => x.HandleBy),
+                "productname" => desc ? projected.OrderByDescending(x => x.ProductName) : projected.OrderBy(x => x.ProductName),
+                "sizename" => desc ? projected.OrderByDescending(x => x.SizeName) : projected.OrderBy(x => x.SizeName),
+                "colorname" => desc ? projected.OrderByDescending(x => x.ColorName) : projected.OrderBy(x => x.ColorName),
+                _ => desc ? projected.OrderByDescending(x => x.DispatchStoreDetailId) : projected.OrderBy(x => x.DispatchStoreDetailId),
+            };
+
+            // Count and paginate
+            var total = await projected.CountAsync();
+            var items = await projected
+                .Skip((filter.Page - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .ToListAsync();
+
+            return new PaginatedResponseDTO<StoreExportStoreDetailDto>(items, total, filter.Page, filter.PageSize);
+        }
+
     }
-  }
+}

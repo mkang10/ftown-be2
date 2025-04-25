@@ -30,5 +30,8 @@ namespace Domain.Interfaces
               int pageSize,
               StoreExportStoreDetailFilterDto filter);
 
+        Task<PaginatedResponseDTO<StoreExportStoreDetailDto>> GetStoreExportStoreDetailByStaffDetailAsync(
+    StoreExportStoreDetailFilterDtO filter);
+
     }
 }

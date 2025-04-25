@@ -17,10 +17,11 @@ namespace API.Controllers
         private readonly EditProductHandler _editProductHandler;
         private readonly GetVariantHandler _getVariantHandler;
         private readonly EditVariantHandler _editVariantHandler;
+        private readonly RedisHandler _redisHandler;
 
 
 
-        public ProductsController(EditVariantHandler editVariantHandler ,GetVariantHandler getVariantHandler, EditProductHandler editProductHandler, GetProductDetailHandler detailHandler, CreateProductHandler createProductHandler, GetAllProductHandler getAllProductHandler)
+        public ProductsController(RedisHandler redisHandler ,EditVariantHandler editVariantHandler ,GetVariantHandler getVariantHandler, EditProductHandler editProductHandler, GetProductDetailHandler detailHandler, CreateProductHandler createProductHandler, GetAllProductHandler getAllProductHandler)
         {
             _createProductHandler = createProductHandler;
             _getallProductHandler = getAllProductHandler;
@@ -28,6 +29,7 @@ namespace API.Controllers
             _editProductHandler = editProductHandler;
             _getVariantHandler = getVariantHandler;
             _editVariantHandler = editVariantHandler;
+            _redisHandler = redisHandler;
         }
 
         // POST: api/Products
@@ -136,9 +138,17 @@ namespace API.Controllers
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Edit([FromForm] EditProductVariantDto dto)
         {
+            // 1. Thực hiện cập nhật variant
             var result = await _editVariantHandler.EditProductVariantAsync(dto);
-            if (!result.Status) return NotFound(result);
-            return Ok(result);
+            if (!result.Status)
+                return NotFound(result);
+
+            // 2. Nếu thành công, clear cache
+            string instanceName = "ProductInstance";  // 👈 Đặt InstanceName của bạn tại đây
+            var resultMessage = await _redisHandler.ClearInstanceCacheAsync(instanceName);
+
+            // 3. Trả về message từ Redis handler
+            return Ok(new { Message = resultMessage });
         }
 
 
@@ -155,21 +165,23 @@ namespace API.Controllers
             var result = await _editVariantHandler.GetAllSizesByProductAsync();
             return Ok(result);
         }
+
+
         [HttpPut("{id}")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Edit(int id, [FromForm] ProductEditDto dto)
         {
             try
             {
+                // 1. Cập nhật product
                 await _editProductHandler.EditAsync(id, dto);
 
-                var response = new ResponseDTO<string>(
-                    "Product updated successfully.",
-                    true,
-                    "Product updated successfully."
-                );
+                // 2. Nếu thành công, clear cache
+                string instanceName = "ProductInstance";  // 👈 Đặt InstanceName tại đây
+                var resultMessage = await _redisHandler.ClearInstanceCacheAsync(instanceName);
 
-                return Ok(response);
+                // 3. Trả về message từ Redis handler
+                return Ok(new { Message = resultMessage });
             }
             catch (KeyNotFoundException)
             {
@@ -188,6 +200,8 @@ namespace API.Controllers
                 ));
             }
         }
+
+
 
     }
 

@@ -107,14 +107,26 @@ namespace Application.UseCases
                                  .Where(sd => string.Equals(sd.Status.Trim(), "Success", StringComparison.OrdinalIgnoreCase))
                                  .ToList();
 
-            if (storeDetails.Count > 0 && storeDetails.Count == successDetails.Count &&
-                !string.Equals(import.Status.Trim(), "Done", StringComparison.OrdinalIgnoreCase))
+            if (storeDetails.Count > 0
+                && storeDetails.Count == successDetails.Count
+                && !string.Equals(import.Status.Trim(), "Done", StringComparison.OrdinalIgnoreCase))
             {
+                // ==== MỚI: kiểm tra Dispatch đã done chưa ====
+                var transfer = await _importRepos.GetTransferByImportIdAsync(import.ImportId);
+                if (transfer != null
+                    && transfer.Dispatch != null
+                    && !string.Equals(transfer.Dispatch.Status.Trim(), "Done", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("Không thể hoàn thành Import: đơn xuất hàng (Dispatch) chưa được xuất xong.");
+                }
+                // =============================================
+
                 UpdateImportStatusToDone(import, staffId);
                 return true;
             }
             return false;
         }
+
 
         /// <summary>
         /// Cập nhật Warehouse cho từng ImportStoreDetail có trạng thái "Success".
@@ -336,6 +348,11 @@ namespace Application.UseCases
 
                 var totalCost = validDetails.Sum(d => (d.CostPrice ?? 0m) * d.Quantity);
                 var avgCost = totalCost / totalQty;
+
+                // Cộng thêm 30% lợi nhuận
+                var profitRate = 0.30m;
+                var avgCostWithProfit = avgCost * (1 + profitRate);
+
 
                 // 4) Cập nhật vào bảng ProductVariant
                 var variant = await _importRepos.GetProductVariantByIdAsync(variantId);

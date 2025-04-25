@@ -22,11 +22,12 @@ namespace Application.UseCases
             _mapper = mapper;
         }
 
-        public async Task<PaginatedResponseDTO<ProductVariantResponseDto>> GetAllProductVariantsAsync(int page, int pageSize)
+        public async Task<PaginatedResponseDTO<ProductVariantResponseDto>> GetAllProductVariantsAsync(int page, int pageSize, string? search = null)
         {
-            var pagedResult = await _repository.GetAllAsync(page, pageSize);
+            var pagedResult = await _repository.GetAllAsync(page, pageSize, search);
             var dtos = _mapper.Map<List<ProductVariantResponseDto>>(pagedResult.Data);
             return new PaginatedResponseDTO<ProductVariantResponseDto>(dtos, pagedResult.TotalRecords, pagedResult.Page, pagedResult.PageSize);
         }
+
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Domain.DTO.Request;
 using Domain.DTO.Response;
+using Domain.DTO.Response.Application.Imports.Dto;
 using Domain.DTO.Response.Domain.DTO.Response;
 using Domain.Entities;
 using System;
@@ -12,6 +13,8 @@ namespace Domain.Interfaces
 {
     public interface IImportRepos
     {
+
+        Task<PaginatedResponseDTO<ImportStoreDetailDto>> GetImportStoreDetailByStaffDetailAsync(ImportStoreDetailFilterDtO filter);
         void Add(Import import);
         Task SaveChangesAsync();
         Task<(IEnumerable<Import>, int)> GetAllImportsAsync(ImportFilterDto filter, CancellationToken cancellationToken);
@@ -22,8 +25,8 @@ namespace Domain.Interfaces
         Task<List<Import>> GetAllByOriginalImportIdAsync(int originalImportId);
         Task UpdateAsync(Import import);
 
-        Task<PaginatedResponseDTO<ProductVariant>> GetAllAsync(int page, int pageSize);
-        Task<PaginatedResponseDTO<ImportStoreDetail>> GetStoreDetailsByStaffDetailAsync(ImportStoreDetailFilterDto filter);
+        Task<PaginatedResponseDTO<ProductVariant>> GetAllAsync(int page, int pageSize, string search = null);
+        Task<PaginatedResponseDTO<ImportStoreDetailDto>> GetStoreDetailsByStaffDetailAsync(ImportStoreDetailFilterDto filter);
         Task ReloadAsync(Import import);
 
         Task<Transfer> GetTransferByImportIdAsync(int importId);
