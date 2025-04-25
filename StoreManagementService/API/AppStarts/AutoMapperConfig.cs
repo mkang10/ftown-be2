@@ -66,7 +66,7 @@ namespace API.AppStarts
 
             CreateMap<ImportStoreDetail, ImportStoreDetailDto>().ForMember(dest => dest.HandleByName, opt => opt.MapFrom(src =>
                     src.HandleByNavigation != null ? src.HandleByNavigation.Account.FullName : null))
-                 .ForMember(dest => dest.HandleBy, opt => opt.MapFrom(src => src.HandleByNavigation.AccountId));
+                 .ForMember(dest => dest.HandleBy, opt => opt.MapFrom(src => src.HandleByNavigation.ShopManagerDetailId));
             CreateMap<ProductVariant, ProductVariantResponseDto>();
 
             //get all staff
@@ -76,7 +76,12 @@ namespace API.AppStarts
                 .ForMember(dest => dest.WareHouseName,
                            opt => opt.MapFrom(src => src.Warehouse.WarehouseName))
                 .ForMember(dest => dest.ImportId, opt => opt.MapFrom(src => src.ImportDetail.Import.ImportId))
-
+ .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src =>
+                // string interpolation để nối 3 phần: tên sản phẩm, màu, kích thước
+                $"{src.ImportDetail.ProductVariant.Product.Name} - " +
+                $"{src.ImportDetail.ProductVariant.Color.ColorName} - " +
+                $"{src.ImportDetail.ProductVariant.Size.SizeName}"
+            ))
                 .ForMember(dest => dest.StaffName,
                            opt => opt.MapFrom(src => src.StaffDetail != null ? src.StaffDetail.Account.FullName : null));
             CreateMap<ProductVariant, ProductVariantResponseDto>()

@@ -253,6 +253,9 @@ namespace Infrastructure
                 .Include(od => od.Warehouse)
                 .Include(od => od.HandleByNavigation)
                 .Include(od => od.ImportDetail).ThenInclude(oc => oc.ProductVariant).ThenInclude(ot => ot.Product)
+                                .Include(od => od.ImportDetail).ThenInclude(oc => oc.ProductVariant).ThenInclude(ot => ot.Size)
+                .Include(od => od.ImportDetail).ThenInclude(oc => oc.ProductVariant).ThenInclude(ot => ot.Color)
+
                 .Include(od => od.ImportDetail)
                         .ThenInclude(c => c.Import)
                 .FirstOrDefaultAsync(o => o.ImportStoreId == importId);

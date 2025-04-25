@@ -41,6 +41,9 @@ namespace API.AppStarts
             services.AddScoped<AssignStaffHandler>();
             services.AddScoped<GetAllDispatchHandler>();
             services.AddScoped<GetAllStaffDispatchHandler>();
+            services.AddScoped<GetAllExportByStaffHandler>();
+            services.AddScoped<GetAllImportStoreHandler>();
+
 
             services.AddScoped<GetAllProductHandler>();
             services.AddScoped<ImportDoneHandler>();

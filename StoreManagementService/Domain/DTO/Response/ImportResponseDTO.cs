@@ -41,8 +41,11 @@ namespace Domain.DTO.Response
         public class ImportStoreDetailDto
         {
             public int ImportDetailId { get; set; }
+
+            public int ImportId { get; set; }
             public int WareHouseId { get; set; }
-            public int ActualReceivedQuantity { get; set; }
+            public int? ActualReceivedQuantity { get; set; }
+            public string? WarehouseName { get; set; }
 
             public int AllocatedQuantity { get; set; }
             public string? Status { get; set; }
@@ -52,10 +55,13 @@ namespace Domain.DTO.Response
 
             public int? HandleBy { get; set; }
             public string? HandleByName { get; set; }
-
+            public string? ProductName { get; set; }
+            public string? SizeName { get; set; }
+            public string? ColorName { get; set; }
         }
+    }
 
     }
 
 
-}
+

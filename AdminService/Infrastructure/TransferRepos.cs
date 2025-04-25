@@ -45,16 +45,15 @@ namespace Infrastructure
         }
 
         public async Task<PaginatedResponseDTO<TransferDto>> GetAllWithPagingAsync(
-    int page,
-    int pageSize,
-    string? filter,
-    CancellationToken cancellationToken = default)
+     int page,
+     int pageSize,
+     string? filter,
+     CancellationToken cancellationToken = default)
         {
             var query = _context.Transfers
                 .AsNoTracking()
                 .Select(t => new TransferDto
                 {
-                    
                     TransferOrderId = t.TransferOrderId,
                     ImportId = t.ImportId,
                     ImportReferenceNumber = t.Import.ReferenceNumber,
@@ -71,6 +70,7 @@ namespace Infrastructure
                     OriginalTransferOrderId = t.OriginalTransferOrderId
                 });
 
+            // Áp dụng filter như cũ
             if (!string.IsNullOrWhiteSpace(filter))
             {
                 var norm = filter.Trim().ToLower();
@@ -83,6 +83,10 @@ namespace Infrastructure
                 );
             }
 
+            // --- Thêm dòng này để default sort theo TransferOrderId DESC ---
+            query = query.OrderByDescending(t => t.TransferOrderId);
+
+            // Tiếp tục count và paging
             var total = await query.CountAsync(cancellationToken);
             var data = await query
                 .Skip((page - 1) * pageSize)
@@ -91,6 +95,7 @@ namespace Infrastructure
 
             return new PaginatedResponseDTO<TransferDto>(data, total, page, pageSize);
         }
+
         public Task<Transfer> GetJSONTransferOrderById(int id)
         {
             var data = _context.Transfers.
