@@ -20,26 +20,32 @@ namespace Infrastructure.HelperServices
 		private readonly IPaymentRepository _paymentRepository;
 		private readonly IOrderRepository _orderRepository;
 		private readonly ICustomerServiceClient _customerServiceClient;
+        private readonly IWareHouseStockAuditRepository _warehouseStockAuditRepository;
 		private readonly IMapper _mapper;
 		private readonly ILogger<OrderProcessingHelper> _logger;
 		private readonly AuditLogHandler _auditLogHandler;
         private readonly INotificationClient _notificationClient;
+        private readonly WareHouseStockAuditHandler _stockAuditHandler;
         public OrderProcessingHelper(
 			IPaymentRepository paymentRepository,
-			IOrderRepository orderRepository,
-			ICustomerServiceClient customerServiceClient,
-			IMapper mapper,
-			ILogger<OrderProcessingHelper> logger,
-			AuditLogHandler auditLogHandler,
-            INotificationClient notificationClient)
-		{
-			_paymentRepository = paymentRepository;
-			_orderRepository = orderRepository;
-			_customerServiceClient = customerServiceClient;
-			_mapper = mapper;
-			_logger = logger;
-			_auditLogHandler = auditLogHandler;
+            IOrderRepository orderRepository,
+            ICustomerServiceClient customerServiceClient,
+            IMapper mapper,
+            ILogger<OrderProcessingHelper> logger,
+            AuditLogHandler auditLogHandler,
+            INotificationClient notificationClient,
+            WareHouseStockAuditHandler stockAuditHandler,
+            IWareHouseStockAuditRepository warehouseStockAuditRepository)
+        {
+            _paymentRepository = paymentRepository;
+            _orderRepository = orderRepository;
+            _customerServiceClient = customerServiceClient;
+            _mapper = mapper;
+            _logger = logger;
+            _auditLogHandler = auditLogHandler;
             _notificationClient = notificationClient;
+            _stockAuditHandler = stockAuditHandler;
+            _warehouseStockAuditRepository = warehouseStockAuditRepository;
         }
 
         public async Task SavePaymentAndOrderDetailsAsync(
@@ -87,6 +93,7 @@ namespace Infrastructure.HelperServices
                 "Đặt hàng thành công và đang đợi xác nhận ."
             );
         }
+
         public async Task LogPendingPaymentStatusAsync(int orderId, int accountId)
         {
             await _auditLogHandler.LogOrderActionAsync(
@@ -206,6 +213,35 @@ namespace Infrastructure.HelperServices
 
             await _notificationClient.SendNotificationAsync(notificationRequest);
         }
+        public async Task LogWarehouseStockChangeAsync(
+                                        int orderId,
+                                        int accountId,
+                                        List<OrderDetail> orderDetails,
+                                        int warehouseId)
+        {
+            var variantIds = orderDetails.Select(o => o.ProductVariantId).ToList();
+            var stockMap = await _warehouseStockAuditRepository.GetWarehouseStockMapAsync(variantIds, warehouseId);
+
+            foreach (var detail in orderDetails)
+            {
+                if (stockMap.TryGetValue(detail.ProductVariantId, out var warehouseStockId))
+                {
+                    await _stockAuditHandler.LogDecreaseStockAsync(
+                        warehouseStockId: warehouseStockId,
+                        quantityReduced: detail.Quantity,
+                        changedBy: accountId,
+                        note: $"Đơn hàng #{orderId} đã trừ {detail.Quantity} sản phẩm VariantId {detail.ProductVariantId}."
+                    );
+                }
+                else
+                {
+                    // Ghi log lỗi nếu không tìm thấy kho
+                    _logger.LogWarning($"Không tìm thấy WareHouseStock cho VariantId: {detail.ProductVariantId}, WareHouseId: {warehouseId}");
+                }
+            }
+        }
+
+
     }
 
 }

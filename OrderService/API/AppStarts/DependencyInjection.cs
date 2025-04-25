@@ -56,6 +56,7 @@ namespace API.AppStarts
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddSingleton<IRedisCacheService, RedisCacheService>();
             services.AddScoped<IOrderProcessingHelper, OrderProcessingHelper>();
+            services.AddScoped<IPaginationHelper, PaginationHelper>();
             //Repository
 
             services.AddScoped<IOrderRepository, OrderRepository>();
@@ -65,7 +66,7 @@ namespace API.AppStarts
             services.AddScoped<IRedisRepository, RedisRepository>();
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             services.AddScoped<IEmailRepository, EmailService>();
-
+            services.AddScoped<IWareHouseStockAuditRepository, WareHouseStockAuditRepository>();
             //Handler
 
             services.AddScoped<CreateOrderHandler>();
@@ -85,7 +86,7 @@ namespace API.AppStarts
             services.AddScoped<AuditLogHandler>();
             services.AddScoped<RevenueHandler>();
             services.AddScoped<GetAllReturnRequestsHandler>();
-
+            services.AddScoped<WareHouseStockAuditHandler>();
             services.AddScoped<EmailHandler>();
 
             //GHN

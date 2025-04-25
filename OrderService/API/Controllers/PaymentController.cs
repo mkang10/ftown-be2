@@ -86,7 +86,8 @@ namespace API.Controllers
 					_logger.LogError("Cập nhật tồn kho thất bại cho OrderId: {OrderId}", orderId);
 					return StatusCode(500, "Lỗi cập nhật tồn kho.");
 				}
-				await _orderProcessingHelper.LogPendingConfirmedStatusAsync(orderId, order.AccountId);
+                await _orderProcessingHelper.LogWarehouseStockChangeAsync(orderId: order.OrderId, accountId: order.AccountId, orderDetails: orderDetails, warehouseId: (int)order.WareHouseId);
+                await _orderProcessingHelper.LogPendingConfirmedStatusAsync(orderId, order.AccountId);
                 await _orderProcessingHelper.AssignOrderToManagerAsync(orderId, order.AccountId);
 				await _orderProcessingHelper.SendOrderNotificationAsync(
                                         order.AccountId,
