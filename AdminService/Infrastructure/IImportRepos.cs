@@ -197,7 +197,14 @@ namespace Infrastructure
                         .ThenInclude(s => s.Warehouse)
                 .FirstOrDefaultAsync(i => i.ImportId == importId);
         }
-
+        public async Task<StaffDetail?> GetStaffDetailByIdAsync(int staffDetailId)
+        {
+            // AsNoTracking() cho trường hợp chỉ đọc dữ liệu
+            return await _context.StaffDetails
+                                   .AsNoTracking()
+                                    .Include(s => s.Account)
+                                   .FirstOrDefaultAsync(s => s.StaffDetailId == staffDetailId);
+        }
 
         public async Task<Import?> GetByIdAssignAsync(int importId)
         {
@@ -274,6 +281,8 @@ namespace Infrastructure
                 .Select(d => (decimal?)d.CostPrice)
                 .FirstOrDefaultAsync();
         }
+
+
 
     }
 }

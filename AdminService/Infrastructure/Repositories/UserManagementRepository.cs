@@ -183,13 +183,6 @@ namespace Infrastructure.Repositories
                         .Select(s => new
                         {
                             s.StaffDetailId,
-                            s.StoreId,
-                            s.JoinDate,
-                            s.Role,
-                            s.JobTitle,
-                            s.Department,
-                            s.Salary,
-                            s.EmploymentType
                         }).FirstOrDefaultAsync();
 
                 default:

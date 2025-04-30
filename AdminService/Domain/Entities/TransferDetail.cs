@@ -9,8 +9,6 @@ public partial class TransferDetail
 
     public int TransferOrderId { get; set; }
 
-    public int SourceStoreId { get; set; }
-
     public int VariantId { get; set; }
 
     public int Quantity { get; set; }

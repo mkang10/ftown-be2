@@ -17,6 +17,10 @@ namespace Domain.DTO.Request
         public string WarehouseType { get; set; } = null!;
         public int? ShopManagerId { get; set; }
 
+        public bool? IsOwnerWarehouse { get; set; }
+
+        
+
         // Image upload
         public IFormFile? ImageFile { get; set; }
     }

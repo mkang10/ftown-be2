@@ -13,9 +13,12 @@ namespace Domain.Interfaces
 {
     public interface IImportRepos
     {
+        Task<StaffDetail?> GetStaffDetailByIdAsync(int staffDetailId);
 
         Task<PaginatedResponseDTO<ImportStoreDetailDto>> GetImportStoreDetailByStaffDetailAsync(ImportStoreDetailFilterDtO filter);
         void Add(Import import);
+
+        Task<Import> AddAsync(Import inventoryImport);
         Task SaveChangesAsync();
         Task<(IEnumerable<Import>, int)> GetAllImportsAsync(ImportFilterDto filter, CancellationToken cancellationToken);
         Task<Import> GetByIdAsyncWithDetails(int id);

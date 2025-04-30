@@ -102,28 +102,37 @@ namespace Application.UseCases
         /// </summary>
         private async Task<bool> TryUpdateImportStatusToDoneAsync(Import import, int staffId)
         {
-            var storeDetails = import.ImportDetails.SelectMany(d => d.ImportStoreDetails).ToList();
+            // Chỉ xử lý nếu import.ImportType là "Purchase"
+            if (!string.Equals(import.ImportType?.Trim(), "Purchase", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var storeDetails = import.ImportDetails
+                                     .SelectMany(d => d.ImportStoreDetails)
+                                     .ToList();
             var successDetails = storeDetails
-                                 .Where(sd => string.Equals(sd.Status.Trim(), "Success", StringComparison.OrdinalIgnoreCase))
+                                 .Where(sd => string.Equals(sd.Status?.Trim(), "Success", StringComparison.OrdinalIgnoreCase))
                                  .ToList();
 
             if (storeDetails.Count > 0
                 && storeDetails.Count == successDetails.Count
-                && !string.Equals(import.Status.Trim(), "Done", StringComparison.OrdinalIgnoreCase))
+                && !string.Equals(import.Status?.Trim(), "Done", StringComparison.OrdinalIgnoreCase))
             {
                 // ==== MỚI: kiểm tra Dispatch đã done chưa ====
                 var transfer = await _importRepos.GetTransferByImportIdAsync(import.ImportId);
                 if (transfer != null
                     && transfer.Dispatch != null
-                    && !string.Equals(transfer.Dispatch.Status.Trim(), "Done", StringComparison.OrdinalIgnoreCase))
+                    && !string.Equals(transfer.Dispatch.Status?.Trim(), "Done", StringComparison.OrdinalIgnoreCase))
                 {
                     throw new InvalidOperationException("Không thể hoàn thành Import: đơn xuất hàng (Dispatch) chưa được xuất xong.");
                 }
-                // =============================================
+                // ============================================
 
                 UpdateImportStatusToDone(import, staffId);
                 return true;
             }
+
             return false;
         }
 

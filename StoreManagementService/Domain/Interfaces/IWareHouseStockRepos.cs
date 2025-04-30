@@ -11,7 +11,10 @@ namespace Domain.Interfaces
 {
     public interface IWareHouseStockRepos
     {
-        
+        Task<IEnumerable<WareHousesStock>> GetByWarehouseAsync(int warehouseId);
+        Task<WareHousesStock?> GetByWarehouseAndVariantAsync(int warehouseId, int variantId);
+        Task<IEnumerable<WareHousesStock>> GetAllByVariantAsync(int variantId);
+        Task UpdateAsync(WareHousesStock stock);
         Task UpdateWarehouseStockAsync(Import import, int staffId);
         Task UpdateDispatchWarehouseStockAsync(Dispatch dispatch, int staffId);
 

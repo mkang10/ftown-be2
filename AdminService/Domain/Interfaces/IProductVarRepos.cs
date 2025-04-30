@@ -18,6 +18,7 @@ namespace Domain.Interfaces
         Task<int[]> GetAllVariantIdsByProductIdAsync(int productId);
         Task<ProductVariant[]> GetAllVariantsByProductIdAsync(int productId);
 
+        Task<ProductVariant?> GetBySkuAsync(string sku);
 
         Task<ProductVariant?> GetByIdAsync(int variantId);
         Task UpdateAsync(ProductVariant variant);

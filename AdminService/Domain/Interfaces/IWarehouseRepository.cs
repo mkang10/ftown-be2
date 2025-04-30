@@ -10,5 +10,12 @@ namespace Domain.Interfaces
     public interface IWarehouseRepository
     {
         Task<Warehouse> CreateAsync(Warehouse warehouse);
+
+        Task UpdateAsync(Warehouse warehouse);
+
+        Task<Warehouse?> GetByIdAsync(int warehouseId);
+
+        Task<Warehouse> GetOwnerWarehouseAsync();
+
     }
 }

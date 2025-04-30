@@ -25,6 +25,9 @@ namespace Infrastructure
         {
             return _context.SaveChangesAsync();
         }
+
+        public async Task AddRangeAsync(IEnumerable<ImportStoreDetail> details)
+       => await _context.ImportStoreDetails.AddRangeAsync(details);
     }
 
 }
