@@ -12,7 +12,8 @@ namespace Application.Enums
         PendingConfirmed,
         PendingPayment,
         Confirmed,
-        Shipped,
+        Delivering,
+        Delivered,
         Completed,
         Cancelled
     }

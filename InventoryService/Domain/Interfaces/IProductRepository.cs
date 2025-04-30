@@ -29,6 +29,7 @@ namespace Domain.Interfaces
         Task<List<Product>> GetProductsByCategoryNameAsync(string categoryName);
         Task<List<Order>> GetCompletedOrdersWithDetailsAsync(DateTime? from, DateTime? to);
         Task<List<ProductVariant>> GetPublishedVariantsByProductIdAsync(int productId);
+        Task<List<Product>> GetProductsByStyleNameAsync(string styleName, int page, int pageSize);
 
     }
 }

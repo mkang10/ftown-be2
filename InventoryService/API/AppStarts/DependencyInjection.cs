@@ -82,6 +82,7 @@ namespace API.AppStarts
             services.AddScoped<AddFavoriteHandler>();
             services.AddScoped<RemoveFavoriteHandler>();
             services.AddScoped<GetTopSellingProductHandler>();
+            services.AddScoped<GetProductsByStyleHandler>();
             services.AddScoped<CategoryHandler>();
             services.AddCors(options =>
             {

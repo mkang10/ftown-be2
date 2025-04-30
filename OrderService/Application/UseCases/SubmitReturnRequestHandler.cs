@@ -86,7 +86,7 @@ namespace Application.UseCases
                                     "Yêu cầu đổi trả ",
                                     $"Yêu cầu đổi trả #{returnOrder.ReturnOrderId} đã được tạo thành công và đang chờ xử lí ."
                                 );
-            await _orderProcessingHelper.AssignOrderToManagerAsync(orderId: returnOrder.OrderId, assignedBy: returnOrder.AccountId);
+            await _orderProcessingHelper.AssignReturnOrderToManagerAsync(orderId: returnOrder.OrderId, assignedBy: returnOrder.AccountId);
             // ✅ 5️⃣ Lưu danh sách sản phẩm đổi trả vào `ReturnOrderItem`
             var returnOrderItems = returnCheckoutData.Items.Select(item => new ReturnOrderItem
             {

@@ -3,6 +3,7 @@
 using Application.Interfaces;
 using Application.UseCases;
 using CloudinaryDotNet;
+using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure;
 using Infrastructure.HelperServices;
@@ -50,13 +51,16 @@ namespace API.AppStarts
             services.AddScoped<GetCustomerProfileHandler>();
             services.AddScoped<ICartRepository, CartRepository>();  
             services.AddScoped<GetShoppingCartHandler>();
+            services.AddScoped<InteractionHandler>();
+            services.AddScoped<SuggestProductsHandler>();
             services.AddSingleton<IRedisCacheService, RedisCacheService>();
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<ICommentService, FeedbackHandler>();
             services.AddScoped<IOrderDetailRepository, OrderDetailRepository>();
-
+            services.AddScoped<PreferredStyleHandler>();
             services.AddScoped<IReplyFeedbackService, ReplyHandler>();
             services.AddScoped<ICustomerProfileDataService, CustomerProfileDataService>();
+            services.AddScoped<ICustomerRecentClickService, CustomerRecentClickService>();
             //services.AddScoped<IOrderRepository, OrderRepository>();
 
 

@@ -71,7 +71,8 @@ namespace API.AppStarts
             CreateMap<ReplyFeedback, UpdateReplyRequestDTO>().ReverseMap();
             CreateMap<Order, UpdateOrderStatusDTO>().ReverseMap();
 
-
+            CreateMap<ProductResponse, SuggestedProductResponse>();
+            CreateMap<Style, StyleResponse>();
         }
     }
 }

@@ -13,7 +13,7 @@ namespace Application.DTO.Response
         public decimal SubTotal { get; set; }
         public decimal ShippingCost { get; set; }
         public int? ShippingAddressId { get; set; }
-        public int? WarehouseId { get; set; } // ✅ Thêm StoreId để tránh lỗi CS1061
+        public int? WarehouseId { get; set; } 
         public List<OrderItemRequest> Items { get; set; } = new();
     }
 }

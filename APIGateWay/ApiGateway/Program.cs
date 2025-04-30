@@ -14,7 +14,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigins", policy =>
     {
         policy
-            .WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-client-pro-n8x7.vercel.app", "http://localhost:3001")
+            .WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-client-test.vercel.app", "http://localhost:3001", "https://ftown-admin-dhww.vercel.app", "https://ftown-admin.vercel.app")
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials(); // N?u dùng cookie ho?c auth header

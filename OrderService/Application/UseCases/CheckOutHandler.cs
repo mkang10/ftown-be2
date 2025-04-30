@@ -21,26 +21,20 @@ namespace Application.UseCases
     public class CheckOutHandler
     {
         private readonly IDistributedCache _cache;
-        private readonly ICustomerServiceClient _customerServiceClient;
         private readonly IShippingAddressRepository _shippingAddressRepository;
-        private readonly IInventoryServiceClient _inventoryServiceClient;
         private readonly GetSelectedCartItemsHandler _getSelectedCartItemsHandler;
         private readonly IConfiguration _configuration;
         private readonly ShippingCostHandler _shippingCostHandler;
 
         public CheckOutHandler(
             IDistributedCache cache,
-            ICustomerServiceClient customerServiceClient,
             IShippingAddressRepository shippingAddressRepository,
-            IInventoryServiceClient inventoryServiceClient,
             GetSelectedCartItemsHandler getSelectedCartItemsHandler,
             ShippingCostHandler shippingCostHandler,
             IConfiguration configuration)
         {
             _cache = cache;
-            _customerServiceClient = customerServiceClient;
             _shippingAddressRepository = shippingAddressRepository;
-            _inventoryServiceClient = inventoryServiceClient;
             _getSelectedCartItemsHandler = getSelectedCartItemsHandler;
             _shippingCostHandler = shippingCostHandler;
             _configuration = configuration;
