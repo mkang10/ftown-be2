@@ -4,6 +4,10 @@
       "DownstreamPathTemplate": "/api/auth/login",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftauthservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7261
@@ -21,6 +25,10 @@
       "DownstreamPathTemplate": "/api/auth/google-login",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftauthservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7261
@@ -38,6 +46,10 @@
       "DownstreamPathTemplate": "/api/auth/register",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftauthservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7261
@@ -54,6 +66,10 @@
       "DownstreamPathTemplate": "/api/cart/{id}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftcustomerservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7264
@@ -70,6 +86,10 @@
       "DownstreamPathTemplate": "/api/cart/{id}/add",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftcustomerservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7264
@@ -86,6 +106,10 @@
       "DownstreamPathTemplate": "/api/cart/{id}/remove/{productVariantId}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftcustomerservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7264
@@ -102,6 +126,10 @@
       "DownstreamPathTemplate": "/api/cart/{id}/clear",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftcustomerservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7264
@@ -119,7 +147,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         //{
-        //  "Host": "inventoryservice123.azurewebsites.net",
+        //  "Host": "ftinventoryservice.azurewebsites.net",
         //  "Port": 443
         //},
         {
@@ -142,6 +170,10 @@
       "DownstreamPathTemplate": "/api/products/filter-by-category",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftinventoryservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7265
@@ -154,6 +186,10 @@
       "DownstreamPathTemplate": "/api/products/top-selling-products",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftinventoryservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7265
@@ -167,7 +203,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         //{
-        //  "Host": "inventoryservice123.azurewebsites.net",
+        //  "Host": "ftinventoryservice.azurewebsites.net",
         //  "Port": 443
         //},
         {
@@ -182,6 +218,10 @@
       "DownstreamPathTemplate": "/api/checkout",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftorderserviceapi.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7266
@@ -194,6 +234,10 @@
       "DownstreamPathTemplate": "/api/orders",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftorderserviceapi.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7266
@@ -210,6 +254,10 @@
       "DownstreamPathTemplate": "/api/orders/{orderId}/status",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftorderserviceapi.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7266
@@ -226,6 +274,10 @@
       "DownstreamPathTemplate": "/api/orders",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftorderserviceapi.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7266
@@ -238,6 +290,10 @@
       "DownstreamPathTemplate": "/api/ghn/order-status-newest",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftorderserviceapi.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7266
@@ -250,6 +306,10 @@
       "DownstreamPathTemplate": "/api/orders/{orderId}/details",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftorderserviceapi.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7266
@@ -262,6 +322,10 @@
       "DownstreamPathTemplate": "/api/orders/returnable",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftorderserviceapi.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7266
@@ -274,6 +338,10 @@
       "DownstreamPathTemplate": "/api/return-requests/order-items",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftorderserviceapi.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7266
@@ -287,7 +355,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         //{
-        //  "Host": "ftorderservicewebapi.azurewebsites.net",
+        //  "Host": "ftorderserviceapi.azurewebsites.net",
         //  "Port": 443
         //},
         {
@@ -302,6 +370,10 @@
       "DownstreamPathTemplate": "/api/return-requests/submit-return-request",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftorderserviceapi.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7266
@@ -314,6 +386,10 @@
       "DownstreamPathTemplate": "/api/feedback/create-multiple",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftcustomerservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7264
@@ -326,6 +402,10 @@
       "DownstreamPathTemplate": "/api/feedback/productid/{id}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftcustomerservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7264
@@ -338,6 +418,10 @@
       "DownstreamPathTemplate": "/api/customer/profile/{accountId}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftcustomerservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7264
@@ -350,6 +434,10 @@
       "DownstreamPathTemplate": "/api/customer/edit-profile/{accountId}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftcustomerservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7264
@@ -362,6 +450,10 @@
       "DownstreamPathTemplate": "/api/shippingaddresses",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftorderserviceapi.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7266
@@ -374,6 +466,10 @@
       "DownstreamPathTemplate": "/api/shippingaddresses/{id}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftorderserviceapi.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7266
@@ -386,6 +482,10 @@
       "DownstreamPathTemplate": "/api/shippingaddresses/{id}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftorderserviceapi.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7266
@@ -399,6 +499,10 @@
       "DownstreamPathTemplate": "/api/shippingaddresses/account/{accountId}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftorderserviceapi.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7266
@@ -411,6 +515,10 @@
       "DownstreamPathTemplate": "/api/favorites/{accountId}/{productId}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftinventoryservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7265
@@ -423,6 +531,10 @@
       "DownstreamPathTemplate": "/api/favorites/{accountId}/{productId}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftinventoryservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7265
@@ -435,6 +547,10 @@
       "DownstreamPathTemplate": "/api/favorites/{accountId}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftinventoryservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7265
@@ -447,6 +563,10 @@
       "DownstreamPathTemplate": "/api/notifications/user/{userId}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftnotificationservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7270
@@ -459,6 +579,10 @@
       "DownstreamPathTemplate": "/notificationHub/negotiate",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftnotificationservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7270
@@ -472,6 +596,10 @@
       "DownstreamPathTemplate": "/notificationHub",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftnotificationservice.azurewebsites.net",
+        //  "Port": 443
+        //},
         {
           "Host": "localhost",
           "Port": 7270
@@ -486,7 +614,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         //{
-        //  "Host": "customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net",
+        //  "Host": "ftcustomerservice.azurewebsites.net",
         //  "Port": 443
         //},
         {
@@ -506,7 +634,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         //{
-        //  "Host": "customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net",
+        //  "Host": "ftcustomerservice.azurewebsites.net",
         //  "Port": 443
         //},
         {
@@ -526,7 +654,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         //{
-        //  "Host": "customerservice1234-c5daareccwarbhey.southeastasia-01.azurewebsites.net",
+        //  "Host": "ftcustomerservice.azurewebsites.net",
         //  "Port": 443
         //},
         {
@@ -542,6 +670,86 @@
       "UpstreamHttpMethod": [ "Post" ]
     },
     {
+      "DownstreamPathTemplate": "/api/customer/products/interactions",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftcustomerservice.azurewebsites.net",
+        //  "Port": 443
+        //},
+        {
+          "Host": "localhost",
+          "Port": 7264
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7264
+        }
+      ],
+      "UpstreamPathTemplate": "/customer/products/interactions",
+      "UpstreamHttpMethod": [ "Post" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/customer/suggestions",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftcustomerservice.azurewebsites.net",
+        //  "Port": 443
+        //},
+        {
+          "Host": "localhost",
+          "Port": 7264
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7264
+        }
+      ],
+      "UpstreamPathTemplate": "/customer/suggestions",
+      "UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/customer/preferred-styles/{accountId}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftcustomerservice.azurewebsites.net",
+        //  "Port": 443
+        //},
+        {
+          "Host": "localhost",
+          "Port": 7264
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7264
+        }
+      ],
+      "UpstreamPathTemplate": "/customer/preferred-styles/{accountId}",
+      "UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/customer/preferred-styles/{accountId}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        //{
+        //  "Host": "ftcustomerservice.azurewebsites.net",
+        //  "Port": 443
+        //},
+        {
+          "Host": "localhost",
+          "Port": 7264
+        },
+        {
+          "Host": "10.87.12.203",
+          "Port": 7264
+        }
+      ],
+      "UpstreamPathTemplate": "/customer/preferred-styles/{accountId}",
+      "UpstreamHttpMethod": [ "Put" ]
+    },
+    {
       "DownstreamPathTemplate": "/api/order/{everything}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
@@ -550,7 +758,7 @@
           "Port": 8002
         }
       ],
-      "UpstreamPathTemplate": "/order/{everything}",
+      "UpstreamPathTemplate": "/  /{everything}",
       "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ]
     }
   ],

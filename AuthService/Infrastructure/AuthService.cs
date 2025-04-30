@@ -33,7 +33,7 @@ namespace Infrastructure.Services
 
             if (account != null && VerifyPassword(password, account.PasswordHash))
             {
-                string token = GenerateJwtToken(account.FullName, "user", account.AccountId, account.Email);
+                string token = GenerateJwtToken(account.FullName, account.Role.RoleName, account.AccountId, account.Email);
 
                 if (account.IsActive == false)
                 {

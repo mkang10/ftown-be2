@@ -25,5 +25,9 @@ namespace Application.Interfaces
 										int accountId,
 										List<OrderDetail> orderDetails,
 										int warehouseId);
+		Task UpdateDefaultAssignmentAsync(int shopManagerId, int staffId);
+		Task LogDeliveredStatusAsync(int orderId, int accountId);
+		Task LogDeliveringStatusAsync(int orderId, int accountId);
+		Task AssignReturnOrderToManagerAsync(int orderId, int assignedBy);
     }
 }

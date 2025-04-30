@@ -78,12 +78,12 @@ namespace Application.UseCases
         {
             var cacheKey = GetAllAddressesCacheKey(accountId);
 
-            // Thử lấy từ cache trước
+            
             var cachedList = await _redisCacheService.GetCacheAsync<List<ShippingAddress>>(cacheKey);
             if (cachedList != null)
                 return cachedList;
 
-            // Nếu không có cache, truy vấn DB
+            
             var addresses = await _shippingAddressRepository.GetShippingAddressesByAccountIdAsync(accountId);
 
             if (addresses != null && addresses.Any())

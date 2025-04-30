@@ -43,7 +43,7 @@ namespace Application.UseCases
 
             // Gọi API GHN sau khi cập nhật thành công
             using var httpClient = new HttpClient();
-            var apiUrl = $"https://localhost:7266/api/ghn/create-order/{orderId}";
+            var apiUrl = $"https://ftorderserviceapi.azurewebsites.net/api/ghn/create-order/{orderId}";
 
             try
             {

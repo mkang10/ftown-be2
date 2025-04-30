@@ -11,46 +11,46 @@ using static Application.UseCases.GetWareHouseIdHandler;
 
 namespace Application.UseCases
 {
-   
-        public class GetWareHouseIdHandler 
+
+    public class GetWareHouseIdHandler
+    {
+        private readonly IWarehouseStockRepos _repository;
+
+        public GetWareHouseIdHandler(IWarehouseStockRepos repository)
         {
-            private readonly IWarehouseStockRepos _repository;
+            _repository = repository;
+        }
 
-            public GetWareHouseIdHandler(IWarehouseStockRepos repository)
+        public async Task<WarehouseStockDto?> GetByIdAsync(int id)
+        {
+            var entity = await _repository.GetByIdWithDetailsAsync(id);
+            if (entity == null) return null;
+
+            var dto = new WarehouseStockDto
             {
-                _repository = repository;
-            }
+                WareHouseStockId = entity.WareHouseStockId,
+                VariantId = entity.VariantId,
+                VariantName = entity.Variant.Product.Name + " - " + entity.Variant.Color.ColorName + " - " + entity.Variant.Size.SizeName,
+                StockQuantity = entity.StockQuantity,
+                WareHouseId = entity.WareHouseId,
+                WareHouseName = entity.WareHouse.WarehouseName,
+                AuditHistory = entity.WareHouseStockAudits
+                    .Select(a => new WarehouseStockAuditDto
+                    {
+                        AuditId = a.AuditId,
+                        Action = a.Action,
+                        QuantityChange = a.QuantityChange,
+                        ActionDate = a.ActionDate,
+                        ChangedBy = a.ChangedBy,
+                        changedByName = a.ChangedByNavigation.FullName,
+                        Note = a.Note
+                    })
+                    .OrderByDescending(a => a.ActionDate)
+                    .ToList()
+            };
 
-            public async Task<WarehouseStockDto?> GetByIdAsync(int id)
-            {
-                var entity = await _repository.GetByIdWithDetailsAsync(id);
-                if (entity == null) return null;
-
-                var dto = new WarehouseStockDto
-                {
-                    WareHouseStockId = entity.WareHouseStockId,
-                    VariantId = entity.VariantId,
-                    VariantName = entity.Variant.Product.Name + " - " + entity.Variant.Color.ColorName + " - " + entity.Variant.Size.SizeName,
-                    StockQuantity = entity.StockQuantity,
-                    WareHouseId = entity.WareHouseId,
-                    WareHouseName = entity.WareHouse.WarehouseName,
-                    AuditHistory = entity.WareHouseStockAudits
-                        .Select(a => new WarehouseStockAuditDto
-                        {
-                            AuditId = a.AuditId,
-                            Action = a.Action,
-                            QuantityChange = a.QuantityChange,
-                            ActionDate = a.ActionDate,
-                            ChangedBy = a.ChangedBy,
-                            changedByName = a.ChangedByNavigation.Account.FullName,
-                            Note = a.Note
-                        })
-                        .OrderByDescending(a => a.ActionDate)
-                        .ToList()
-                };
-
-                return dto;
-            }
+            return dto;
+        }
 
         public async Task<PaginatedResponseDTO<GetWareHouseStockRes>> GetByWarehouseIdAsync(
            int warehouseId,
@@ -79,7 +79,7 @@ namespace Application.UseCases
                 StockQuantity = entity.StockQuantity,
                 WareHouseId = entity.WareHouseId,
                 WareHouseName = entity.WareHouse.WarehouseName,
-             
+
             });
 
             // Filters
@@ -102,5 +102,3 @@ namespace Application.UseCases
         }
     }
 }
-    
-

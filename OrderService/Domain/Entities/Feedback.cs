@@ -29,4 +29,3 @@ public partial class Feedback
 
     public virtual ICollection<ReplyFeedback> ReplyFeedbacks { get; set; } = new List<ReplyFeedback>();
 }
-

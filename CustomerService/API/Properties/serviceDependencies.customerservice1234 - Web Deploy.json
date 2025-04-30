@@ -1,8 +1,0 @@
-{
-  "dependencies": {
-    "apis1": {
-      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.ApiManagement/service/customerapi1234/apis/customerapi",
-      "type": "apis.azure"
-    }
-  }
-}

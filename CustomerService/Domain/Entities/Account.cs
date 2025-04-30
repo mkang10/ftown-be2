@@ -11,7 +11,7 @@ public partial class Account
 
     public string Email { get; set; } = null!;
 
-    public string? PasswordHash { get; set; } = null!;
+    public string PasswordHash { get; set; } = null!;
 
     public string? PhoneNumber { get; set; }
 
@@ -58,6 +58,4 @@ public partial class Account
     public virtual ICollection<ShoppingCart> ShoppingCarts { get; set; } = new List<ShoppingCart>();
 
     public virtual ICollection<StaffDetail> StaffDetails { get; set; } = new List<StaffDetail>();
-
-    public virtual ICollection<WishList> WishLists { get; set; } = new List<WishList>();
 }

@@ -39,7 +39,7 @@ namespace API.AppStarts
             });
             services.AddHttpClient<INotificationClient, NotificationServiceClient>(client =>
             {
-                client.BaseAddress = new Uri("https://localhost:7270/api/");
+                client.BaseAddress = new Uri("https://ftnotificationservice.azurewebsites.net/api/");
             });
             services.AddHttpClient<IPayOSService, PayOSService>(client =>
             {
@@ -57,6 +57,9 @@ namespace API.AppStarts
             services.AddSingleton<IRedisCacheService, RedisCacheService>();
             services.AddScoped<IOrderProcessingHelper, OrderProcessingHelper>();
             services.AddScoped<IPaginationHelper, PaginationHelper>();
+            services.AddScoped<IAssignmentSettingService, AssignmentSettingService>();
+            services.AddScoped<IOrderAutoCompletionHandler, OrderAutoCompletionHandler>();
+            services.AddHostedService<OrderAutoCompletionService>();
             //Repository
 
             services.AddScoped<IOrderRepository, OrderRepository>();

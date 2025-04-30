@@ -11,7 +11,7 @@ namespace Infrastructure.Repositories
         private readonly FtownContext _context;
         private readonly IProductVarRepos _varRepos;
 
-        public WarehouseStockRepository(IProductVarRepos varRepos ,FtownContext context)
+        public WarehouseStockRepository(IProductVarRepos varRepos, FtownContext context)
         {
             _context = context;
             _varRepos = varRepos;
@@ -29,7 +29,7 @@ namespace Infrastructure.Repositories
                 .Include(ws => ws.WareHouse)
                .Include(ws => ws.WareHouseStockAudits)
             .ThenInclude(a => a.ChangedByNavigation)
-                        .ThenInclude(a => a.Account)
+
 
                 .FirstOrDefaultAsync(ws => ws.WareHouseStockId == id);
         }

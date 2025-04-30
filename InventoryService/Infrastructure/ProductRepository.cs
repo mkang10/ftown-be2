@@ -233,7 +233,20 @@ namespace Infrastructure
                 .Include(v => v.WareHousesStocks) 
                 .ToListAsync();
         }
-
+        public async Task<List<Product>> GetProductsByStyleNameAsync(string styleName, int page, int pageSize)
+        {
+            return await _context.Products
+                .Where(p =>
+                    (p.Status == ProductStatus.Online.ToString() || p.Status == ProductStatus.Both.ToString())
+                    && p.Style == styleName)
+                .Include(p => p.ProductVariants)
+                    .ThenInclude(pv => pv.Color)
+                .Include(p => p.Category)
+                .Include(p => p.ProductImages)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
 
     }
 }

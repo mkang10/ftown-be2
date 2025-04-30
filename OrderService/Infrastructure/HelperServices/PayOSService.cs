@@ -70,8 +70,8 @@ namespace Infrastructure.HelperServices
                 amount: (int)amount,
                 description: $"Thanh toán đơn hàng {orderId}",
                 items: items,
-                cancelUrl: "https://b347-116-110-41-44.ngrok-free.app/api/payment/cancel",
-                returnUrl: $"https://ftown-client-pro-n8x7.vercel.app/profile/order"
+                cancelUrl: "https://ftorderserviceapi.azurewebsites.net/api/payment/cancel",
+                returnUrl: $"https://ftown-client-test.vercel.app/profile/order"
             );
 
             var createPayment = await _payOS.createPaymentLink(paymentData);
