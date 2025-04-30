@@ -32,6 +32,12 @@ namespace Infrastructure
                 .Select(v => (int?)v.VariantId)
                 .FirstOrDefaultAsync();
         }
+        public async Task<ProductVariant?> GetBySkuAsync(string sku)
+        {
+            return await _context.ProductVariants
+                                 .AsNoTracking()
+                                 .FirstOrDefaultAsync(v => v.Sku == sku);
+        }
 
         public async Task<ProductVariant?> GetByProductSizeColorAsync(int productId, int sizeId, int colorId)
         {

@@ -4,8 +4,10 @@ using Domain.DTO.Request;
 using Domain.DTO.Response;
 using Domain.Entities;
 using Domain.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace API.Controllers
 {
@@ -148,14 +150,14 @@ namespace API.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> CreateImport([FromBody] CreateImportDto request)
+        public async Task<IActionResult> CreateImport([FromBody] PurchaseImportCreateDto request)
         {
             try
             {
-                if (request == null || request.ImportDetails == null || !request.ImportDetails.Any())
-                    return BadRequest(new ResponseDTO<object>(null, false, "Dữ liệu import không hợp lệ!"));
+                //if (request == null || request. == null || !request.ImportDetails.Any())
+                //    return BadRequest(new ResponseDTO<object>(null, false, "Dữ liệu import không hợp lệ!"));
 
-                var response = await _createImportHandler.CreateImportAsync(request);
+                var response = await _createImportHandler.CreatePurchaseImportAsync(request);
                 if (!response.Status)
                     return BadRequest(response);
 
@@ -168,6 +170,51 @@ namespace API.Controllers
                 byte[] slipFile = _reportService.GenerateImportSlip(importEntity);
                 string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
                 return File(slipFile, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
+            }
+            catch (ArgumentException argEx)
+            {
+                return BadRequest(new ResponseDTO<object>(null, false, argEx.Message));
+            }
+            catch (UnauthorizedAccessException uaEx)
+            {
+                return Unauthorized(new ResponseDTO<object>(null, false, uaEx.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>(null, false, $"Lỗi server: {ex.Message}"));
+            }
+        }
+
+        [HttpPost("create-from-excel")]
+ 
+        public async Task<IActionResult> CreateImportFromExcel(
+        [FromForm] IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                    return BadRequest(new ResponseDTO<object>(null, false, "Vui lòng upload file Excel."));
+
+
+                // Gọi service để import từ Excel
+                var response = await _createImportHandler.CreatePurchaseImportFromExcelAsync(file, 18);
+                if (!response.Status)
+                    return BadRequest(response);
+
+                // Lấy lại entity import vừa tạo
+                var importEntity = await _importRepos.GetByIdAsync(response.Data.ImportId);
+                if (importEntity == null)
+                    return NotFound(new ResponseDTO<object>(null, false, "Không tìm thấy đơn nhập sau khi tạo."));
+
+                // Sinh file biên bản nhập kho
+                byte[] slipFile = _reportService.GenerateImportSlip(importEntity);
+                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
+
+                return File(
+                    slipFile,
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    fileName
+                );
             }
             catch (ArgumentException argEx)
             {

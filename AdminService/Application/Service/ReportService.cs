@@ -191,59 +191,90 @@ namespace Application.Services
 
 
 
-        private Table CreateImportDetailTable(Import import)
+private Table CreateImportDetailTable(Import import)
+{
+    // Khởi tạo Table với style và border
+    Table table = new Table();
+    TableProperties tblProps = new TableProperties(
+        new TableStyle { Val = "TableGrid" },
+        new TableWidth { Type = TableWidthUnitValues.Pct, Width = "5000" },
+        new TableBorders(
+            new TopBorder { Val = BorderValues.Single, Size = 4 },
+            new BottomBorder { Val = BorderValues.Single, Size = 4 },
+            new LeftBorder { Val = BorderValues.Single, Size = 4 },
+            new RightBorder { Val = BorderValues.Single, Size = 4 },
+            new InsideHorizontalBorder { Val = BorderValues.Single, Size = 4 },
+            new InsideVerticalBorder { Val = BorderValues.Single, Size = 4 }
+        )
+    );
+    table.Append(tblProps);
+
+    // Header row
+    TableRow headerRow = new TableRow();
+    headerRow.Append(CreateTableCell("STT", true));
+    headerRow.Append(CreateTableCell("Tên sản phẩm", true));
+    headerRow.Append(CreateTableCell("SL nhập", true));
+    headerRow.Append(CreateTableCell("Đơn giá", true));
+    headerRow.Append(CreateTableCell("Thành tiền", true));
+    headerRow.Append(CreateTableCell("Kho", true));
+    headerRow.Append(CreateTableCell("SL phân bổ", true));
+    headerRow.Append(CreateTableCell("Nhân viên kiểm nhập", true));
+    headerRow.Append(CreateTableCell("Trạng thái", true));
+    headerRow.Append(CreateTableCell("Ghi chú", true));
+    table.Append(headerRow);
+
+    int stt = 1;
+    // Duyệt qua từng ImportDetail và ImportStoreDetail
+    foreach (var detail in import.ImportDetails)
+    {
+        string productName = detail.ProductVariant != null
+            ? $"{detail.ProductVariant.Product.Name} - {detail.ProductVariant.Color.ColorName} - {detail.ProductVariant.Size.SizeName}"
+            : detail.ProductVariantId.ToString();
+
+        foreach (var sd in detail.ImportStoreDetails)
         {
-            Table table = new Table();
+            string warehouseName = sd.Warehouse?.WarehouseName ?? GetWarehouseName(sd.WarehouseId ?? 0);
+            string allocatedQty = sd.AllocatedQuantity.ToString();
+            string actualQty = (sd.ActualReceivedQuantity ?? 0).ToString();
+            string staffName = GetStaffName(sd.StaffDetailId ?? 0);
+             
+              
+        
+            string status = sd.Status ?? string.Empty;
+            string comment = sd.Comments ?? string.Empty;
 
-            TableProperties tblProps = new TableProperties(
-                new TableStyle { Val = "TableGrid" },
-                new TableWidth { Type = TableWidthUnitValues.Pct, Width = "5000" },
-                new TableBorders(
-                    new TopBorder { Val = BorderValues.Single, Size = 4 },
-                    new BottomBorder { Val = BorderValues.Single, Size = 4 },
-                    new LeftBorder { Val = BorderValues.Single, Size = 4 },
-                    new RightBorder { Val = BorderValues.Single, Size = 4 },
-                    new InsideHorizontalBorder { Val = BorderValues.Single, Size = 4 },
-                    new InsideVerticalBorder { Val = BorderValues.Single, Size = 4 }
-                )
-            );
-            table.Append(tblProps);
+            // Tạo row mới
+            TableRow row = new TableRow();
+            row.Append(CreateTableCell(stt.ToString()));
+            row.Append(CreateTableCell(productName));
+            row.Append(CreateTableCell(detail.Quantity.ToString()));
+            row.Append(CreateTableCell(FormatCurrency(detail.CostPrice ?? 0)));
+            row.Append(CreateTableCell(FormatCurrency(detail.Quantity * (detail.CostPrice ?? 0))));
+            row.Append(CreateTableCell(warehouseName));
+            row.Append(CreateTableCell(allocatedQty));
+            row.Append(CreateTableCell(staffName));
+            row.Append(CreateTableCell(status));
+            row.Append(CreateTableCell(comment));
+            table.Append(row);
 
-            // Hàng tiêu đề của bảng
-            TableRow headerRow = new TableRow();
-            headerRow.Append(CreateTableCell("STT", true));
-            headerRow.Append(CreateTableCell("Tên sản phẩm", true));
-            headerRow.Append(CreateTableCell("Số lượng", true));
-            headerRow.Append(CreateTableCell("Đơn giá", true));
-            headerRow.Append(CreateTableCell("Thành tiền", true));
-            headerRow.Append(CreateTableCell("Kho", true));
-            table.Append(headerRow);
+            stt++;
+        }
+    }
 
-            int stt = 1;
-            foreach (var detail in import.ImportDetails)
-            {
-                // Lấy thông tin sản phẩm từ navigation property
-                string productName = detail.ProductVariant != null
-                    ? $"{detail.ProductVariant.Product.Name} - {detail.ProductVariant.Color.ColorName} - {detail.ProductVariant.Size.SizeName}"
-                    : detail.ProductVariantId.ToString();
+    return table;
+}
 
-                // Nếu Warehouse không được load thì sử dụng hàm GetWarehouseName để truy vấn qua warehouseId
-                string warehouseNames = string.Join(", ",
-                    detail.ImportStoreDetails.Select(ds => ds.Warehouse != null
-                        ? ds.Warehouse.WarehouseName
-                        : GetWarehouseName((int)ds.WarehouseId)));
+        private string GetStaffName(int staffDetailId)
+        {
+            var staff = _impRepos.GetStaffDetailByIdAsync(staffDetailId).GetAwaiter().GetResult();
+            return staff != null
+                ? $"{staff.Account.FullName}"
+                : "Unknown Staff";
+        }
 
-                TableRow row = new TableRow();
-                row.Append(CreateTableCell(stt.ToString()));
-                row.Append(CreateTableCell(productName));
-                row.Append(CreateTableCell(detail.Quantity.ToString()));
-                row.Append(CreateTableCell(detail.CostPrice.HasValue ? $"{detail.CostPrice.Value:#,## VND}" : "0"));
-                row.Append(CreateTableCell($"{detail.Quantity * (detail.CostPrice ?? 0):#,## VND}"));
-                row.Append(CreateTableCell(warehouseNames));
-                table.Append(row);
-                stt++;
-            }
-            return table;
+        private string FormatCurrency(decimal amount)
+        {
+            return string.Format(new System.Globalization.CultureInfo("vi-VN"), "{0:c0}", amount);
         }
 
 

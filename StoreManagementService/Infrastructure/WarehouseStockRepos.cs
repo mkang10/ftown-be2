@@ -19,7 +19,25 @@ namespace Infrastructure
         {
             _context = context;
         }
+        public async Task<IEnumerable<WareHousesStock>> GetByWarehouseAsync(int warehouseId)
+            => await _context.WareHousesStocks
+                .Where(s => s.WareHouseId == warehouseId)
+                .ToListAsync();
 
+        public async Task<WareHousesStock?> GetByWarehouseAndVariantAsync(int warehouseId, int variantId)
+            => await _context.WareHousesStocks
+                .FirstOrDefaultAsync(s => s.WareHouseId == warehouseId && s.VariantId == variantId);
+
+        public async Task<IEnumerable<WareHousesStock>> GetAllByVariantAsync(int variantId)
+            => await _context.WareHousesStocks
+                .Where(s => s.VariantId == variantId)
+                .ToListAsync();
+
+        public Task UpdateAsync(WareHousesStock stock)
+        {
+            _context.WareHousesStocks.Update(stock);
+            return Task.CompletedTask;
+        }
         public async Task UpdateWarehouseStockAsync(Import import, int staffId)
         {
             // Duyệt qua từng ImportDetail trong Import

@@ -104,6 +104,9 @@ public partial class FtownContext : DbContext
 
     public virtual DbSet<Warehouse> Warehouses { get; set; }
 
+
+    public virtual DbSet<WarehouseStaff> WarehouseStaffs { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=ftown-sql.database.windows.net;Database=Ftown;User Id=sqladminftown;Password=Tuongvy123456;TrustServerCertificate=True;");
@@ -407,6 +410,9 @@ public partial class FtownContext : DbContext
             entity.Property(e => e.ApprovedDate).HasColumnType("datetime");
             entity.Property(e => e.CompletedDate).HasColumnType("datetime");
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.ImportType)
+                .HasMaxLength(10)
+                .IsFixedLength();
             entity.Property(e => e.OriginalImportId).HasColumnName("OriginalImportID");
             entity.Property(e => e.ReferenceNumber).HasMaxLength(100);
             entity.Property(e => e.Status).HasMaxLength(50);
@@ -922,15 +928,9 @@ public partial class FtownContext : DbContext
 
             entity.Property(e => e.StaffDetailId).HasColumnName("StaffDetailID");
             entity.Property(e => e.AccountId).HasColumnName("AccountID");
-            entity.Property(e => e.Department).HasMaxLength(100);
-            entity.Property(e => e.EmploymentType).HasMaxLength(50);
-            entity.Property(e => e.JobTitle).HasMaxLength(100);
             entity.Property(e => e.JoinDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.Role).HasMaxLength(255);
-            entity.Property(e => e.Salary).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.StoreId).HasColumnName("StoreID");
 
             entity.HasOne(d => d.Account).WithMany(p => p.StaffDetails)
                 .HasForeignKey(d => d.AccountId)
@@ -1001,7 +1001,6 @@ public partial class FtownContext : DbContext
             entity.HasKey(e => e.TransferOrderDetailId).HasName("PK__Transfer__5BFCAC6794FA5B28");
 
             entity.Property(e => e.TransferOrderDetailId).HasColumnName("TransferOrderDetailID");
-            entity.Property(e => e.SourceStoreId).HasColumnName("SourceStoreID");
             entity.Property(e => e.TransferOrderId).HasColumnName("TransferOrderID");
             entity.Property(e => e.VariantId).HasColumnName("VariantID");
 
@@ -1076,6 +1075,24 @@ public partial class FtownContext : DbContext
             entity.HasOne(d => d.ShopManager).WithMany(p => p.Warehouses)
                 .HasForeignKey(d => d.ShopManagerId)
                 .HasConstraintName("FK_Warehouses_ShopManagerDetail");
+        });
+
+
+        modelBuilder.Entity<WarehouseStaff>(entity =>
+        {
+            entity.ToTable("WarehouseStaff");
+
+            entity.Property(e => e.Role).HasMaxLength(50);
+
+            entity.HasOne(d => d.StaffDetail).WithMany(p => p.WarehouseStaffs)
+                .HasForeignKey(d => d.StaffDetailId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_WarehouseStaff_StaffDetail");
+
+            entity.HasOne(d => d.Warehouse).WithMany(p => p.WarehouseStaffs)
+                .HasForeignKey(d => d.WarehouseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_WarehouseStaff_Warehouses");
         });
 
         OnModelCreatingPartial(modelBuilder);

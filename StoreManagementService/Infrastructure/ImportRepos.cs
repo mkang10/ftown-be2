@@ -29,6 +29,16 @@ namespace Infrastructure
             return inventoryImport;
         }
 
+        public async Task<StaffDetail?> GetStaffDetailByIdAsync(int staffDetailId)
+        {
+            // AsNoTracking() cho trường hợp chỉ đọc dữ liệu
+            return await _context.StaffDetails
+                                   .AsNoTracking()
+                                    .Include(s => s.Account)
+                                   .FirstOrDefaultAsync(s => s.StaffDetailId == staffDetailId);
+        }
+
+
         public async Task<PaginatedResponseDTO<ImportStoreDetailDto>> GetImportStoreDetailByStaffDetailAsync(ImportStoreDetailFilterDtO filter)
         {
             // 1. Build base query (AsNoTracking + filter HandleBy + optional Status)
@@ -134,7 +144,6 @@ namespace Infrastructure
                 .Include(i => i.CreatedByNavigation)
                 .Include(i => i.ImportDetails)
                     .ThenInclude(d => d.ImportStoreDetails)
-                           .ThenInclude(d => d.HandleByNavigation)
                 .AsQueryable();
 
             // Filtering
@@ -182,7 +191,6 @@ namespace Infrastructure
                     .ThenInclude(p => p.ProductImages)
                 .Include(pv => pv.Size)
                 .Include(pv => pv.Color)
-                .Where(pv => pv.Status == "Draft")
                 .AsQueryable();
 
             // Nếu có từ khóa tìm kiếm, lọc theo tên sản phẩm, màu sắc, kích thước
@@ -192,7 +200,8 @@ namespace Infrastructure
                 query = query.Where(pv =>
                     pv.Product.Name.ToLower().Contains(keyword) ||
                     pv.Color.ColorName.ToLower().Contains(keyword) ||
-                    pv.Size.SizeName.ToLower().Contains(keyword)
+                    pv.Size.SizeName.ToLower().Contains(keyword) ||
+                    pv.Sku.ToLower().Contains(keyword)
                 );
             }
 
@@ -250,9 +259,18 @@ namespace Infrastructure
         public async Task<Import?> GetByIdAsync(int importId)
         {
             return await _context.Imports
-                .Include(i => i.ImportDetails)
-            .ThenInclude(d => d.ImportStoreDetails)
-                .FirstOrDefaultAsync(i => i.ImportId == importId);
+               .Include(i => i.ImportDetails)
+                   .ThenInclude(id => id.ProductVariant)
+                       .ThenInclude(v => v.Product)
+               .Include(i => i.ImportDetails)
+                   .ThenInclude(id => id.ProductVariant)
+                       .ThenInclude(v => v.Color)
+               .Include(i => i.ImportDetails)
+                   .ThenInclude(id => id.ProductVariant)
+                       .ThenInclude(v => v.Size)
+               .Include(i => i.ImportDetails)
+                   .ThenInclude(id => id.ImportStoreDetails)
+               .FirstOrDefaultAsync(i => i.ImportId == importId);
         }
 
         public async Task<Import> GetByIdAsyncWithDetails(int id)

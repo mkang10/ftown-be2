@@ -1,10 +1,13 @@
 ﻿using Application.DTO.Response;
 using Application.Services;
 using AutoMapper;
+using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Domain.DTO.Request;
 using Domain.DTO.Response;
 using Domain.Entities;
 using Domain.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -16,96 +19,208 @@ namespace Application.UseCases
 {
     public class CreateImportHandler
     {
+
+        private readonly Random _rng = new();
+        private readonly IWarehouseRepository _warehouseRepo;
+
         private readonly IImportRepos _impRepos;
+        private readonly IProductVarRepos _productVar;
+
+        private readonly IImportStoreRepos _importStoreRepos;
+        private readonly IWarehouseStaffRepos _wsRepos;
         private readonly IMapper _mapper;
         private readonly IAuditLogRepos _auditLogRepos;
         private readonly ReportService _reportService;
 
 
-        public CreateImportHandler(ReportService reportService, IImportRepos impRepos, IMapper mapper, IAuditLogRepos auditLogRepos)
+        public CreateImportHandler(ReportService reportService, IProductVarRepos productVar, IWarehouseRepository warehouseRepo, IWarehouseStaffRepos wsRepos, IImportRepos impRepos, IImportStoreRepos importStoreRepos, IMapper mapper, IAuditLogRepos auditLogRepos)
         {
+            _importStoreRepos = importStoreRepos;
+            _productVar = productVar;
             _impRepos = impRepos;
             _mapper = mapper;
             _auditLogRepos = auditLogRepos;
             _reportService = reportService;
+            _wsRepos = wsRepos;
+            _warehouseRepo = warehouseRepo;
         }
-        public async Task<ResponseDTO<ImportDto>> CreateImportAsync(CreateImportDto request)
+        public async Task<ResponseDTO<Import>> CreatePurchaseImportAsync(PurchaseImportCreateDto dto)
         {
-            // Sinh tự động ReferenceNumber nếu không hợp lệ
-            if (string.IsNullOrEmpty(request.ReferenceNumber) || !request.ReferenceNumber.StartsWith("IIN"))
+            try
             {
-                Random rnd = new Random();
-                request.ReferenceNumber = "IIN" + rnd.Next(100, 1000).ToString();
-            }
+                // 1. Validate DTO
+                if (dto.ImportDetails == null || !dto.ImportDetails.Any())
+                    return new ResponseDTO<Import>(null, false, "Phải có ít nhất 1 sản phẩm.");
+                if (dto.ImportDetails.Any(d => d.CostPrice <= 0))
+                    return new ResponseDTO<Import>(null, false, "CostPrice phải lớn hơn 0.");
 
-            // Tính tổng tiền từ các ImportDetail (Quantity * UnitPrice)
-            decimal totalCost = request.ImportDetails.Sum(d => d.Quantity * d.CostPrice);
-
-            // Duyệt qua từng ImportDetail để gán HandleBy cho StoreDetail từ ShopManagerId của warehouse
-            foreach (var importDetail in request.ImportDetails)
-            {
-                foreach (var storeDetail in importDetail.StoreDetails)
+                // 2. Tạo Import + ImportDetails
+                var importEntity = new Import
                 {
-                    // Nếu HandleBy chưa có giá trị
-                    if (storeDetail.HandleBy == null)
+                    CreatedBy = dto.CreatedBy,
+                    ApprovedDate = DateTime.Now,
+                    CreatedDate = DateTime.Now,
+                    Status = "Approved",
+                    ImportType = "Purchase",
+                    ReferenceNumber = GenerateReferenceNumber(),
+                    ImportDetails = dto.ImportDetails.Select(d => new ImportDetail
                     {
-                        // Lấy thông tin warehouse dựa trên WareHouseId
-                        var warehouse = await _impRepos.GetWareHouseByIdAsync(storeDetail.WareHouseId);
-                        if (warehouse != null)
-                        {
-                            // Gán ShopManagerId từ warehouse cho HandleBy
-                            storeDetail.HandleBy = warehouse.ShopManagerId;
-                        }
-                        else
-                        {
-                            // Xử lý khi không tìm thấy warehouse (có thể ném exception hoặc gán giá trị mặc định)
-                            throw new Exception($"Warehouse với id {storeDetail.WareHouseId} không tồn tại.");
-                        }
-                    }
+                        ProductVariantId = d.ProductVariantId,
+                        Quantity = d.Quantity,
+                        CostPrice = d.CostPrice
+                    }).ToList()
+                };
+                importEntity.TotalCost = importEntity.ImportDetails.Sum(x => x.Quantity * x.CostPrice);
+
+                // 3. Lưu Import vào DB
+                await _impRepos.AddAsync(importEntity);
+                await _impRepos.SaveChangesAsync();
+
+                // 4. Ghi AuditLog cho Import vừa tạo
+                var serializedImport = JsonConvert.SerializeObject(importEntity,
+                    new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
+                var auditLog = new AuditLog
+                {
+                    TableName = "Import",
+                    RecordId = importEntity.ImportId.ToString(),
+                    Operation = "CREATE",
+                    ChangeDate = DateTime.Now,
+                    ChangedBy = importEntity.CreatedBy,
+                    ChangeData = serializedImport,
+                    Comment = "Tạo mới đơn import Purchase"
+                };
+                await _auditLogRepos.AddAsync(auditLog);
+                await _auditLogRepos.SaveChangesAsync();
+
+                // 5. Lấy kho tổng của owner
+                var warehouse = await _warehouseRepo.GetOwnerWarehouseAsync();
+                if (warehouse == null)
+                    return new ResponseDTO<Import>(null, false, "Không tìm thấy kho tổng của owner.");
+
+                // 6. Lấy danh sách Checker
+                var allCheckers = await _wsRepos.GetByWarehouseAndRoleAsync(warehouse.WarehouseId, "Checker");
+                var unused = string.IsNullOrWhiteSpace(warehouse.UnusedCheckerIds)
+                    ? allCheckers.Select(w => w.StaffDetailId).ToList()
+                    : warehouse.UnusedCheckerIds
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(int.Parse)
+                        .ToList();
+                if (!unused.Any())
+                    unused = allCheckers.Select(w => w.StaffDetailId).ToList();
+
+                var storeDetails = new List<ImportStoreDetail>();
+                foreach (var det in importEntity.ImportDetails)
+                {
+                    if (!unused.Any())
+                        unused = allCheckers.Select(w => w.StaffDetailId).ToList();
+
+                    int idx = _rng.Next(unused.Count);
+                    int chosen = unused[idx];
+                    unused.RemoveAt(idx);
+
+                    storeDetails.Add(new ImportStoreDetail
+                    {
+                        ImportDetailId = det.ImportDetailId,
+                        WarehouseId = warehouse.WarehouseId,
+                        AllocatedQuantity = det.Quantity,
+                        Status = "Processing",
+                        Comments = "Đơn Nhập Hàng Tự Động bởi hệ thống",
+                        StaffDetailId = chosen,
+                        HandleBy = null
+                    });
+                }
+
+                // 8. Lưu ImportStoreDetails
+                await _importStoreRepos.AddRangeAsync(storeDetails);
+                await _impRepos.SaveChangesAsync();  // hoặc SaveChanges của importStoreRepos
+
+                // 9. Ghi AuditLog cho từng ImportStoreDetail
+                foreach (var sd in storeDetails)
+                {
+                    var serializedSd = JsonConvert.SerializeObject(sd,
+                        new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
+                    var auditLogSd = new AuditLog
+                    {
+                        TableName = "ImportStoreDetail",
+                        RecordId = sd.ImportStoreId.ToString(),   // EF đã set ra ID sau SaveChanges
+                        Operation = "CREATE",
+                        ChangeDate = DateTime.Now,
+                        ChangedBy = importEntity.CreatedBy,
+                        ChangeData = serializedSd,
+                        Comment = "Tạo mới ImportStoreDetail cho ImportId " + importEntity.ImportId
+                    };
+                    await _auditLogRepos.AddAsync(auditLogSd);
+                }
+                await _auditLogRepos.SaveChangesAsync();
+
+                // 10. Cập nhật lại danh sách unused vào Warehouse
+                warehouse.UnusedCheckerIds = string.Join(",", unused);
+                await _warehouseRepo.UpdateAsync(warehouse);
+
+                return new ResponseDTO<Import>(importEntity, true,
+                    "Tạo đơn Purchase thành công, gán Checker và ghi AuditLog cho Import + StoreDetails.");
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO<Import>(null, false, $"Đã xảy ra lỗi: {ex.Message}");
+            }
+        }
+        private string GenerateReferenceNumber()
+            => $"IMP-PUR-{DateTime.Now:yyyyMMddHHmmss}";
+
+        public async Task<ResponseDTO<Import>> CreatePurchaseImportFromExcelAsync(IFormFile file, int createdBy)
+        {
+            if (file == null || file.Length == 0)
+                return new ResponseDTO<Import>(null, false, "Vui lòng chọn file Excel.");
+
+            var details = new List<PurchaseImportDetailDto>();
+            using (var stream = file.OpenReadStream())
+            using (var workbook = new XLWorkbook(stream))
+            {
+                var sheet = workbook.Worksheet(1);
+                var firstRow = sheet.FirstRowUsed();
+                if (firstRow == null)
+                    return new ResponseDTO<Import>(null, false, "File Excel không có dữ liệu.");
+
+                int row = firstRow.RowNumber() + 1;
+                while (true)
+                {
+                    var skuCell = sheet.Cell(row, 1);
+                    if (skuCell.IsEmpty()) break;
+
+                    string sku = skuCell.GetString().Trim();
+                    var variant = await _productVar.GetBySkuAsync(sku);
+                    if (variant == null)
+                        return new ResponseDTO<Import>(null, false, $"Dòng {row}: Không tìm thấy variant với SKU '{sku}'.");
+
+                    int qty = sheet.Cell(row, 2).GetValue<int>();
+                    decimal cost = sheet.Cell(row, 3).GetValue<decimal>();
+
+                    if (qty <= 0 || cost <= 0)
+                        return new ResponseDTO<Import>(null, false, $"Dòng {row}: Quantity và CostPrice phải > 0.");
+
+                    details.Add(new PurchaseImportDetailDto
+                    {
+                        ProductVariantId = variant.VariantId,
+                        Quantity = qty,
+                        CostPrice = cost
+                    });
+
+                    row++;
                 }
             }
 
-            // Map từ Request DTO sang Entity
-            var newImport = _mapper.Map<Import>(request);
+            if (!details.Any())
+                return new ResponseDTO<Import>(null, false, "File Excel không có dòng dữ liệu hợp lệ.");
 
-            // Set các trường bổ sung không được mapping tự động
-            newImport.CreatedDate = DateTime.UtcNow;
-            newImport.Status = "Approved";
-            newImport.TotalCost = totalCost;
-            newImport.ApprovedDate = null;
-            newImport.CompletedDate = null;
-
-            // Lưu Import qua repository
-            _impRepos.Add(newImport);
-            await _impRepos.SaveChangesAsync();
-
-            // Tạo AuditLog
-            // Ở đây, thay vì serialize toàn bộ entity (có thể gây vòng lặp),
-            // bạn đã map entity sang DTO (với mapping profile loại bỏ vòng lặp)
-            // và serialize DTO đó.
-            var serializedChangeData = JsonConvert.SerializeObject(newImport,
-                new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
-
-            var auditLog = new AuditLog
+            var dto = new PurchaseImportCreateDto
             {
-                TableName = "Import",
-                RecordId = newImport.ImportId.ToString(),
-                Operation = "CREATE",
-                ChangeDate = DateTime.UtcNow,
-                ChangedBy = request.CreatedBy,
-                ChangeData = serializedChangeData,
-                Comment = "Tạo mới đơn import"
+                CreatedBy = createdBy,
+                ImportDetails = details
             };
 
-            _auditLogRepos.Add(auditLog);
-            await _auditLogRepos.SaveChangesAsync();
-
-            // Map từ Entity sang Response DTO
-            var resultDto = _mapper.Map<ImportDto>(newImport);
-            return new ResponseDTO<ImportDto>(resultDto, true, "Tạo import thành công!");
+            return await CreatePurchaseImportAsync(dto);
         }
-
-
 
         public async Task<ResponseDTO<ImportSupplementReportDto>> CreateSupplementImportAsync(SupplementImportRequestDto request)
         {

@@ -43,10 +43,11 @@ namespace API.AppStarts
             services.AddScoped<IProductVarRepos, ProductVarRepos>();
             services.AddScoped<IProductRepos, ProductRepos>();
             services.AddScoped<IUploadImageService, UploadImageService>();
-            services.AddScoped<IWarehouseRepository, WarehouseRepository>();
             //ducanh
             services.AddScoped<ITransferRepos, TransferRepos>();
             services.AddScoped<IDispatchRepos, DispatchRepos>();
+            services.AddScoped<IWarehouseStaffRepos, WarehouseStaffRepository>();
+            services.AddScoped<IWarehouseRepository, WarehouseRepository>();
 
             services.AddScoped<ReportService>();
             services.AddScoped<GetWareHouseIdHandler>();

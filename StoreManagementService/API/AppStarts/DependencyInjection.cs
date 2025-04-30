@@ -1,5 +1,6 @@
 ﻿
 
+using Application.Services;
 using Application.UseCases;
 using Domain.Entities;
 using Domain.Interfaces;
@@ -33,7 +34,16 @@ namespace API.AppStarts
             services.AddScoped<IWareHouseStockRepos, WareHouseStockRepos>();
             services.AddScoped<IDispatchRepos, DispatchRepos>();
             services.AddScoped<IOrderRepository, OrderRepository>();
-
+            services.AddScoped<IImportStoreRepos, ImportStoreRepos>();
+            services.AddScoped<ITransferDetailRepository, TransferDetailRepository>();
+            services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+            services.AddScoped<IWarehouseStaffRepos, WarehouseStaffRepository>();
+            services.AddScoped<IWarehouseStockAuditRepository, WarehouseStockAuditRepository>();
+            services.AddScoped<IProductVariantRepository, ProductVarRepos>();
+            services.AddScoped<ITransferRepository, TransferRepository>();
+            services.AddScoped<IDispatchDetailRepository, DispatchDetailRepos>();
+            services.AddScoped<IStoreExportRepos, StoreExportRepos>();
+            services.AddScoped<ReportService>();
 
             services.AddScoped<CreateImportHandler>();
             services.AddScoped<GetImportHandler>();

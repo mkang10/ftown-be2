@@ -84,6 +84,17 @@ builder.Services.AddSwaggerGen(options =>
             new string[] {}
         }
     });
+    options.DocInclusionPredicate((docName, apiDesc) =>
+    {
+        // Ẩn đúng route create-from-excel
+        return !string.Equals(apiDesc.RelativePath,
+                              "api/inventoryimport/create-from-excel",
+                              StringComparison.OrdinalIgnoreCase);
+    });
+
+    //options.OperationFilter<FileResponseOperationFilter>();
+    //options.OperationFilter<FileUploadOperationFilter>();
+
     options.MapType<DateOnly>(() => new OpenApiSchema
     {
         Type = "string",

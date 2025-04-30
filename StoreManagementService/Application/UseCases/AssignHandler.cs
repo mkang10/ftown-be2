@@ -47,7 +47,6 @@ namespace Application.UseCases
             var targetStoreDetails = inventoryImport
                 .ImportDetails
                 .SelectMany(d => d.ImportStoreDetails)
-                .Where(sd => sd.WarehouseId == staffDetail.StoreId)
                 .ToList();
 
             if (!targetStoreDetails.Any())
@@ -86,7 +85,6 @@ namespace Application.UseCases
             var targetStoreDetails = dispatch
                 .DispatchDetails
                 .SelectMany(d => d.StoreExportStoreDetails)
-                .Where(sd => sd.WarehouseId == staffDetail.StoreId)  // ⚠️ Thay ExportStoreId bằng tên FK đúng của bạn
                 .ToList();
 
             if (!targetStoreDetails.Any())

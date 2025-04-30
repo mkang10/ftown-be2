@@ -43,7 +43,8 @@ namespace Application.UseCases
                 Email = dto.Email,
                 Phone = dto.Phone,
                 WarehouseType = dto.WarehouseType,
-                ShopManagerId = dto.ShopManagerId
+                ShopManagerId = dto.ShopManagerId,
+                IsOwnerWarehouse = dto.IsOwnerWarehouse
             };
 
             var created = await _warehouseRepo.CreateAsync(warehouse);
