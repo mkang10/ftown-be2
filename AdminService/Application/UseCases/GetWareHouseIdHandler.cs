@@ -42,7 +42,7 @@ namespace Application.UseCases
                             QuantityChange = a.QuantityChange,
                             ActionDate = a.ActionDate,
                             ChangedBy = a.ChangedBy,
-                            changedByName = a.ChangedByNavigation.Account.FullName,
+                            changedByName = a.ChangedByNavigation.FullName,
                             Note = a.Note
                         })
                         .OrderByDescending(a => a.ActionDate)

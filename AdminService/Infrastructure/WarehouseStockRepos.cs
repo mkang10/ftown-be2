@@ -29,7 +29,7 @@ namespace Infrastructure.Repositories
                 .Include(ws => ws.WareHouse)
                .Include(ws => ws.WareHouseStockAudits)
             .ThenInclude(a => a.ChangedByNavigation)
-                        .ThenInclude(a => a.Account)
+                       
 
                 .FirstOrDefaultAsync(ws => ws.WareHouseStockId == id);
         }

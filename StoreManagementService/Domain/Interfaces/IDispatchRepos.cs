@@ -14,6 +14,7 @@ namespace Domain.Interfaces
 {
     public interface IDispatchRepos
     {
+        Task<int> GetApprovedOutboundQuantityAsync(int warehouseId, int variantId);
         Task<Dispatch?> GetByIdAssignAsync(int dispatchId);
         Task<Dispatch?> GetByIdAsync(int dispatchId);
         Task<List<Dispatch>> GetAllByOriginalDispatchIdAsync(int originalDispatchId);
@@ -29,6 +30,7 @@ namespace Domain.Interfaces
               int page,
               int pageSize,
               StoreExportStoreDetailFilterDto filter);
+        Task AddAsync(Dispatch dispatch);
 
         Task<PaginatedResponseDTO<StoreExportStoreDetailDto>> GetStoreExportStoreDetailByStaffDetailAsync(
     StoreExportStoreDetailFilterDtO filter);

@@ -54,7 +54,8 @@ namespace Infrastructure
         {
             await _context.Entry(dispatch).ReloadAsync();
         }
-
+        public async Task AddAsync(Dispatch dispatch)
+           => await _context.Dispatches.AddAsync(dispatch);
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
@@ -279,6 +280,20 @@ namespace Infrastructure
                 .ToListAsync();
 
             return new PaginatedResponseDTO<StoreExportStoreDetailDto>(items, total, filter.Page, filter.PageSize);
+        }
+
+        public async Task<int> GetApprovedOutboundQuantityAsync(int warehouseId, int variantId)
+        {
+            // Dùng DispatchStoreDetails vì WarehouseId nằm ở đây
+            var query = from dsd in _context.StoreExportStoreDetails
+                        join dd in _context.DispatchDetails on dsd.DispatchDetailId equals dd.DispatchDetailId
+                        join dj in _context.Dispatches on dd.DispatchId equals dj.DispatchId
+                        where dsd.WarehouseId == warehouseId
+                              && dd.VariantId == variantId
+                              && dj.Status == "Approved"
+                        select dsd.AllocatedQuantity;
+
+            return await query.SumAsync(q => (int?)q) ?? 0;
         }
 
     }

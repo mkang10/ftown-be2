@@ -30,6 +30,7 @@ namespace Domain.Interfaces
         Task<PaginatedResponseDTO<Warehouse>> GetAllWarehousesAsync(int page, int pageSize);
 
         Task<Warehouse> GetWareHouseByIdAsync(int id);
+        Task<StaffDetail?> GetStaffDetailByIdAsync(int staffDetailId);
 
         Task<Import?> GetImportByTransferIdAsync(int transferId);
 

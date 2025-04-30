@@ -10,6 +10,12 @@ namespace Domain.DTO.Response
 
     namespace Application.Imports.Dto
     {
+
+        public class ImportResponseDto
+        {
+            public int ImportId { get; set; }
+            public string Status { get; set; } = string.Empty;
+        }
         public class ImportDto
         {
             public int ImportId { get; set; }

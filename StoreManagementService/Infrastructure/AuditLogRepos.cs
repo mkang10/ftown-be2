@@ -22,14 +22,15 @@ namespace Infrastructure
             _context.AuditLogs.Add(auditLog);
         }
 
-        public async void AddAsync(AuditLog auditLog)
-        {
-            _context.AuditLogs.Add(auditLog);
-        }
-
+      
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public async Task AddAsync(AuditLog auditLog)
+        {
+            await _context.AuditLogs.AddAsync(auditLog);
         }
     }
 }

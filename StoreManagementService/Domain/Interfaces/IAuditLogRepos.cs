@@ -11,5 +11,7 @@ namespace Domain.Interfaces
     {
         void Add(AuditLog auditLog);
         Task SaveChangesAsync();
+        Task AddAsync(AuditLog auditLog);
+
     }
 }

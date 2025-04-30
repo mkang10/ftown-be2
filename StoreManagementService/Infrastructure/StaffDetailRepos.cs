@@ -35,7 +35,6 @@ namespace Infrastructure
         {
             return await _context.StaffDetails
                 .Include(s => s.Account)
-                .Where(s => s.StoreId == warehouseId) // lọc theo warehouse
                 .GroupBy(s => new { s.StaffDetailId, s.Account.FullName })
                 .Select(g => new StaffNameDto
                 {

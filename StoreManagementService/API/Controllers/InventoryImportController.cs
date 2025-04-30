@@ -1,9 +1,11 @@
 ﻿using Application.DTO.Request;
+using Application.Services;
 using Application.UseCases;
 using Domain.DTO.Request;
 using Domain.DTO.Response;
 using Domain.DTO.Response.Domain.DTO.Response;
 using Domain.Entities;
+using Domain.Interfaces;
 using Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,15 +24,17 @@ namespace API.Controllers
         private readonly ImportDoneHandler _importDoneHandler;
         private readonly ImportIncompletedHandler _importIncompletedHandler;
         private readonly ImportShortageHandler _importShortageHandler;
+        private readonly IImportRepos _importRepos;
 
         private readonly GetAllStaffImportHandler _getAllStaffImport;
         private readonly GetAllImportStoreHandler _getAllImportStore;
+        private readonly ReportService _reportService;
 
 
 
 
 
-        public InventoryImportController(GetAllImportStoreHandler getAllImportStore, ImportShortageHandler importShortageHandler, GetAllStaffImportHandler getAllStaffImport, ImportDoneHandler importDoneHandler, ImportIncompletedHandler importIncompletedHandler, AssignStaffHandler assignStaff, GetAllStaffHandler getAllStaff, CreateImportHandler createhandler, GetImportHandler Gethandler, GetAllProductHandler getProductVar)
+        public InventoryImportController(ReportService reportService, IImportRepos importRepos, GetAllImportStoreHandler getAllImportStore, ImportShortageHandler importShortageHandler, GetAllStaffImportHandler getAllStaffImport, ImportDoneHandler importDoneHandler, ImportIncompletedHandler importIncompletedHandler, AssignStaffHandler assignStaff, GetAllStaffHandler getAllStaff, CreateImportHandler createhandler, GetImportHandler Gethandler, GetAllProductHandler getProductVar)
         {
             _createhandler = createhandler;
             _gethandler = Gethandler;
@@ -42,6 +46,8 @@ namespace API.Controllers
             _importShortageHandler = importShortageHandler;
             _getAllStaffImport = getAllStaffImport;
             _getAllImportStore = getAllImportStore;
+            _reportService = reportService;
+            _importRepos = importRepos;
         }
 
 
@@ -118,18 +124,48 @@ namespace API.Controllers
             }
         }
 
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateImport([FromBody] CreateImportDto request)
+        [HttpPost("create-from-excel")]
+        public async Task<IActionResult> CreateImportFromExcel(
+    [FromForm] IFormFile file,
+    [FromForm] int warehouseId,
+    [FromForm] int createdBy)
         {
             try
             {
-                if (request == null || request.ImportDetails == null || !request.ImportDetails.Any())
+                if (file == null || file.Length == 0)
+                    return BadRequest(new ResponseDTO<object>(null, false, "Vui lòng upload file Excel."));
+
+                // Gọi service để import từ Excel
+                var response = await _createhandler.CreateTRansferImportFromExcelAsync(file, warehouseId, createdBy);
+                // Ở đây vẫn giữ response.Status = true ngay cả khi importEntity.Status = "Rejected"
+                if (!response.Status)
+                    return BadRequest(response);
+
+                // Lấy lại entity import vừa tạo
+                var importEntity = await _importRepos.GetByIdAsync(response.Data.ImportId);
+                if (importEntity == null)
+                    return NotFound(new ResponseDTO<object>(null, false, "Không tìm thấy đơn nhập sau khi tạo."));
+
+                // Nếu đơn bị reject thì chỉ trả về response DTO chứ không sinh file
+                if (string.Equals(importEntity.Status, "Rejected", StringComparison.OrdinalIgnoreCase))
                 {
-                    return BadRequest(new ResponseDTO<object>(null, false, "Dữ liệu import không hợp lệ!"));
+                    // Trả về thành công (200 OK) với thông báo, nhưng không có file
+                    return Ok(new ResponseDTO<object>(
+                        null,
+                        true,
+                        "Đơn nhập đã bị từ chối, bạn không thể tải biên bản nhập kho, vì các kho lân cận đều không đủ hàng"
+                    ));
                 }
 
-                var response = await _createhandler.CreateImportAsync(request);
-                return Ok(response);
+                // Chỉ đến đây nếu Status != "Rejected"
+                byte[] slipFile = _reportService.GenerateImportSlip(importEntity);
+                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
+
+                return File(
+                    slipFile,
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    fileName
+                );
             }
             catch (ArgumentException argEx)
             {
@@ -145,18 +181,48 @@ namespace API.Controllers
             }
         }
 
-        [HttpPost("create-supplement")]
-        public async Task<IActionResult> CreateSupplementImport([FromBody] SupplementImportRequestDto request)
+
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateImport([FromBody] TransImportDto request)
         {
             try
             {
+                // 1. Validate request
                 if (request == null || request.ImportDetails == null || !request.ImportDetails.Any())
                     return BadRequest(new ResponseDTO<object>(null, false, "Dữ liệu import không hợp lệ!"));
-                if (request.OriginalImportId <= 0)
-                    return BadRequest(new ResponseDTO<object>(null, false, "OriginalImportId không hợp lệ!"));
 
-                var response = await _createhandler.CreateSupplementImportAsync(request);
-                return Ok(response);
+                // 2. Gọi handler (Status=true dù đã reject)
+                var response = await _createhandler.CreateTransferImportAsync(request);
+
+                // Nếu handler có report lỗi nghiêm trọng (ví dụ validate đầu vào, lỗi DB…), vẫn BadRequest
+                if (!response.Status)
+                    return BadRequest(response);
+
+                // 3. Lấy import entity để đọc trạng thái thật
+                var importEntity = await _importRepos.GetByIdAsync(response.Data.ImportId);
+                if (importEntity == null)
+                    return NotFound(new ResponseDTO<object>(null, false, "Không tìm thấy đơn nhập sau khi tạo."));
+
+                // 4. Nếu import bị REJECTED → chỉ trả JSON, giữ status=true nhưng không trả file
+                if (string.Equals(importEntity.Status, "Rejected", StringComparison.OrdinalIgnoreCase))
+                {
+                    var payload = new { ImportId = importEntity.ImportId };
+                    return Ok(new ResponseDTO<object>(
+                        payload,
+                        true,
+                        "Đơn của bạn đã bị từ chối vì sản phẩm không đủ để điều phối"
+                    ));
+                }
+
+                // 5. Ngược lại (Approved) → sinh file và trả về
+                byte[] slipFile = _reportService.GenerateImportSlip(importEntity);
+                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
+
+                return File(
+                    slipFile,
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    fileName
+                );
             }
             catch (ArgumentException argEx)
             {
@@ -171,6 +237,8 @@ namespace API.Controllers
                 return StatusCode(500, new ResponseDTO<object>(null, false, $"Lỗi server: {ex.Message}"));
             }
         }
+
+
 
 
         [HttpPost("{importId}/done")]

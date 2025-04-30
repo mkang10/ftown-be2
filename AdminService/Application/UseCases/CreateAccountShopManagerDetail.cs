@@ -104,11 +104,6 @@ namespace Application.UseCases
                     {
                         AccountId = result.AccountId,
                         JoinDate = DateTime.UtcNow,
-                        Role = "Nhân viên thực tập",
-                        JobTitle = "Nhân viên",
-                        Department = "Nhân viên",
-                        Salary = 120000,
-                        EmploymentType = "Nhân viên"
                     };
                     var staff = await _userManagementRepository.CreateStaffDetail(staffDetail);
                 }
