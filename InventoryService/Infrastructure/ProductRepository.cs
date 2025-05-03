@@ -71,16 +71,18 @@ namespace Infrastructure
         public async Task<List<Product>> GetPagedProductsWithVariantsAsync(int page, int pageSize)
         {
             return await _context.Products
-				.Where(p => p.Status == ProductStatus.Online.ToString()
-		                   || p.Status == ProductStatus.Both.ToString() )
-				.Include(p => p.ProductVariants)
+                .AsNoTracking() // ✅ Thêm dòng này để bỏ tracking
+                .Where(p => p.Status == ProductStatus.Online.ToString()
+                         || p.Status == ProductStatus.Both.ToString())
+                .Include(p => p.ProductVariants)
                     .ThenInclude(pv => pv.Color)
                 .Include(p => p.Category)
-                .Include(p => p.ProductImages) 
+                .Include(p => p.ProductImages)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
         }
+
 
         public async Task<List<ProductVariant>> GetProductVariantsByIdsAsync(List<int> variantIds)
         {

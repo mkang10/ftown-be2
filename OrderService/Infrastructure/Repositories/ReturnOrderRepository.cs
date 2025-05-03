@@ -48,13 +48,13 @@ namespace Infrastructure.Repositories
             }
         }
         public async Task<PaginatedResult<ReturnOrder>> GetReturnOrdersAsync(
-        string? status,
-        string? returnOption,
-        DateTime? dateFrom,
-        DateTime? dateTo,
-        int? orderId,
-        int pageNumber,
-        int pageSize)
+                                                        string? status,
+                                                        string? returnOption,
+                                                        DateTime? dateFrom,
+                                                        DateTime? dateTo,
+                                                        int? orderId,
+                                                        int pageNumber,
+                                                        int pageSize)
         {
             IQueryable<ReturnOrder> query = _context.ReturnOrders
                 .Include(ro => ro.Order).ThenInclude(o => o.OrderDetails)
@@ -75,6 +75,28 @@ namespace Infrastructure.Repositories
                 query = query.Where(ro => ro.OrderId == orderId.Value);
             query = query.OrderByDescending(ro => ro.CreatedDate);
             return await query.ToPaginatedResultAsync(pageNumber, pageSize);
+        }
+
+        public async Task<ReturnOrder?> GetByIdAsync(int returnOrderId)
+        {
+            return await _context.ReturnOrders
+              .Include(ro => ro.Order)
+              .Include(ro => ro.ReturnOrderItems)
+              .FirstOrDefaultAsync(ro => ro.ReturnOrderId == returnOrderId);
+        }
+
+        public async Task UpdateAsync(ReturnOrder returnOrder)
+        {
+            _context.ReturnOrders.Update(returnOrder);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<ReturnOrder>> GetByStatusAsync(string status)
+        {
+            return await _context.ReturnOrders
+              .Where(ro => ro.Status == status)
+              .OrderByDescending(ro => ro.CreatedDate)
+              .ToListAsync();
         }
     }
 }

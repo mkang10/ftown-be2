@@ -42,7 +42,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 builder.Services.InstallService(builder.Configuration);
 builder.Services.AddHttpClient<IInventoryServiceClient, InventoryServiceClient>(client =>
 {
-    client.BaseAddress = new Uri("https://ftinventoryservice.azurewebsites.net/api/");
+    client.BaseAddress = new Uri("https://localhost:7265/api/");
 });
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

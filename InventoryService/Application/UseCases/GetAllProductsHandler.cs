@@ -47,24 +47,24 @@ namespace Application.UseCases
             // 🔹 Lấy danh sách khuyến mãi đang hoạt động
             var promotions = await _promotionRepository.GetActiveProductPromotionsAsync();
 
-            // ⚡ Dùng AutoMapper để chuyển đổi Entity -> DTO
-            var productList = _mapper.Map<List<ProductListResponse>>(products);
+            var productList = products.Select(p =>
+            {
+                var dto = _mapper.Map<ProductListResponse>(p); // dto.Price đã được map từ ProductVariants
 
-			// 🔥 Tính giá sau khuyến mãi
-			foreach (var product in productList)
-			{
-				_promotionService.ApplyPromotion(
-					product.ProductId,
-					product.Price,
-					promotions,
-					out var discountedPrice,
-					out var promotionTitle);
+                _promotionService.ApplyPromotion(
+                    dto.ProductId,
+                    dto.Price, // ✅ dùng dto.Price thay vì p.Price
+                    promotions,
+                    out var discounted,
+                    out var promoTitle);
 
-				product.DiscountedPrice = discountedPrice;
-				product.PromotionTitle = promotionTitle;
-			}
-			// ✅ Lưu vào cache với TTL 10 phút
-			await _cacheService.SetCacheAsync(cacheKey, productList, TimeSpan.FromMinutes(10));
+                dto.DiscountedPrice = discounted;
+                dto.PromotionTitle = promoTitle;
+
+                return dto;
+            }).ToList();
+            // ✅ Lưu vào cache với TTL 10 phút
+            await _cacheService.SetCacheAsync(cacheKey, productList, TimeSpan.FromMinutes(10));
 
             return productList;
         }

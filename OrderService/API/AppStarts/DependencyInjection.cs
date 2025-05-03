@@ -91,6 +91,7 @@ namespace API.AppStarts
             services.AddScoped<GetAllReturnRequestsHandler>();
             services.AddScoped<WareHouseStockAuditHandler>();
             services.AddScoped<EmailHandler>();
+            services.AddScoped<UpdateReturnOrderStatusHandler>();
 
             //GHN
             services.AddScoped<GHNLogHandler>();

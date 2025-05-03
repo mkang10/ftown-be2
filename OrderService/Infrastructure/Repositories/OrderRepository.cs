@@ -119,6 +119,12 @@ namespace Infrastructure.Repositories
             _context.Orders.Update(order);
             await _context.SaveChangesAsync();
         }
+        public async Task UpdateOrderStatusWithOrderAsync(Order order, string newStatus)
+        {
+            order.Status = newStatus;
+            _context.Orders.Update(order);
+            await _context.SaveChangesAsync();
+        }
         public async Task<Order> GetOrderItemsWithOrderIdAsync(int orderId)
         {
             return await _context.Orders
@@ -212,6 +218,18 @@ namespace Infrastructure.Repositories
         {
             var data = _context.Orders.SingleOrDefaultAsync(o => o.Ghnid == orderId);
             return data;
+        }
+
+        public async Task<bool> IsOrderReturnableAsync(int orderId, int accountId)
+        {
+            var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+
+            return await _context.Orders.AnyAsync(o =>
+                o.OrderId == orderId &&
+                o.AccountId == accountId &&
+                o.Status == "completed" &&
+                o.CompletedDate != null &&
+                o.CompletedDate >= sevenDaysAgo);
         }
     }
 }

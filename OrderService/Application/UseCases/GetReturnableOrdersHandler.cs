@@ -58,7 +58,10 @@ namespace Application.UseCases
 
             return orderResponses;
         }
-
+        public async Task<bool> CheckReturnableHandleAsync(int orderId, int accountId)
+        {
+            return await _orderRepository.IsOrderReturnableAsync(orderId, accountId);
+        }
     }
 
 }

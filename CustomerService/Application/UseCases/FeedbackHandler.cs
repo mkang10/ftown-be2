@@ -133,43 +133,36 @@ namespace Application.UseCases
 
         public async Task<Pagination<FeedbackRequestDTO>> GetAllFeedbackByProductId(int id, PaginationParameter paginationParameter)
         {
-            try
+            var cacheKey = $"Feedback_Product_{id}_{paginationParameter.PageIndex}_{paginationParameter.PageSize}";
+            var db = _redis.GetDatabase();
+
+            // (tuỳ chọn) đọc cache nếu có
+            var cached = await db.StringGetAsync(cacheKey);
+            if (cached.HasValue)
             {
-                var cacheKey = "Data";
-                var db = _redis.GetDatabase();
-
-                //// check cache null or not ?
-                //var cachedData = await db.StringGetAsync(cacheKey);
-                //if (cachedData.HasValue)
-                //{
-                //    // if not null , deserialize object
-                //    var cachedResult = JsonConvert.DeserializeObject<Pagination<FeedbackRequestDTO>>(cachedData);
-                //    return cachedResult;
-                //}
-
-                // if null cache, get data from db and write it down cache
-                var trips = await _commentRepository.GettAllFeedbackByProductId(id, paginationParameter);
-                if (!trips.Any())
-                {
-                    throw new Exception("No data!");
-                }
-
-                var tripModels = _mapper.Map<List<FeedbackRequestDTO>>(trips);
-
-                // write down cache
-                var paginationResult = new Pagination<FeedbackRequestDTO>(tripModels,
-                    trips.TotalCount,
-                    trips.CurrentPage,
-                    trips.PageSize);
-                await db.StringSetAsync(cacheKey, JsonConvert.SerializeObject(paginationResult), TimeSpan.FromMinutes(300));
-
-                return paginationResult;
+                return JsonConvert.DeserializeObject<Pagination<FeedbackRequestDTO>>(cached);
             }
 
-            catch (Exception ex)
-            {
-                throw new Exception("An error occurred: " + ex.Message);
-            }
+            // Lấy từ DB
+            var trips = await _commentRepository.GettAllFeedbackByProductId(id, paginationParameter);
+
+            // Map sang DTO (trips có thể rỗng)
+            var tripModels = _mapper.Map<List<FeedbackRequestDTO>>(trips);
+
+            var paginationResult = new Pagination<FeedbackRequestDTO>(
+                tripModels,
+                trips.TotalCount,
+                trips.CurrentPage,
+                trips.PageSize
+            );
+
+            // Ghi cache
+            await db.StringSetAsync(cacheKey,
+                JsonConvert.SerializeObject(paginationResult),
+                TimeSpan.FromMinutes(300)
+            );
+
+            return paginationResult;
         }
 
         public async Task<FeedbackRequestDTO> GetById(int id)

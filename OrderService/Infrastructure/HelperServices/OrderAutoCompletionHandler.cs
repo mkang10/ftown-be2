@@ -54,7 +54,7 @@ namespace Infrastructure.HelperServices
             {
                 Console.WriteLine($"[BGService] Đang cập nhật OrderId: {order.OrderId} sang Completed.");
                 order.Status = "Completed";
-
+                order.CompletedDate = DateTime.UtcNow;
                 // 3. Ghi thêm AuditLog
                 await _auditLogHandler.LogOrderActionAsync(
                     order.OrderId,

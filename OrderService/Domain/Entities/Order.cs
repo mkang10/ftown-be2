@@ -43,6 +43,8 @@ public partial class Order
 
     public bool? IsFeedback { get; set; }
 
+    public DateTime? CompletedDate { get; set; }
+
     public virtual Account Account { get; set; } = null!;
 
     public virtual ICollection<DeliveryTracking> DeliveryTrackings { get; set; } = new List<DeliveryTracking>();

@@ -175,136 +175,136 @@ namespace API.Controllers
         }
 
 
-        [HttpPost("order-status-newest")]
-        public async Task<IActionResult> GetOrderStatusNewest([FromBody] OrderDetailWithUpdateRequest orderDetailRequest)
-        {
-            if (orderDetailRequest == null || string.IsNullOrEmpty(orderDetailRequest.order_code))
-                return BadRequest("Invalid order code.");
+        //[HttpPost("order-status-newest")]
+        //public async Task<IActionResult> GetOrderStatusNewest([FromBody] OrderDetailWithUpdateRequest orderDetailRequest)
+        //{
+        //    if (orderDetailRequest == null || string.IsNullOrEmpty(orderDetailRequest.order_code))
+        //        return BadRequest("Invalid order code.");
 
-            var requestJson = Newtonsoft.Json.JsonConvert.SerializeObject(orderDetailRequest);
-            var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
-            content.Headers.Add("Token", token);
+        //    var requestJson = Newtonsoft.Json.JsonConvert.SerializeObject(orderDetailRequest);
+        //    var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
+        //    content.Headers.Add("Token", token);
 
-            var response = await _httpClient.PostAsync("https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/detail", content);
+        //    var response = await _httpClient.PostAsync("https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/detail", content);
 
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorResponseData = await response.Content.ReadAsStringAsync();
-                return BadRequest(errorResponseData);
-            }
+        //    if (!response.IsSuccessStatusCode)
+        //    {
+        //        var errorResponseData = await response.Content.ReadAsStringAsync();
+        //        return BadRequest(errorResponseData);
+        //    }
 
-            var responseData = await response.Content.ReadAsStringAsync();
-            var jsonResponse = JObject.Parse(responseData);
-            var data = jsonResponse["data"];
-            if (data == null)
-                return BadRequest("Dữ liệu không tồn tại trong phản hồi từ GHN.");
+        //    var responseData = await response.Content.ReadAsStringAsync();
+        //    var jsonResponse = JObject.Parse(responseData);
+        //    var data = jsonResponse["data"];
+        //    if (data == null)
+        //        return BadRequest("Dữ liệu không tồn tại trong phản hồi từ GHN.");
 
-            var systemAccountId = -1; // Account ID hệ thống (hoặc bạn gán giá trị phù hợp)
-            var logsToken = data["log"];
+        //    var systemAccountId = -1; // Account ID hệ thống (hoặc bạn gán giá trị phù hợp)
+        //    var logsToken = data["log"];
 
-            if (logsToken != null && logsToken.Type == JTokenType.Array)
-            {
-                var logs = logsToken.ToObject<List<Application.DTO.Request.LogEntry>>();
-                var latestLog = logs
-                    .OrderByDescending(log => log.updated_date)
-                    .FirstOrDefault();
+        //    if (logsToken != null && logsToken.Type == JTokenType.Array)
+        //    {
+        //        var logs = logsToken.ToObject<List<Application.DTO.Request.LogEntry>>();
+        //        var latestLog = logs
+        //            .OrderByDescending(log => log.updated_date)
+        //            .FirstOrDefault();
 
-                if (latestLog != null)
-                {
-                    var order = await _orderRepository.GetOrderByIdGHNAsync(orderDetailRequest.order_code);
+        //        if (latestLog != null)
+        //        {
+        //            var order = await _orderRepository.GetOrderByIdGHNAsync(orderDetailRequest.order_code);
 
-                    if (latestLog.status == "delivering")
-                    {
-                        await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "Delivering");
+        //            if (latestLog.status == "delivering")
+        //            {
+        //                await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "Delivering");
 
-                        if (order != null)
-                        {
-                            try
-                            {
-                                await _orderProcessingHelper.LogDeliveringStatusAsync(order.OrderId, systemAccountId);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error logging delivering status: {ex.Message}");
-                            }
-                        }
-                    }
-                    else if (latestLog.status == "delivered")
-                    {
-                        await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "Delivered");
+        //                if (order != null)
+        //                {
+        //                    try
+        //                    {
+        //                        await _orderProcessingHelper.LogDeliveringStatusAsync(order.OrderId, systemAccountId);
+        //                    }
+        //                    catch (Exception ex)
+        //                    {
+        //                        Console.WriteLine($"Error logging delivering status: {ex.Message}");
+        //                    }
+        //                }
+        //            }
+        //            else if (latestLog.status == "delivered")
+        //            {
+        //                await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "Delivered");
 
-                        if (order != null)
-                        {
-                            try
-                            {
-                                await _orderProcessingHelper.LogDeliveredStatusAsync(order.OrderId, systemAccountId);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error logging delivered status: {ex.Message}");
-                            }
-                        }
-                    }
+        //                if (order != null)
+        //                {
+        //                    try
+        //                    {
+        //                        await _orderProcessingHelper.LogDeliveredStatusAsync(order.OrderId, systemAccountId);
+        //                    }
+        //                    catch (Exception ex)
+        //                    {
+        //                        Console.WriteLine($"Error logging delivered status: {ex.Message}");
+        //                    }
+        //                }
+        //            }
 
-                    return Ok(new
-                    {
-                        status = latestLog.status,
-                        UpdatedDate = latestLog.updated_date.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
-                    });
-                }
-            }
+        //            return Ok(new
+        //            {
+        //                status = latestLog.status,
+        //                UpdatedDate = latestLog.updated_date.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+        //            });
+        //        }
+        //    }
 
-            // Xử lý fallback nếu log bị thiếu
-            var fallbackStatus = data["status"]?.ToString();
-            var fallbackDate = data["created_date"]?.ToObject<DateTime?>();
+        //    // Xử lý fallback nếu log bị thiếu
+        //    var fallbackStatus = data["status"]?.ToString();
+        //    var fallbackDate = data["created_date"]?.ToObject<DateTime?>();
 
-            if (!string.IsNullOrEmpty(fallbackStatus) && fallbackDate.HasValue)
-            {
-                var order = await _orderRepository.GetOrderByIdGHNAsync(orderDetailRequest.order_code);
+        //    if (!string.IsNullOrEmpty(fallbackStatus) && fallbackDate.HasValue)
+        //    {
+        //        var order = await _orderRepository.GetOrderByIdGHNAsync(orderDetailRequest.order_code);
 
-                if (fallbackStatus == "delivering")
-                {
-                    await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "Delivering");
+        //        if (fallbackStatus == "delivering")
+        //        {
+        //            await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "Delivering");
 
-                    if (order != null)
-                    {
-                        try
-                        {
-                            await _orderProcessingHelper.LogDeliveringStatusAsync(order.OrderId, systemAccountId);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Error logging delivering status: {ex.Message}");
-                        }
-                    }
-                }
-                else if (fallbackStatus == "delivered")
-                {
-                    await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "Delivered");
+        //            if (order != null)
+        //            {
+        //                try
+        //                {
+        //                    await _orderProcessingHelper.LogDeliveringStatusAsync(order.OrderId, systemAccountId);
+        //                }
+        //                catch (Exception ex)
+        //                {
+        //                    Console.WriteLine($"Error logging delivering status: {ex.Message}");
+        //                }
+        //            }
+        //        }
+        //        else if (fallbackStatus == "delivered")
+        //        {
+        //            await _logHandler.GetOrderByGHNId(orderDetailRequest.order_code, "Delivered");
 
-                    if (order != null)
-                    {
-                        try
-                        {
-                            await _orderProcessingHelper.LogDeliveredStatusAsync(order.OrderId, systemAccountId);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Error logging delivered status: {ex.Message}");
-                        }
-                    }
-                }
+        //            if (order != null)
+        //            {
+        //                try
+        //                {
+        //                    await _orderProcessingHelper.LogDeliveredStatusAsync(order.OrderId, systemAccountId);
+        //                }
+        //                catch (Exception ex)
+        //                {
+        //                    Console.WriteLine($"Error logging delivered status: {ex.Message}");
+        //                }
+        //            }
+        //        }
 
-                return Ok(new
-                {
-                    status = fallbackStatus,
-                    UpdatedDate = fallbackDate.Value.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
-                });
-            }
+        //        return Ok(new
+        //        {
+        //            status = fallbackStatus,
+        //            UpdatedDate = fallbackDate.Value.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+        //        });
+        //    }
 
-            var fallbackError = await response.Content.ReadAsStringAsync();
-            return BadRequest(fallbackError);
-        }
+        //    var fallbackError = await response.Content.ReadAsStringAsync();
+        //    return BadRequest(fallbackError);
+        //}
 
 
 

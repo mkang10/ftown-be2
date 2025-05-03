@@ -61,39 +61,36 @@ namespace API.Controllers
             }
         }
         [HttpGet("productid/{id}")]
-        public async Task<IActionResult> GettAllFeedbackByProductId(int id, [FromQuery] PaginationParameter paginationParameter)
+        public async Task<IActionResult> GetAllFeedbackByProductId(int id, [FromQuery] PaginationParameter paginationParameter)
         {
-            try
-            {
-                var result = await _service.GetAllFeedbackByProductId(id, paginationParameter);
+            // gọi service (không bao giờ throw nữa)
+            var result = await _service.GetAllFeedbackByProductId(id, paginationParameter);
 
-                if (result == null)
-                {
-                    var notFoundResponse = new MessageRespondDTO<object>(Array.Empty<object>(), false, StatusSuccess.Wrong.ToString());
-                    return NotFound(notFoundResponse);
-                }
-                else
-                {
-                    var metadata = new
-                    {
-                        result.TotalCount,
-                        result.PageSize,
-                        result.CurrentPage,
-                        result.TotalPages,
-                        result.HasNext,
-                        result.HasPrevious
-                    };
-
-                    Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(metadata));
-                }
-                var successResponse = new MessageRespondDTO<object>(result, true, StatusSuccess.Success.ToString());
-                return Ok(successResponse);
-            }
-            catch (Exception ex)
+            if (result == null)
             {
-                var errorResponse = new MessageRespondDTO<object>(Array.Empty<object>(), true, "No object!");
-                return BadRequest(errorResponse);
+                // có thể giữ NotFound nếu id sản phẩm không tồn tại
+                return NotFound(new MessageRespondDTO<object>(Array.Empty<object>(), false, StatusSuccess.Wrong.ToString()));
             }
+
+            // Thêm header X-Pagination
+            var metadata = new
+            {
+                result.TotalCount,
+                result.PageSize,
+                result.CurrentPage,
+                result.TotalPages,
+                result.HasNext,
+                result.HasPrevious
+            };
+            Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(metadata));
+
+            // Xác định message theo kết quả
+            var message = result.TotalCount == 0
+                ? "Chưa có đánh giá"
+                : StatusSuccess.Success.ToString();
+
+            var successResponse = new MessageRespondDTO<object>(result, true, message);
+            return Ok(successResponse);
         }
 
         [HttpPost("create-multiple")]

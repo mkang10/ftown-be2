@@ -23,6 +23,7 @@ namespace Application.DTO.Response
         public string? BankName { get; set; }
         public string? BankAccountNumber { get; set; }
         public string? BankAccountName { get; set; }
+        public List<ReturnItemResponse> ReturnItems { get; set; } = new();
 
         // Dùng trực tiếp wrapper trả về chi tiết order
         public OrderDetailResponseWrapper? Order { get; set; }

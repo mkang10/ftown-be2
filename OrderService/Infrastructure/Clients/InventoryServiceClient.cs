@@ -161,7 +161,53 @@ namespace Infrastructure.Clients
                 return false;
             }
         }
+        public async Task<bool> RestoreStockAfterCancelAsync(int warehouseId, List<OrderDetail> orderDetails)
+        {
+            try
+            {
+                // Tạo request khôi phục tồn kho
+                var stockUpdateRequest = new StockUpdateRequest
+                {
+                    WarehouseId = warehouseId,
+                    Items = orderDetails.Select(od => new StockItemResponse
+                    {
+                        VariantId = od.ProductVariantId,
+                        Quantity = od.Quantity
+                    }).ToList()
+                };
 
+                Console.WriteLine($"[DEBUG] Payload gửi đi (restore): {JsonSerializer.Serialize(stockUpdateRequest)}");
+
+                // Gửi đến API InventoryService
+                var response = await _httpClient.PostAsJsonAsync("warehouses/restore-after-cancel", stockUpdateRequest);
+                var responseJson = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"[DEBUG] API Response (restore): {responseJson}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"[ERROR] Không thể khôi phục tồn kho: {response.StatusCode}");
+                    return false;
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<ResponseDTO>();
+
+                if (result != null && result.Status)
+                {
+                    Console.WriteLine($"[INFO] {result.Message}");
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine($"[ERROR] Khôi phục tồn kho thất bại: {result?.Message}");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Lỗi khi gọi RestoreStockAfterCancelAsync: {ex.Message}");
+                return false;
+            }
+        }
 
     }
 }
