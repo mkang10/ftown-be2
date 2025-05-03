@@ -1,4 +1,6 @@
 ﻿using Application.DTO.Response;
+using Application.Interfaces;
+using Domain.Common_Model;
 using Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 using System;
@@ -13,10 +15,12 @@ namespace Application.UseCases
     {
         private readonly IOrderRepository _orderRepository;
         private readonly ILogger<RevenueHandler> _logger;
-        public RevenueHandler(IOrderRepository orderRepository, ILogger<RevenueHandler> logger)
+        private readonly IPaginationHelper _paginationHelper;
+        public RevenueHandler(IOrderRepository orderRepository, ILogger<RevenueHandler> logger, IPaginationHelper paginationHelper)
         {
             _orderRepository = orderRepository;
             _logger = logger;
+            _paginationHelper = paginationHelper;
         }
 
         public async Task<ResponseDTO<RevenueSummaryResponse>> GetRevenueSummaryAsync(DateTime? from, DateTime? to)
@@ -42,7 +46,8 @@ namespace Application.UseCases
 
             return new ResponseDTO<RevenueSummaryResponse>(response, true, "Lấy thống kê doanh thu thành công");
         }
-        public async Task<ResponseDTO<List<OrderSummaryItem>>> GetRevenueOrdersAsync(DateTime? from, DateTime? to)
+        public async Task<ResponseDTO<PaginatedResult<OrderSummaryItem>>> GetRevenueOrdersAsync(
+                                                                                DateTime? from, DateTime? to, int pageNumber = 1, int pageSize = 10)
         {
             _logger.LogInformation("Getting completed orders from {From} to {To}", from, to);
 
@@ -63,9 +68,12 @@ namespace Application.UseCases
                 CustomerName = o.FullName,
                 TotalQuantity = o.OrderDetails.Sum(od => od.Quantity),
                 TotalPrice = o.OrderDetails.Sum(od => od.PriceAtPurchase * od.Quantity)
-            }).ToList();
+            });
 
-            return new ResponseDTO<List<OrderSummaryItem>>(result, true, "Lấy danh sách đơn hàng doanh thu thành công");
+            var paginated = _paginationHelper.PaginateInMemory(result, pageNumber, pageSize);
+
+            return new ResponseDTO<PaginatedResult<OrderSummaryItem>>(paginated, true, "Lấy danh sách đơn hàng doanh thu thành công");
+
         }
 
         public async Task<ResponseDTO<List<TopSellingProductResponse>>> GetTopSellingProductsAsync(DateTime? from, DateTime? to, int top = 10)
@@ -95,8 +103,10 @@ namespace Application.UseCases
             return new ResponseDTO<List<TopSellingProductResponse>>(productStats, true, "Lấy top sản phẩm bán chạy thành công");
         }
 
-        public async Task<ResponseDTO<List<RevenueByDateResponse>>> GetRevenueByDateAsync(
-                                                            DateTime from, DateTime to, string groupBy = "day")
+        public async Task<ResponseDTO<PaginatedResult<RevenueByDateResponse>>> GetRevenueByDateAsync(
+                                                                                                        DateTime from, DateTime to,
+                                                                                                        string groupBy = "day",
+                                                                                                        int pageNumber = 1, int pageSize = 10)
         {
             var orders = await _orderRepository.GetCompletedOrdersWithDetailsAsync(from, to);
 
@@ -109,12 +119,9 @@ namespace Application.UseCases
 
             var grouped = groupBy.ToLower() switch
             {
-                "day" => orderDetails
-                    .GroupBy(x => x.Date.ToString("yyyy-MM-dd")),
-                "month" => orderDetails
-                    .GroupBy(x => x.Date.ToString("yyyy-MM")),
-                "year" => orderDetails
-                    .GroupBy(x => x.Date.ToString("yyyy")),
+                "day" => orderDetails.GroupBy(x => x.Date.ToString("yyyy-MM-dd")),
+                "month" => orderDetails.GroupBy(x => x.Date.ToString("yyyy-MM")),
+                "year" => orderDetails.GroupBy(x => x.Date.ToString("yyyy")),
                 _ => throw new ArgumentException("Invalid groupBy. Use: day, month, or year.")
             };
 
@@ -126,10 +133,14 @@ namespace Application.UseCases
             .OrderBy(x => x.TimePeriod)
             .ToList();
 
-            return new ResponseDTO<List<RevenueByDateResponse>>(result, true, "Lấy thống kê doanh thu theo thời gian thành công");
+            var paginated = _paginationHelper.PaginateInMemory(result, pageNumber, pageSize);
+
+            return new ResponseDTO<PaginatedResult<RevenueByDateResponse>>(paginated, true, "Lấy thống kê doanh thu theo thời gian thành công");
         }
 
-        public async Task<ResponseDTO<RevenueByProductResponse>> GetRevenueByProductAsync(int productId, DateTime? from, DateTime? to)
+        public async Task<ResponseDTO<PaginatedResult<VariantRevenueItem>>> GetRevenueByProductAsync(
+                                                                                        int productId, DateTime? from, DateTime? to,
+                                                                                        int pageNumber = 1, int pageSize = 10)
         {
             var orders = await _orderRepository.GetCompletedOrdersWithDetailsAsync(from, to);
 
@@ -140,14 +151,8 @@ namespace Application.UseCases
 
             if (!allDetails.Any())
             {
-                return new ResponseDTO<RevenueByProductResponse>(null, true, "Không có dữ liệu doanh thu cho sản phẩm này");
+                return new ResponseDTO<PaginatedResult<VariantRevenueItem>>(null, true, "Không có dữ liệu doanh thu cho sản phẩm này");
             }
-
-            var product = allDetails.First().ProductVariant.Product;
-
-            var totalQuantity = allDetails.Sum(x => x.Quantity);
-            var totalRevenue = allDetails.Sum(x => x.Quantity * x.PriceAtPurchase);
-            var avgPrice = totalRevenue / totalQuantity;
 
             var variants = allDetails
                 .GroupBy(x => x.ProductVariant.VariantId)
@@ -161,18 +166,9 @@ namespace Application.UseCases
                 })
                 .ToList();
 
-            var result = new RevenueByProductResponse
-            {
-                ProductId = productId,
-                ProductName = product.Name,
-                CategoryName = product.Category?.Name,
-                TotalQuantitySold = totalQuantity,
-                TotalRevenue = totalRevenue,
-                AveragePrice = avgPrice,
-                Variants = variants
-            };
+            var paginatedVariants = _paginationHelper.PaginateInMemory(variants, pageNumber, pageSize);
 
-            return new ResponseDTO<RevenueByProductResponse>(result, true, "Lấy chi tiết doanh thu sản phẩm thành công");
+            return new ResponseDTO<PaginatedResult<VariantRevenueItem>>(paginatedVariants, true, "Lấy chi tiết doanh thu sản phẩm thành công");
         }
 
 

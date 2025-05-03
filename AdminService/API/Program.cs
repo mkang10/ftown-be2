@@ -19,7 +19,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-admin.vercel.app", "https://ftown-admin-dhww.vercel.app")
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5000", "https://ftown-admin-dhww.vercel.app", "https://ftown-admin.vercel.app")
 
               .AllowAnyMethod()
               .AllowAnyHeader()
@@ -121,15 +121,15 @@ var cloudinary = new Cloudinary(account);
 
 // Đăng ký Cloudinary dưới dạng Singleton (chỉ một lần)
 builder.Services.AddSingleton(cloudinary);
-
 var app = builder.Build();
 
 // Cấu hình pipeline HTTP request
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "AdminService API v1");
+    c.RoutePrefix = "swagger"; // ho?c "" n?u mu?n swagger ? root
+});
 
 app.UseCors("AllowSpecificOrigins");
 app.UseHttpsRedirection();

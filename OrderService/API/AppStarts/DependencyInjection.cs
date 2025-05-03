@@ -39,7 +39,7 @@ namespace API.AppStarts
             });
             services.AddHttpClient<INotificationClient, NotificationServiceClient>(client =>
             {
-                client.BaseAddress = new Uri("https://localhost:7270/api/");
+                client.BaseAddress = new Uri("https://ftnotificationservice.azurewebsites.net/api/");
             });
             services.AddHttpClient<IPayOSService, PayOSService>(client =>
             {
@@ -56,6 +56,10 @@ namespace API.AppStarts
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddSingleton<IRedisCacheService, RedisCacheService>();
             services.AddScoped<IOrderProcessingHelper, OrderProcessingHelper>();
+            services.AddScoped<IPaginationHelper, PaginationHelper>();
+            services.AddScoped<IAssignmentSettingService, AssignmentSettingService>();
+            services.AddScoped<IOrderAutoCompletionHandler, OrderAutoCompletionHandler>();
+            services.AddHostedService<OrderAutoCompletionService>();
             //Repository
 
             services.AddScoped<IOrderRepository, OrderRepository>();
@@ -65,7 +69,7 @@ namespace API.AppStarts
             services.AddScoped<IRedisRepository, RedisRepository>();
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             services.AddScoped<IEmailRepository, EmailService>();
-
+            services.AddScoped<IWareHouseStockAuditRepository, WareHouseStockAuditRepository>();
             //Handler
 
             services.AddScoped<CreateOrderHandler>();
@@ -85,7 +89,7 @@ namespace API.AppStarts
             services.AddScoped<AuditLogHandler>();
             services.AddScoped<RevenueHandler>();
             services.AddScoped<GetAllReturnRequestsHandler>();
-
+            services.AddScoped<WareHouseStockAuditHandler>();
             services.AddScoped<EmailHandler>();
 
             //GHN

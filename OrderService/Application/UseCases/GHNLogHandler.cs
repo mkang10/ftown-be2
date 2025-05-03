@@ -1,4 +1,5 @@
 ﻿using Application.DTO.Request;
+using Application.Enums;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
@@ -70,11 +71,12 @@ namespace Application.UseCases
             await _auditLogRepository.AddAuditLogAsync(
                 "Orders",
                 orderId.ToString(),
-                newStatus,
+                AuditOperation.UpdateStatus.ToString(),  // 🔥 Sửa đây, luôn ghi UpdateStatus
                 order.AccountId,
                 changeData,
                 "CHANGE STATUS"
             );
+
 
             return true;
         }

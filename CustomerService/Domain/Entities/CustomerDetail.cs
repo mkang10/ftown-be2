@@ -22,4 +22,6 @@ public partial class CustomerDetail
     public string? PreferredPaymentMethod { get; set; }
 
     public virtual Account Account { get; set; } = null!;
+
+    public virtual ICollection<CustomerStyle> CustomerStyles { get; set; } = new List<CustomerStyle>();
 }

@@ -1,4 +1,3 @@
-
 ﻿using System;
 using System.Collections.Generic;
 
@@ -59,7 +58,4 @@ public partial class Account
     public virtual ICollection<ShoppingCart> ShoppingCarts { get; set; } = new List<ShoppingCart>();
 
     public virtual ICollection<StaffDetail> StaffDetails { get; set; } = new List<StaffDetail>();
-
-    public virtual ICollection<WishList> WishLists { get; set; } = new List<WishList>();
 }
-

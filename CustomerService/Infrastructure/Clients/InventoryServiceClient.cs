@@ -42,11 +42,48 @@ namespace Infrastructure.Clients
         {
             try
             {
-                return await _httpClient.GetFromJsonAsync<ProductDetailResponse>($"products/{productId}");
+                var response = await _httpClient.GetAsync($"products/{productId}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var apiResult = await response.Content.ReadFromJsonAsync<ResponseDTO<ProductDetailResponse>>();
+
+                    if (apiResult != null && apiResult.Status)
+                    {
+                        return apiResult.Data;
+                    }
+                }
+
+                return null;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Lỗi khi gọi InventoryService: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<List<ProductResponse>?> GetProductsByStyleNameAsync(string styleName, int page, int pageSize)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"products/by-style?styleName={Uri.EscapeDataString(styleName)}&page={page}&pageSize={pageSize}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var apiResult = await response.Content.ReadFromJsonAsync<ResponseDTO<List<ProductResponse>>>();
+
+                    if (apiResult != null && apiResult.Status)
+                    {
+                        return apiResult.Data;
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi khi gọi InventoryService (GetProductsByStyleNameAsync): {ex.Message}");
                 return null;
             }
         }

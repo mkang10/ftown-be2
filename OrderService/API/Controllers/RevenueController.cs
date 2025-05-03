@@ -1,5 +1,6 @@
 ﻿using Application.DTO.Response;
 using Application.UseCases;
+using Domain.Common_Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,11 +28,13 @@ namespace API.Controllers
             return Ok(result);
         }
         [HttpGet("orders")]
-        public async Task<ActionResult<ResponseDTO<List<OrderSummaryItem>>>> GetRevenueOrders(
-                            [FromQuery] DateTime? from,
-                            [FromQuery] DateTime? to)
+        public async Task<ActionResult<ResponseDTO<PaginatedResult<OrderSummaryItem>>>> GetRevenueOrders(
+                                                                                            [FromQuery] DateTime? from,
+                                                                                            [FromQuery] DateTime? to,
+                                                                                            [FromQuery] int pageNumber = 1,
+                                                                                            [FromQuery] int pageSize = 10)
         {
-            var result = await _revenueHandler.GetRevenueOrdersAsync(from, to);
+            var result = await _revenueHandler.GetRevenueOrdersAsync(from, to, pageNumber, pageSize);
             return Ok(result);
         }
         [HttpGet("top-selling-products")]
@@ -44,23 +47,29 @@ namespace API.Controllers
             return Ok(result);
         }
         [HttpGet("by-date")]
-        public async Task<ActionResult<ResponseDTO<List<RevenueByDateResponse>>>> GetRevenueByDate(
-                            [FromQuery] DateTime from,
-                            [FromQuery] DateTime to,
-                            [FromQuery] string groupBy = "day")
+        public async Task<ActionResult<ResponseDTO<PaginatedResult<RevenueByDateResponse>>>> GetRevenueByDate(
+                                                                                                        [FromQuery] DateTime from,
+                                                                                                        [FromQuery] DateTime to,
+                                                                                                        [FromQuery] string groupBy = "day",
+                                                                                                        [FromQuery] int pageNumber = 1,
+                                                                                                        [FromQuery] int pageSize = 10)
         {
-            var result = await _revenueHandler.GetRevenueByDateAsync(from, to, groupBy);
+            var result = await _revenueHandler.GetRevenueByDateAsync(from, to, groupBy, pageNumber, pageSize);
             return Ok(result);
         }
+
         [HttpGet("product/{productId}/revenue")]
-        public async Task<ActionResult<ResponseDTO<RevenueByProductResponse>>> GetRevenueByProduct(
-                            int productId,
-                            [FromQuery] DateTime? from,
-                            [FromQuery] DateTime? to)
+        public async Task<ActionResult<ResponseDTO<PaginatedResult<VariantRevenueItem>>>> GetRevenueByProduct(
+                                                                                                        int productId,
+                                                                                                        [FromQuery] DateTime? from,
+                                                                                                        [FromQuery] DateTime? to,
+                                                                                                        [FromQuery] int pageNumber = 1,
+                                                                                                        [FromQuery] int pageSize = 10)
         {
-            var result = await _revenueHandler.GetRevenueByProductAsync(productId, from, to);
+            var result = await _revenueHandler.GetRevenueByProductAsync(productId, from, to, pageNumber, pageSize);
             return Ok(result);
         }
+
     }
 
 }
