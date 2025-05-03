@@ -103,7 +103,13 @@ namespace Infrastructure
                 Include(o => o.Import).
                     ThenInclude(od => od.ImportDetails).
                     ThenInclude(oc => oc.ImportStoreDetails).ThenInclude(oc => oc.Warehouse).
-
+  Include(o => o.Import).
+                    ThenInclude(od => od.ImportDetails).
+                    ThenInclude(oc => oc.ImportStoreDetails).ThenInclude(oc => oc.StaffDetail).ThenInclude(oc => oc.Account).
+                    Include(o => o.Import).
+                    ThenInclude(od => od.ImportDetails).
+                    ThenInclude(oc => oc.ImportStoreDetails).ThenInclude(oc => oc.HandleByNavigation).ThenInclude(oc => oc.Account).
+                Include(O => O.Dispatch).
                 Include(O => O.Dispatch).
                     ThenInclude(od => od.DispatchDetails).
                     ThenInclude(oc => oc.StoreExportStoreDetails).

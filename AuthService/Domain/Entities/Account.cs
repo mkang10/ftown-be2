@@ -61,5 +61,5 @@ public partial class Account
 
     public virtual ICollection<StaffDetail> StaffDetails { get; set; } = new List<StaffDetail>();
 
-    public virtual ICollection<WishList> WishLists { get; set; } = new List<WishList>();
+    public virtual ICollection<WareHouseStockAudit> WareHouseStockAudits { get; set; } = new List<WareHouseStockAudit>();
 }

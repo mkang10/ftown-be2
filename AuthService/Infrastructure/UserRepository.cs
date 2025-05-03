@@ -16,7 +16,13 @@ namespace Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<Account> GetUserByUsernameAsync(string email)
+        public async Task<Account> GetUserByUsernameAsync(string fullname)
+        {
+            return await _context.Accounts.Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.FullName == fullname);
+        }
+
+        public async Task<Account> GetUserByEmail(string email)
         {
             return await _context.Accounts.Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Email == email);
@@ -85,13 +91,9 @@ namespace Infrastructure.Repositories
                         .Select(s => new
                         {
                             s.StaffDetailId,
-                            s.StoreId,
                             s.JoinDate,
-                            s.Role,
-                            s.JobTitle,
-                            s.Department,
-                            s.Salary,
-                            s.EmploymentType
+                            
+
                         }).FirstOrDefaultAsync();
 
                 default:

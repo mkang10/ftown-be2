@@ -57,7 +57,8 @@ namespace Infrastructure
                 Include(o => o.CreatedByNavigation).
                 Include(o => o.DispatchDetails)
                         .ThenInclude(od => od.StoreExportStoreDetails)
-                        .ThenInclude(od => od.HandleByNavigation).
+                        .ThenInclude(od => od.HandleByNavigation).ThenInclude(od => od.Account).
+
                 Include(o => o.DispatchDetails)
                         .ThenInclude(od => od.Variant.Product).
                 Include(o => o.DispatchDetails)
@@ -71,7 +72,7 @@ namespace Infrastructure
                         .ThenInclude(v => v.Size).
                 Include(o => o.DispatchDetails)
                         .ThenInclude(od => od.StoreExportStoreDetails)
-                        .ThenInclude(od => od.StaffDetail).
+                        .ThenInclude(od => od.StaffDetail).ThenInclude(od => od.Account).
                 FirstOrDefaultAsync(x => x.DispatchId == id);
             return data;
         }

@@ -28,12 +28,14 @@ namespace Application.UseCases
             {
                 throw new Exception("Import không tồn tại");
             }
-
+            var currentStatus = import.Status.Trim();
             // Chỉ cho phép xử lý các Import có trạng thái Processing hoặc Partial Success
-            if (!string.Equals(import.Status, "Processing", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(import.Status, "Partial Success", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(currentStatus, "Approved", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(currentStatus, "Shortage", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(currentStatus, "Partial Success", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(currentStatus, "Supplement Created", StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException("Chỉ cho phép chỉnh sửa các Import có trạng thái Processing hoặc Partial Success");
+                throw new InvalidOperationException("Chỉ cho phép chỉnh sửa các Import có trạng thái Approved , Partial Success, Shortage  và Supplement Created");
             }
 
             // Danh sách các store detail được cập nhật để dùng cho việc cập nhật tồn kho sau này
@@ -72,7 +74,7 @@ namespace Application.UseCases
                         Operation = "UPDATE",
                         ChangeDate = DateTime.Now,
                         ChangedBy = staffId,
-                        ChangeData = $"Status updated to Shortage and ActualReceivedQuantity set to {storeDetail.ActualReceivedQuantity}",
+                        ChangeData = $"Trạng tahí được cập nhật thành thiếu hàng và số lượng thực tế được cập nhật : {storeDetail.ActualReceivedQuantity}",
                         Comment = storeDetail.Comments
                     };
                     _auditLogRepos.Add(auditLogDetail);
@@ -88,7 +90,7 @@ namespace Application.UseCases
             // Nếu có bất kỳ ImportStoreDetail nào có trạng thái Shortage, cập nhật Import status thành Partial Success
             if (import.ImportDetails.Any(id => id.ImportStoreDetails.Any(sd => string.Equals(sd.Status, "Shortage", StringComparison.OrdinalIgnoreCase))))
             {
-                import.Status = "Partial Success";
+                import.Status = "Shortage";
                 import.CompletedDate = DateTime.Now;
 
                 var auditLogImport = new AuditLog
@@ -99,7 +101,7 @@ namespace Application.UseCases
                     ChangeDate = DateTime.Now,
                     ChangedBy = staffId,
                     ChangeData = "Status updated to Partial Success",
-                    Comment = "Some ImportStoreDetails have status Shortage"
+                    Comment = "Trạng thái đơn nhập hàng được cập nhật thành Shortage"
                 };
                 _auditLogRepos.Add(auditLogImport);
 

@@ -61,19 +61,40 @@ namespace WebAPI.Controllers
         }
 
 
-      
+
         [HttpPost("google-login")]
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
         {
             var result = await _authService.AuthenticateWithGoogleAsync(request.IdToken);
 
-            if (result == null || result.Token == null)
+            // 1. Trường hợp service trả về null (token Google không hợp lệ)
+            if (result == null)
             {
-                return Unauthorized(new { message = "Đăng nhập Google không thành công hoặc tài khoản bị vô hiệu hoá." });
+                return BadRequest(new ResponseDTO<object>(
+                    null,
+                    false,
+                    "Google token không hợp lệ."
+                ));
             }
 
-            return Ok(result);
+            // 2. Trường hợp có lỗi (email đã tồn tại, tài khoản bị khoá…)
+            if (!result.Success)
+            {
+                return BadRequest(new ResponseDTO<List<string>>(
+                    result.Errors,
+                    false,
+                    "Đăng nhập Google thất bại. Vui lòng kiểm tra các lỗi."
+                ));
+            }
+
+            // 3. Thành công
+            return Ok(new ResponseDTO<LoginResponse>(
+                result,
+                true,
+                "Đăng nhập Google thành công."
+            ));
         }
+
         /// <summary>
         /// Đăng ký tài khoản mới.
         /// </summary>
@@ -84,23 +105,35 @@ namespace WebAPI.Controllers
             {
                 var response = await _authService.RegisterAsync(registerDTO);
 
-                if (response == null || string.IsNullOrEmpty(response.Token))
+                // 1. Nếu có lỗi validate hoặc username tồn tại
+                if (!response.Success)
                 {
-                    // Tên đăng nhập đã tồn tại hoặc đăng ký không thành công
-                    return Conflict(new ResponseDTO<object>(null, false, "Tên đăng nhập đã tồn tại!"));
+                    // Trả về 400 với danh sách lỗi
+                    return BadRequest(new ResponseDTO<List<string>>(
+                        response.Errors,
+                        false,
+                        "Đăng ký thất bại. Vui lòng kiểm tra các lỗi."
+                    ));
                 }
 
-                // Đăng ký thành công
-                return Ok(new ResponseDTO<object>(response, true, "Đăng ký thành công!"));
+                // 2. Đăng ký thành công, trả token
+                return Ok(new ResponseDTO<string>(
+                    response.Token,
+                    true,
+                    "Đăng ký thành công!"
+                ));
             }
             catch (Exception ex)
             {
-                // Log exception (ex) nếu cần thiết
-                return StatusCode(500, new ResponseDTO<object>(null, false, "Đã có lỗi xảy ra từ phía server. Vui lòng thử lại sau!"));
+                // Log ex nếu cần
+                return StatusCode(500, new ResponseDTO<object>(
+                    null,
+                    false,
+                    "Đã có lỗi xảy ra từ phía server. Vui lòng thử lại sau!"
+                ));
             }
-
-
         }
+
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestCapcha ps)
         {
