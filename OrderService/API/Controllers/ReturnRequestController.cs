@@ -17,16 +17,19 @@ namespace API.Controllers
         private readonly ProcessReturnCheckoutHandler _processReturnCheckoutHandler;
         private readonly SubmitReturnRequestHandler _submitReturnRequestHandler;
         private readonly GetAllReturnRequestsHandler _getAllReturnRequestsHandler;
+        private readonly UpdateReturnOrderStatusHandler _updateReturnOrderStatusHandler;
         public ReturnRequestController(
             GetOrderItemsForReturnHandler getOrderItemsForReturnHandler,
             ProcessReturnCheckoutHandler processReturnCheckoutHandler,
             SubmitReturnRequestHandler submitReturnRequestHandler,
-            GetAllReturnRequestsHandler getAllReturnRequestsHandler)
+            GetAllReturnRequestsHandler getAllReturnRequestsHandler,
+            UpdateReturnOrderStatusHandler updateReturnOrderStatusHandler)
         {
             _getOrderItemsForReturnHandler = getOrderItemsForReturnHandler;
             _processReturnCheckoutHandler = processReturnCheckoutHandler;
             _submitReturnRequestHandler = submitReturnRequestHandler;
             _getAllReturnRequestsHandler = getAllReturnRequestsHandler;
+            _updateReturnOrderStatusHandler = updateReturnOrderStatusHandler;
         }
 
         /// <summary>
@@ -128,6 +131,35 @@ namespace API.Controllers
             );
 
             return Ok(response);
+        }
+        [HttpPut("{returnOrderId}/status")]
+        public async Task<IActionResult> UpdateReturnOrderStatus(int returnOrderId, [FromBody] UpdateOrderStatusRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .Where(ms => ms.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
+
+                return BadRequest(new ResponseDTO<Dictionary<string, string[]>>(errors, false, "Dữ liệu không hợp lệ"));
+            }
+
+            var success = await _updateReturnOrderStatusHandler.HandleAsync(
+                returnOrderId,
+                request.NewStatus,
+                request.ChangedBy,
+                request.Comment
+            );
+
+            if (!success)
+            {
+                return NotFound(new ResponseDTO(false, "Không tìm thấy đơn đổi/trả."));
+            }
+
+            return Ok(new ResponseDTO(true, "Cập nhật trạng thái đơn đổi/trả thành công!"));
         }
     }
 }

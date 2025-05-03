@@ -78,6 +78,18 @@ namespace API.Controllers
             return Ok(new ResponseDTO(true, "Cập nhật tồn kho thành công."));
         }
 
+        [HttpPost("restore-after-cancel")]
+        public async Task<ActionResult<ResponseDTO>> RestoreStockAfterCancel([FromBody] StockUpdateRequest request)
+        {
+            var response = await _updateStockHandler.HandleRestoreStockAsync(request);
+
+            if (!response.Success)
+            {
+                return BadRequest(new ResponseDTO(false, response.Message));
+            }
+
+            return Ok(new ResponseDTO(true, "Khôi phục tồn kho sau khi huỷ đơn thành công."));
+        }
 
     }
 }

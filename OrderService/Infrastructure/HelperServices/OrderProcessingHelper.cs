@@ -117,7 +117,7 @@ namespace Infrastructure.HelperServices
                 AuditOperation.CancelOrder,
                 new
                 {
-                    InitialStatus = OrderStatus.Cancelled.ToString()
+                    InitialStatus = OrderStatus.Canceled.ToString()
                 },
                 accountId,
                 "Thanh toán đã bị hủy."

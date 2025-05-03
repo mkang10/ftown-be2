@@ -34,7 +34,7 @@ namespace Infrastructure.HelperServices
                     Console.WriteLine($"Error while auto completing orders: {ex.Message}");
                 }
 
-                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken); // Kiểm tra mỗi 1 tiếng
+                await Task.Delay(TimeSpan.FromMinutes(60), stoppingToken); // Kiểm tra mỗi 1 tiếng
             }
         }
     }

@@ -1,4 +1,5 @@
 ﻿using Application.DTO.Request;
+using Application.Interfaces;
 using Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 using System;
@@ -14,27 +15,45 @@ namespace Application.UseCases
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IAuditLogRepository _auditLogRepository;
+        private readonly IInventoryServiceClient _inventoryServiceClient; // Gọi API kho
 
-        public UpdateOrderStatusHandler(IOrderRepository orderRepository, IAuditLogRepository auditLogRepository)
+        public UpdateOrderStatusHandler(
+            IOrderRepository orderRepository,
+            IAuditLogRepository auditLogRepository,
+            IInventoryServiceClient inventoryServiceClient)
         {
             _orderRepository = orderRepository;
             _auditLogRepository = auditLogRepository;
+            _inventoryServiceClient = inventoryServiceClient;
         }
 
         public async Task<bool> HandleAsync(int orderId, string newStatus, int changedBy, string? comment)
         {
-            // 📌 1️⃣ Lấy thông tin đơn hàng
             var order = await _orderRepository.GetOrderByIdAsync(orderId);
-            if (order == null)
+            if (order == null) return false;
+
+            var previousStatus = order.Status;
+
+            if (newStatus == "Canceled")
             {
-                return false;
+                var restoreSuccess = await _inventoryServiceClient.RestoreStockAfterCancelAsync(
+                    2,
+                    order.OrderDetails.ToList()
+                );
+                if (!restoreSuccess)
+                {
+                    Console.WriteLine("[ERROR] Không thể khôi phục tồn kho khi huỷ đơn.");
+                    return false;
+                }
             }
 
-            // 📌 2️⃣ Cập nhật trạng thái đơn hàng
-            await _orderRepository.UpdateOrderStatusAsync(orderId, newStatus);
+            if (newStatus.ToLowerInvariant() == "completed" && order.CompletedDate == null)
+            {
+                order.CompletedDate = DateTime.UtcNow;
+            }
 
-            // 📌 3️⃣ Ghi log vào AuditLog
-            var previousStatus = order.Status; // Lấy trạng thái cũ
+            await _orderRepository.UpdateOrderStatusWithOrderAsync(order, newStatus);
+
 
             var changeData = JsonSerializer.Serialize(new
             {
@@ -47,14 +66,14 @@ namespace Application.UseCases
                 orderId.ToString(),
                 newStatus,
                 changedBy,
-                changeData, // ✅ Lưu dữ liệu thay đổi
+                changeData,
                 comment
             );
 
-
-
             return true;
         }
+
     }
+
 
 }

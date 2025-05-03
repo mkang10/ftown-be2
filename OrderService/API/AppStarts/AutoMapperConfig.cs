@@ -50,6 +50,12 @@ namespace API.AppStarts
             CreateMap<CreateShippingAddressRequest, ShippingAddress>();
             CreateMap<ShippingAddress, ShippingAddressResponse>();
 
+            CreateMap<ReturnOrderItem, ReturnItemResponse>()
+                .ForMember(dest => dest.ProductName, opt => opt.Ignore())
+                .ForMember(dest => dest.Color, opt => opt.Ignore())
+                .ForMember(dest => dest.Size, opt => opt.Ignore())
+                .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())
+                .ForMember(dest => dest.Price, opt => opt.Ignore());
         }
     }
 }

@@ -43,47 +43,66 @@ namespace Infrastructure
         }
         public async Task<bool> UpdateStockAfterOrderAsync(int warehouseId, List<(int VariantId, int Quantity)> stockUpdates)
         {
+            // Lấy danh sách VariantId cần trừ tồn kho
             var variantIds = stockUpdates.Select(s => s.VariantId).ToList();
 
-            // Lấy toàn bộ tồn kho của các sản phẩm liên quan
+            // Lấy tồn kho tại kho duy nhất
             var warehouseStocks = await _context.WareHousesStocks
-                .Where(s => variantIds.Contains(s.VariantId))
+                .Where(s => s.WareHouseId == warehouseId && variantIds.Contains(s.VariantId))
+                .ToListAsync();
+
+            // Kiểm tra tất cả mặt hàng có đủ tồn kho không
+            foreach (var update in stockUpdates)
+            {
+                var stockItem = warehouseStocks.FirstOrDefault(s => s.VariantId == update.VariantId);
+
+                if (stockItem == null || stockItem.StockQuantity < update.Quantity)
+                {
+                    return false; // Không đủ hàng, huỷ luôn
+                }
+            }
+
+            // Nếu tất cả đều đủ hàng thì tiến hành trừ tồn kho
+            foreach (var update in stockUpdates)
+            {
+                var stockItem = warehouseStocks.First(s => s.VariantId == update.VariantId);
+                stockItem.StockQuantity -= update.Quantity;
+            }
+
+            _context.WareHousesStocks.UpdateRange(warehouseStocks);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> RestoreStockAfterCancelAsync(int warehouseId, List<(int VariantId, int Quantity)> stockUpdates)
+        {
+            var variantIds = stockUpdates.Select(s => s.VariantId).ToList();
+
+            var warehouseStocks = await _context.WareHousesStocks
+                .Where(s => s.WareHouseId == warehouseId && variantIds.Contains(s.VariantId))
                 .ToListAsync();
 
             foreach (var update in stockUpdates)
             {
-                // Kiểm tra tồn kho tại cửa hàng khách chọn
-                var storeStock = warehouseStocks.FirstOrDefault(s => s.WareHouseId == warehouseId && s.VariantId == update.VariantId);
-
-                if (storeStock != null && storeStock.StockQuantity >= update.Quantity)
+                var stockItem = warehouseStocks.FirstOrDefault(s => s.VariantId == update.VariantId);
+                if (stockItem == null)
                 {
-                    // Nếu đủ hàng, giảm số lượng tại cửa hàng khách chọn
-                    storeStock.StockQuantity -= update.Quantity;
-                }
-                else
-                {
-                    // Tìm cửa hàng có variant này nhiều nhất
-                    var alternateWarehouseStock = warehouseStocks
-                        .Where(s => s.VariantId == update.VariantId && s.StockQuantity >= update.Quantity)
-                        .OrderByDescending(s => s.StockQuantity) // Chọn cửa hàng có nhiều hàng nhất
-                        .FirstOrDefault();
-
-                    if (alternateWarehouseStock == null)
+                    // Nếu chưa có thì tạo mới luôn
+                    stockItem = new WareHousesStock
                     {
-                        // Nếu không tìm được cửa hàng nào có hàng, rollback transaction
-                        return false;
-                    }
-
-                    // Trừ số lượng tại cửa hàng thay thế
-                    alternateWarehouseStock.StockQuantity -= update.Quantity;
+                        WareHouseId = warehouseId,
+                        VariantId = update.VariantId,
+                        StockQuantity = 0
+                    };
+                    _context.WareHousesStocks.Add(stockItem);
                 }
+
+                stockItem.StockQuantity += update.Quantity;
             }
 
-            // Cập nhật dữ liệu chỉ một lần
-            _context.WareHousesStocks.UpdateRange(warehouseStocks);
             await _context.SaveChangesAsync();
             return true;
         }
-
     }
 }

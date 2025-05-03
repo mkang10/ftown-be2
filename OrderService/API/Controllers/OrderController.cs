@@ -86,6 +86,7 @@ namespace API.Controllers
                 true,
                 $"Danh sách đơn hàng với trạng thái {status} {(accountId.HasValue ? $"và accountId {accountId}" : "")} được lấy thành công."));
         }
+
         [HttpGet("returnable")]
         public async Task<ActionResult<ResponseDTO<List<OrderResponse>>>> GetReturnableOrders([FromQuery] int accountId)
         {
@@ -94,16 +95,17 @@ namespace API.Controllers
         }
 
         [HttpGet("{orderId}/details")]
-        public async Task<IActionResult> GetOrderDetails(int orderId)
+        public async Task<IActionResult> GetOrderDetails(int orderId, [FromQuery] int accountId)
         {
-            var orderDetailResponse = await _getOrderDetailHandler.HandleAsync(orderId);
+            var orderDetailResponse = await _getOrderDetailHandler.HandleAsync(orderId, accountId);
             if (orderDetailResponse == null)
             {
-                return NotFound(new ResponseDTO<OrderDetailResponseWrapper>(null, false, "Không tìm thấy đơn hàng."));
+                return NotFound(new ResponseDTO<OrderDetailResponseWrapper>(null, false, "Không tìm thấy đơn hàng hoặc bạn không có quyền truy cập."));
             }
 
             return Ok(new ResponseDTO<OrderDetailResponseWrapper>(orderDetailResponse, true, "Lấy chi tiết đơn hàng thành công!"));
         }
+
 
         [HttpGet("{orderId}/items")]
         public async Task<IActionResult> GetOrderItemsById(int orderId)
@@ -154,6 +156,14 @@ namespace API.Controllers
             await _orderProcessingHelper.UpdateDefaultAssignmentAsync(request.ShopManagerId, request.StaffId);
             return Ok(new { Success = true, Message = "Cập nhật thành công!" });
         }
+
+        [HttpGet("{orderId}/is-returnable")]
+        public async Task<ActionResult<ResponseDTO<bool>>> IsOrderReturnable(int orderId, [FromQuery] int accountId)
+        {
+            var result = await _getReturnableOrdersHandler.CheckReturnableHandleAsync(orderId, accountId);
+            return Ok(new ResponseDTO<bool>(result, true, "Kiểm tra điều kiện đổi trả thành công."));
+        }
+
 
     }
 }

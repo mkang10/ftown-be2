@@ -14,5 +14,6 @@ namespace Application.Interfaces
         Task<int> GetStockQuantityAsync(int storeId, int variantId);
         Task<bool> UpdateStockAfterOrderAsync(int warehouseId, List<OrderDetail> orderDetails);
         Task<Dictionary<int, ProductVariantResponse?>> GetAllProductVariantsByIdsAsync(List<int> variantIds);
+        Task<bool> RestoreStockAfterCancelAsync(int warehouseId, List<OrderDetail> orderDetails);
     }
 }

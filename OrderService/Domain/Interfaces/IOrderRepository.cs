@@ -26,11 +26,10 @@ namespace Domain.Interfaces
         Task UpdateRangeAsync(IEnumerable<Order> orders);
         Task<List<Order>> GetCompletedOrdersAsync(DateTime? from, DateTime? to);
         Task<List<Order>> GetCompletedOrdersWithDetailsAsync(DateTime? from, DateTime? to);
-
         Task<Order?> GetOrderByIdGHNAsync(string orderId);
         Task UpdateOrderStatusGHNIdAsync(string orderId, string newStatus);
-
-
+        Task<bool> IsOrderReturnableAsync(int orderId, int accountId);
+        Task UpdateOrderStatusWithOrderAsync(Order order, string newStatus);
 
     }
 }

@@ -108,7 +108,7 @@ public partial class FtownContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=ftown-sql.database.windows.net;Database=Ftown;User Id=sqladminftown;Password=Tuongvy123456;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("Server=DESKTOP-T0VARJ7;Database=Ftown;User Id=sa;Password=sa123456;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -574,6 +574,7 @@ public partial class FtownContext : DbContext
             entity.Property(e => e.AccountId).HasColumnName("AccountID");
             entity.Property(e => e.Address).HasMaxLength(500);
             entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.CompletedDate).HasColumnType("datetime");
             entity.Property(e => e.Country).HasMaxLength(100);
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
@@ -686,6 +687,8 @@ public partial class FtownContext : DbContext
 
             entity.HasIndex(e => e.CategoryId, "IX_Product_CategoryID");
 
+            entity.HasIndex(e => e.Status, "IX_Product_Status");
+
             entity.Property(e => e.ProductId).HasColumnName("ProductID");
             entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
             entity.Property(e => e.Material).HasMaxLength(255);
@@ -761,6 +764,8 @@ public partial class FtownContext : DbContext
             entity.HasKey(e => e.PromotionId).HasName("PK__Promotio__52C42FCFA5F612CE");
 
             entity.ToTable("Promotion");
+
+            entity.HasIndex(e => new { e.ApplyTo, e.Status, e.StartDate, e.EndDate }, "IX_Promotions_Filter");
 
             entity.Property(e => e.ApplyTo)
                 .HasMaxLength(20)

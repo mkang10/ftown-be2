@@ -34,33 +34,27 @@ namespace Application.UseCases
             _logger = logger;
         }
 
-        public async Task<OrderDetailResponseWrapper?> HandleAsync(int orderId)
+        public async Task<OrderDetailResponseWrapper?> HandleAsync(int orderId, int accountId)
         {
             var order = await _orderRepository.GetOrderByIdAsync(orderId);
-            if (order == null)
+            if (order == null || order.AccountId != accountId)
             {
-                return null;
+                return null; // Không tìm thấy hoặc không thuộc về accountId
             }
 
             var orderitemsResponses = _mapper.Map<List<OrderItemResponse>>(order.OrderDetails);
-
-            // Lấy danh sách ProductVariantId duy nhất
             var variantIds = orderitemsResponses.Select(d => d.ProductVariantId).Distinct().ToList();
 
-            // Gửi một request duy nhất để lấy thông tin tất cả product variants
             Dictionary<int, ProductVariantResponse> variantDetailsDict = new();
-
             try
             {
                 variantDetailsDict = await _inventoryServiceClient.GetAllProductVariantsByIdsAsync(variantIds);
-
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Error fetching product/store details: {ex.Message}");
             }
 
-            // Ánh xạ thông tin sản phẩm
             foreach (var detail in orderitemsResponses)
             {
                 if (variantDetailsDict.TryGetValue(detail.ProductVariantId, out var variantDetails))
@@ -83,10 +77,8 @@ namespace Application.UseCases
                     detail.Price = 0;
                     detail.DiscountApplied = 0;
                 }
-
             }
 
-            // Lấy phương thức thanh toán từ bảng Payment
             var paymentMethod = await _paymentRepository.GetPaymentMethodByOrderIdAsync(orderId) ?? "Không xác định";
 
             return new OrderDetailResponseWrapper
@@ -104,11 +96,13 @@ namespace Application.UseCases
                 OrderTotal = order.OrderTotal ?? 0,
                 ShippingCost = order.ShippingCost ?? 0,
                 OrderItems = orderitemsResponses,
-                Status = order.Status,                         
+                Status = order.Status,
                 CreatedDate = order.CreatedDate,
                 Ghnid = order.Ghnid
             };
         }
+
     }
+
 
 }

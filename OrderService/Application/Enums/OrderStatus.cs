@@ -15,7 +15,7 @@ namespace Application.Enums
         Delivering,
         Delivered,
         Completed,
-        Cancelled
+        Canceled
     }
     public enum ReturnOrderStatus
     {

@@ -44,6 +44,4 @@ public partial class ProductVariant
     public virtual ICollection<TransferDetail> TransferDetails { get; set; } = new List<TransferDetail>();
 
     public virtual ICollection<WareHousesStock> WareHousesStocks { get; set; } = new List<WareHousesStock>();
-
-    public virtual ICollection<WishListItem> WishListItems { get; set; } = new List<WishListItem>();
 }

@@ -15,12 +15,15 @@ namespace Domain.Interfaces
         Task UpdateReturnOrderStatusAsync(int returnOrderId, string status);
         Task AddReturnOrderItemsAsync(List<ReturnOrderItem> returnOrderItems);
         Task<PaginatedResult<ReturnOrder>> GetReturnOrdersAsync(
-        string? status,
-        string? returnOption,
-        DateTime? dateFrom,
-        DateTime? dateTo,
-        int? orderId,
-        int pageNumber,
-        int pageSize);
+                                            string? status,
+                                            string? returnOption,
+                                            DateTime? dateFrom,
+                                            DateTime? dateTo,
+                                            int? orderId,
+                                            int pageNumber,
+                                            int pageSize);
+        Task<ReturnOrder?> GetByIdAsync(int returnOrderId);
+        Task UpdateAsync(ReturnOrder returnOrder);
+        Task<List<ReturnOrder>> GetByStatusAsync(string status);
     }
 }
