@@ -14,6 +14,7 @@ namespace Domain.Interfaces
         Task<StaffDetail?> GetByIdAsync(int staffDetailId);
         Task<StaffDetail?> GetByAccountIdAsync(int accountId);
         Task<IEnumerable<StaffNameDto>> GetAllStaffNamesAsync(int warehouseId);
+        Task<int> GetAccountIdByStaffIdAsync(int staffId);
 
 
     }

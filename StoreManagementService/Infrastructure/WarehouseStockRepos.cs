@@ -40,6 +40,12 @@ namespace Infrastructure
         }
         public async Task UpdateWarehouseStockAsync(Import import, int staffId)
         {
+            // Chỉ xử lý các import có ImportType là Purchase (dùng Trim để bỏ khoảng trắng thừa)
+            if (import.ImportType?.Trim() != "Purchase")
+            {
+                // Nếu không phải Purchase, không thực hiện cập nhật tồn kho
+                return;
+            }
             // Duyệt qua từng ImportDetail trong Import
             foreach (var importDetail in import.ImportDetails)
             {
@@ -97,6 +103,7 @@ namespace Infrastructure
             // Cuối cùng lưu lại các bản ghi audit (và các cập nhật tồn kho nếu có bản ghi cũ)
             await _context.SaveChangesAsync();
         }
+
 
 
         public async Task SaveChangesAsync()

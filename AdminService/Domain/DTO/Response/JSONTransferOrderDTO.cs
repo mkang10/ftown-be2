@@ -42,9 +42,11 @@ namespace Domain.DTO.Response
 
         public int TransferOrderId { get; set; }
 
-        public int SourceStoreId { get; set; }
-
         public string Product { get; set; }
+
+        public string Color { get; set; }
+
+        public string Size { get; set; }
 
         public int Quantity { get; set; }
 

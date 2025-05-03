@@ -52,8 +52,14 @@ namespace Infrastructure
                   .FirstOrDefaultAsync(s => s.Account.AccountId == accountId);
         }
 
-
-
-
+        public async Task<int> GetAccountIdByStaffIdAsync(int staffId)
+        {
+            // Chỉ query lên StaffDetails, rồi select AccountId
+            return await _context.StaffDetails
+                .AsNoTracking()
+                .Where(sd => sd.StaffDetailId == staffId)
+                .Select(sd => (int)sd.AccountId)
+                .FirstOrDefaultAsync();
+        }
     }
 }

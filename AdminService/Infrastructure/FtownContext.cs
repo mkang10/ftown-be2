@@ -953,6 +953,10 @@ public partial class FtownContext : DbContext
                 .IsFixedLength();
             entity.Property(e => e.WarehouseId).HasColumnName("WarehouseID");
 
+            entity.HasOne(d => d.Destination).WithMany(p => p.StoreExportStoreDetailDestinations)
+                .HasForeignKey(d => d.DestinationId)
+                .HasConstraintName("FK_StoreExportStoreDetail_Warehouses1");
+
             entity.HasOne(d => d.DispatchDetail).WithMany(p => p.StoreExportStoreDetails)
                 .HasForeignKey(d => d.DispatchDetailId)
                 .HasConstraintName("FK_StoreExportStoreDetail_DispatchDetails");
@@ -965,7 +969,7 @@ public partial class FtownContext : DbContext
                 .HasForeignKey(d => d.StaffDetailId)
                 .HasConstraintName("FK_StoreExportStoreDetail_StaffDetail");
 
-            entity.HasOne(d => d.Warehouse).WithMany(p => p.StoreExportStoreDetails)
+            entity.HasOne(d => d.Warehouse).WithMany(p => p.StoreExportStoreDetailWarehouses)
                 .HasForeignKey(d => d.WarehouseId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_StoreExportStoreDetail_Warehouses");

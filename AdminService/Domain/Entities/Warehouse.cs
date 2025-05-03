@@ -42,7 +42,9 @@ public partial class Warehouse
 
     public virtual ShopManagerDetail? ShopManager { get; set; }
 
-    public virtual ICollection<StoreExportStoreDetail> StoreExportStoreDetails { get; set; } = new List<StoreExportStoreDetail>();
+    public virtual ICollection<StoreExportStoreDetail> StoreExportStoreDetailDestinations { get; set; } = new List<StoreExportStoreDetail>();
+
+    public virtual ICollection<StoreExportStoreDetail> StoreExportStoreDetailWarehouses { get; set; } = new List<StoreExportStoreDetail>();
 
     public virtual ICollection<WareHousesStock> WareHousesStocks { get; set; } = new List<WareHousesStock>();
 

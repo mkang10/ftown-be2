@@ -7,10 +7,17 @@ using System.Threading.Tasks;
 namespace Domain.DTO.Response
 {
     public class LoginResponse
-	{
-		public string Token { get; set; }
-		public AccountResponse Account { get; set; }
-	}
+    {
+        public string Token { get; set; }
+        public AccountResponse Account { get; set; }
+
+        // Danh sách lỗi (nếu có)
+        public List<string> Errors { get; set; } = new List<string>();
+
+        // Thuộc tính helper để biết login thành công hay không
+        public bool Success => Errors == null || !Errors.Any();
+    }
+
 
     public class AccountResponse
     {
