@@ -30,7 +30,7 @@ namespace Infrastructure.Services
 
         public async Task<LoginResponse> AuthenticateAsync(string email, string password)
         {
-            var account = await _accountRepos.GetUserByUsernameAsync(email);
+            var account = await _accountRepos.GetUserByEmail(email);
 
             if (account != null && VerifyPassword(password, account.PasswordHash))
             {
