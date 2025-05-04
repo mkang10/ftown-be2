@@ -33,17 +33,13 @@ public partial class Warehouse
 
     public int? UrgentSafetyStock { get; set; }
 
-    public virtual ICollection<CheckDetail> CheckDetails { get; set; } = new List<CheckDetail>();
-
     public virtual ICollection<ImportStoreDetail> ImportStoreDetails { get; set; } = new List<ImportStoreDetail>();
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
     public virtual ShopManagerDetail? ShopManager { get; set; }
 
-    public virtual ICollection<StoreExportStoreDetail> StoreExportStoreDetailDestinations { get; set; } = new List<StoreExportStoreDetail>();
-
-    public virtual ICollection<StoreExportStoreDetail> StoreExportStoreDetailWarehouses { get; set; } = new List<StoreExportStoreDetail>();
+    public virtual ICollection<StoreExportStoreDetail> StoreExportStoreDetails { get; set; } = new List<StoreExportStoreDetail>();
 
     public virtual ICollection<WareHousesStock> WareHousesStocks { get; set; } = new List<WareHousesStock>();
 

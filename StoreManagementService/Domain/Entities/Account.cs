@@ -27,8 +27,6 @@ public partial class Account
 
     public string? ImagePath { get; set; }
 
-    public virtual ICollection<AccountInterest> AccountInterests { get; set; } = new List<AccountInterest>();
-
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 
     public virtual ICollection<ConversationParticipant> ConversationParticipants { get; set; } = new List<ConversationParticipant>();
