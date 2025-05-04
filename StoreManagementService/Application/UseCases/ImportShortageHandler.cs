@@ -1,6 +1,7 @@
 ﻿using Domain.DTO.Request;
 using Domain.Entities;
 using Domain.Interfaces;
+using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,16 +14,20 @@ namespace Application.UseCases
         private readonly IImportRepos _importRepos;
         private readonly IAuditLogRepos _auditLogRepos;
         private readonly IWareHouseStockRepos _wareHouseStockRepos;
+        private readonly IStaffDetailRepository _staffDetailRepository;
 
-        public ImportShortageHandler(IWareHouseStockRepos wareHouseStockRepos, IImportRepos importRepos, IAuditLogRepos auditLogRepos)
+        public ImportShortageHandler(IStaffDetailRepository staffDetailRepository, IWareHouseStockRepos wareHouseStockRepos, IImportRepos importRepos, IAuditLogRepos auditLogRepos)
         {
             _importRepos = importRepos;
             _auditLogRepos = auditLogRepos;
             _wareHouseStockRepos = wareHouseStockRepos;
+            _staffDetailRepository = staffDetailRepository;
         }
 
         public async Task ImportIncompletedAsync(int importId, int staffId, List<UpdateStoreDetailDto> confirmations)
         {
+            var accountId = await _staffDetailRepository.GetAccountIdByStaffIdAsync(staffId);
+
             var import = await _importRepos.GetByIdAssignAsync(importId);
             if (import == null)
             {
@@ -33,7 +38,9 @@ namespace Application.UseCases
             if (!string.Equals(currentStatus, "Approved", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(currentStatus, "Shortage", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(currentStatus, "Partial Success", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(currentStatus, "Supplement Created", StringComparison.OrdinalIgnoreCase))
+                !string.Equals(currentStatus, "Supplement Created", StringComparison.OrdinalIgnoreCase)&&
+                !string.Equals(currentStatus, "Done", StringComparison.OrdinalIgnoreCase))
+
             {
                 throw new InvalidOperationException("Chỉ cho phép chỉnh sửa các Import có trạng thái Approved , Partial Success, Shortage  và Supplement Created");
             }
@@ -44,6 +51,7 @@ namespace Application.UseCases
             // Duyệt qua từng ImportDetail và ImportStoreDetail
             foreach (var importDetail in import.ImportDetails)
             {
+
                 foreach (var storeDetail in importDetail.ImportStoreDetails)
                 {
                     // Tìm thông tin xác nhận tương ứng
@@ -73,8 +81,8 @@ namespace Application.UseCases
                         RecordId = storeDetail.ImportStoreId.ToString(),
                         Operation = "UPDATE",
                         ChangeDate = DateTime.Now,
-                        ChangedBy = staffId,
-                        ChangeData = $"Trạng tahí được cập nhật thành thiếu hàng và số lượng thực tế được cập nhật : {storeDetail.ActualReceivedQuantity}",
+                        ChangedBy = accountId,
+                        ChangeData = $"Trạng thái được cập nhật thành thiếu hàng và số lượng thực tế được cập nhật : {storeDetail.ActualReceivedQuantity}",
                         Comment = storeDetail.Comments
                     };
                     _auditLogRepos.Add(auditLogDetail);
@@ -99,7 +107,7 @@ namespace Application.UseCases
                     RecordId = import.ImportId.ToString(),
                     Operation = "UPDATE",
                     ChangeDate = DateTime.Now,
-                    ChangedBy = staffId,
+                    ChangedBy = accountId,
                     ChangeData = "Status updated to Partial Success",
                     Comment = "Trạng thái đơn nhập hàng được cập nhật thành Shortage"
                 };

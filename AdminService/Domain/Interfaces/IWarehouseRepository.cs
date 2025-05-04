@@ -16,6 +16,7 @@ namespace Domain.Interfaces
         Task<Warehouse?> GetByIdAsync(int warehouseId);
 
         Task<Warehouse> GetOwnerWarehouseAsync();
+        Task<IEnumerable<Warehouse>> GetAllAsync();
 
     }
 }

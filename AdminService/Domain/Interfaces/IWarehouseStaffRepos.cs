@@ -10,6 +10,6 @@ namespace Domain.Interfaces
     public interface IWarehouseStaffRepos
     {
         Task<List<WarehouseStaff>> GetByWarehouseAndRoleAsync(int warehouseId, string role);
-
+        Task<List<WarehouseStaff>> GetByWarehouseAndRoleAsyncNormal(int warehouseId, string role);
     }
 }

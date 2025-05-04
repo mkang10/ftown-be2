@@ -123,9 +123,9 @@ namespace Application.UseCases
                     await CreateAuditLogAsync("ImportStoreDetail", sd.ImportStoreId.ToString(), importEntity.CreatedBy, comment);
                 }
 
-                if (capableMap.Values.All(v => v == "true"))
+                if (capableMap.Values.All(v => v == "Tự động phê duyệt"))
                     importEntity.Status = "Approved";
-                else if (capableMap.Values.All(v => v == "false"))
+                else if (capableMap.Values.All(v => v == "Không đủ sản phẩm"))
                     importEntity.Status = "Rejected";
                 else
                     importEntity.Status = "Partially Approved";
@@ -345,7 +345,7 @@ namespace Application.UseCases
                 var totalAvailable = stores.Where(s => s.available > 0).Sum(s => s.available);
 
                 if (totalAvailable < detail.Quantity)
-                    detailComments[detail.ProductVariantId] = $"Không đủ sản phẩm | cần {detail.Quantity} sản phẩm , hiện có {totalAvailable}  sản phẩm trong tất cả các kho";
+                    detailComments[detail.ProductVariantId] = "Không đủ sản phẩm";
                 else
                     detailComments[detail.ProductVariantId] = "Tự động phê duyệt";
             }

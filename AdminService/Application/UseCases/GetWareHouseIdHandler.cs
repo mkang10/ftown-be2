@@ -26,34 +26,41 @@ namespace Application.UseCases
             var entity = await _repository.GetByIdWithDetailsAsync(id);
             if (entity == null) return null;
 
+            if (entity.Variant == null ||
+                entity.Variant.Product == null ||
+                entity.Variant.Color == null ||
+                entity.Variant.Size == null ||
+                entity.WareHouse == null)
+            {
+                throw new InvalidOperationException("Dữ liệu liên quan Variant hoặc Warehouse bị thiếu. Vui lòng kiểm tra database hoặc logic include.");
+            }
 
-             
-
-                var dto = new WarehouseStockDto
-                {
-                    WareHouseStockId = entity.WareHouseStockId,
-                    VariantId = entity.VariantId,
-                    VariantName = entity.Variant.Product.Name + " - " + entity.Variant.Color.ColorName + " - " + entity.Variant.Size.SizeName,
-                    StockQuantity = entity.StockQuantity,
-                    WareHouseId = entity.WareHouseId,
-                    WareHouseName = entity.WareHouse.WarehouseName,
-                    AuditHistory = entity.WareHouseStockAudits
-                        .Select(a => new WarehouseStockAuditDto
-                        {
-                            AuditId = a.AuditId,
-                            Action = a.Action,
-                            QuantityChange = a.QuantityChange,
-                            ActionDate = a.ActionDate,
-                            ChangedBy = a.ChangedBy,
-                            changedByName = a.ChangedByNavigation.FullName,
-                            Note = a.Note
-                        })
-                        .OrderByDescending(a => a.ActionDate)
-                        .ToList()
-                };
+            var dto = new WarehouseStockDto
+            {
+                WareHouseStockId = entity.WareHouseStockId,
+                VariantId = entity.VariantId,
+                VariantName = $"{entity.Variant.Product.Name} - {entity.Variant.Color.ColorName} - {entity.Variant.Size.SizeName}",
+                StockQuantity = entity.StockQuantity,
+                WareHouseId = entity.WareHouseId,
+                WareHouseName = entity.WareHouse.WarehouseName,
+                AuditHistory = entity.WareHouseStockAudits?
+                    .Select(a => new WarehouseStockAuditDto
+                    {
+                        AuditId = a.AuditId,
+                        Action = a.Action,
+                        QuantityChange = a.QuantityChange,
+                        ActionDate = a.ActionDate,
+                        ChangedBy = a.ChangedBy,
+                        changedByName = a.ChangedByNavigation?.FullName ?? "Không rõ",
+                        Note = a.Note
+                    })
+                    .OrderByDescending(a => a.ActionDate)
+                    .ToList() ?? new List<WarehouseStockAuditDto>()
+            };
 
             return dto;
         }
+
 
         public async Task<PaginatedResponseDTO<GetWareHouseStockRes>> GetByWarehouseIdAsync(
            int warehouseId,

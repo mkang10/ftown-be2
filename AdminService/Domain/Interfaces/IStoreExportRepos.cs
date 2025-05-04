@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,10 @@ namespace Domain.Interfaces
         {
             void Add(StoreExportStoreDetail storeExport);
             Task SaveChangesAsync();
-        }
-    
+
+        Task AddRangeAndSaveAsync(IEnumerable<StoreExportStoreDetail> entities);
+    }
+
+   
+   
 }

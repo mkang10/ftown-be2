@@ -22,5 +22,14 @@ namespace Infrastructure
                                       && ws.Warehouse.IsOwnerWarehouse == true)
                             .ToListAsync();
         }
+
+        public async Task<List<WarehouseStaff>> GetByWarehouseAndRoleAsyncNormal(int warehouseId, string role)
+        {
+            return await _db.WarehouseStaffs
+                            .Where(ws => ws.WarehouseId == warehouseId
+                                      && ws.Role == role
+                                      )
+                            .ToListAsync();
+        }
     }
 }
