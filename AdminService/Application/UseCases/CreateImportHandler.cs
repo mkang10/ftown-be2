@@ -108,16 +108,12 @@ namespace Application.UseCases
                 if (!unused.Any())
                     unused = allCheckers.Select(w => w.StaffDetailId).ToList();
 
+                int chosenStaffId = unused[_rng.Next(unused.Count)];
+                unused.Remove(chosenStaffId);
+
                 var storeDetails = new List<ImportStoreDetail>();
                 foreach (var det in importEntity.ImportDetails)
                 {
-                    if (!unused.Any())
-                        unused = allCheckers.Select(w => w.StaffDetailId).ToList();
-
-                    int idx = _rng.Next(unused.Count);
-                    int chosen = unused[idx];
-                    unused.RemoveAt(idx);
-
                     storeDetails.Add(new ImportStoreDetail
                     {
                         ImportDetailId = det.ImportDetailId,
@@ -125,7 +121,7 @@ namespace Application.UseCases
                         AllocatedQuantity = det.Quantity,
                         Status = "Processing",
                         Comments = "Đơn Nhập Hàng Tự Động bởi hệ thống",
-                        StaffDetailId = chosen,
+                        StaffDetailId = chosenStaffId,
                         HandleBy = null
                     });
                 }

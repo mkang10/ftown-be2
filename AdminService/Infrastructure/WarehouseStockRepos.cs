@@ -17,9 +17,10 @@ namespace Infrastructure.Repositories
             _varRepos = varRepos;
         }
 
-       
-
-                .FirstOrDefaultAsync(ws => ws.WareHouseStockId == id);
+      
+        public async Task<WareHousesStock?> GetByIdWithDetailsAsync(int id)
+        {
+            return await _context.WareHousesStocks.FirstOrDefaultAsync(ws => ws.WareHouseStockId == id);
         }
 
         public async Task<IEnumerable<WareHousesStock>> GetByWarehouseIdAsync(int warehouseId)
@@ -45,3 +46,6 @@ namespace Infrastructure.Repositories
         }
     }
 }
+
+     
+

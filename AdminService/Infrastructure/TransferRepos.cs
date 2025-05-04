@@ -113,7 +113,15 @@ namespace Infrastructure
                 Include(O => O.Dispatch).
                     ThenInclude(od => od.DispatchDetails).
                     ThenInclude(oc => oc.StoreExportStoreDetails).
-
+                     Include(o => o.Import).
+                    ThenInclude(od => od.ImportDetails).
+                    ThenInclude(oc => oc.ProductVariant).ThenInclude(oc => oc.Product).
+                     Include(o => o.Import).
+                    ThenInclude(od => od.ImportDetails).
+                    ThenInclude(oc => oc.ProductVariant).ThenInclude(oc => oc.Size).
+                     Include(o => o.Import).
+                    ThenInclude(od => od.ImportDetails).
+                    ThenInclude(oc => oc.ProductVariant).ThenInclude(oc => oc.Color).
                     FirstOrDefaultAsync(a => a.TransferOrderId == id);
             return data;
         }

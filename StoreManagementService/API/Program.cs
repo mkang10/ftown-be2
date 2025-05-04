@@ -1,6 +1,9 @@
 ﻿using API.AppStarts;
+using Application.Service;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
+using static Application.Service.IGoongService;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -20,6 +23,9 @@ builder.Services.AddCors(options =>
 // Add depen
 builder.Services.InstallService(builder.Configuration);
 builder.Services.AddControllers();
+builder.Services
+    .AddHttpClient<IGoongService, GoongService>()
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5));
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
