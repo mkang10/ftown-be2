@@ -15,6 +15,8 @@ namespace Application.DTO.Response
         public string PaymentMethod { get; set; } = null!;
         public string? PaymentUrl { get; set; } // Nếu là PAYOS, URL để thanh toán
         public string? Ghnid { get; set; }
+        public bool? IsFeedback { get; set; }
+        public DateTime? CompletedDate { get; set; }
         public DateTime? DeliveredDate { get; set; }
         public List<OrderItemResponse> Items { get; set; } = new();
     }

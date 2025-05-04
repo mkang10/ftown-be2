@@ -98,7 +98,9 @@ namespace Application.UseCases
                 OrderItems = orderitemsResponses,
                 Status = order.Status,
                 CreatedDate = order.CreatedDate,
-                Ghnid = order.Ghnid
+                Ghnid = order.Ghnid,
+                IsFeedback = order.IsFeedback,
+                CompletedDate = order.CompletedDate,
             };
         }
 
