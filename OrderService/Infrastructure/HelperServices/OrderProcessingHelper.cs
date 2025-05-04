@@ -20,26 +20,35 @@ namespace Infrastructure.HelperServices
 		private readonly IPaymentRepository _paymentRepository;
 		private readonly IOrderRepository _orderRepository;
 		private readonly ICustomerServiceClient _customerServiceClient;
+        private readonly IWareHouseStockAuditRepository _warehouseStockAuditRepository;
 		private readonly IMapper _mapper;
 		private readonly ILogger<OrderProcessingHelper> _logger;
 		private readonly AuditLogHandler _auditLogHandler;
         private readonly INotificationClient _notificationClient;
+        private readonly WareHouseStockAuditHandler _stockAuditHandler;
+        private readonly IAssignmentSettingService _assignmentSettingService;
         public OrderProcessingHelper(
 			IPaymentRepository paymentRepository,
-			IOrderRepository orderRepository,
-			ICustomerServiceClient customerServiceClient,
-			IMapper mapper,
-			ILogger<OrderProcessingHelper> logger,
-			AuditLogHandler auditLogHandler,
-            INotificationClient notificationClient)
-		{
-			_paymentRepository = paymentRepository;
-			_orderRepository = orderRepository;
-			_customerServiceClient = customerServiceClient;
-			_mapper = mapper;
-			_logger = logger;
-			_auditLogHandler = auditLogHandler;
+            IOrderRepository orderRepository,
+            ICustomerServiceClient customerServiceClient,
+            IMapper mapper,
+            ILogger<OrderProcessingHelper> logger,
+            AuditLogHandler auditLogHandler,
+            INotificationClient notificationClient,
+            WareHouseStockAuditHandler stockAuditHandler,
+            IWareHouseStockAuditRepository warehouseStockAuditRepository,
+            IAssignmentSettingService assignmentSettingService)
+        {
+            _paymentRepository = paymentRepository;
+            _orderRepository = orderRepository;
+            _customerServiceClient = customerServiceClient;
+            _mapper = mapper;
+            _logger = logger;
+            _auditLogHandler = auditLogHandler;
             _notificationClient = notificationClient;
+            _stockAuditHandler = stockAuditHandler;
+            _warehouseStockAuditRepository = warehouseStockAuditRepository;
+            _assignmentSettingService = assignmentSettingService;
         }
 
         public async Task SavePaymentAndOrderDetailsAsync(
@@ -87,6 +96,7 @@ namespace Infrastructure.HelperServices
                 "Đặt hàng thành công và đang đợi xác nhận ."
             );
         }
+
         public async Task LogPendingPaymentStatusAsync(int orderId, int accountId)
         {
             await _auditLogHandler.LogOrderActionAsync(
@@ -126,6 +136,34 @@ namespace Infrastructure.HelperServices
                 "Yêu cầu đổi/trả đã được tạo và đang chờ xử lý."
             );
         }
+        public async Task LogDeliveredStatusAsync(int orderId, int accountId)
+        {
+            await _auditLogHandler.LogOrderActionAsync(
+                orderId,
+                AuditOperation.UpdateStatus, // Operation lần này là UpdateStatus (khác với CreateOrder lúc đặt)
+                new
+                {
+                    From = OrderStatus.Delivering.ToString(),
+                    To = OrderStatus.Delivered.ToString()
+                },
+                accountId,
+                "Đơn hàng đã được giao thành công."
+            );
+        }
+        public async Task LogDeliveringStatusAsync(int orderId, int accountId)
+        {
+            await _auditLogHandler.LogOrderActionAsync(
+                orderId,
+                AuditOperation.UpdateStatus,
+                new
+                {
+                    From = OrderStatus.Confirmed.ToString(),
+                    To = OrderStatus.Delivering.ToString()
+                },
+                accountId,
+                "Đơn hàng đang được vận chuyển."
+            );
+        }
         public OrderResponse BuildOrderResponse(Order order, string paymentMethod, string? paymentUrl = null)
 		{
 			var response = _mapper.Map<OrderResponse>(order);
@@ -135,14 +173,13 @@ namespace Infrastructure.HelperServices
 		}
         public async Task AssignOrderToManagerAsync(int orderId, int assignedBy)
         {
-            const int DefaultShopManagerId = 1;
-
             var assignment = new OrderAssignment
             {
                 OrderId = orderId,
-                ShopManagerId = DefaultShopManagerId,
+                ShopManagerId = _assignmentSettingService.DefaultShopManagerId,
+                StaffId = _assignmentSettingService.DefaultStaffId,
                 AssignmentDate = DateTime.UtcNow,
-                Comments = "Tự động phân công đơn hàng khi tạo."
+                Comments = "Tự động phân công đơn hàng cho Shop Manager và Staff mặc định."
             };
 
             await _orderRepository.CreateAssignmentAsync(assignment);
@@ -150,21 +187,25 @@ namespace Infrastructure.HelperServices
             await _auditLogHandler.LogOrderActionAsync(
                 orderId,
                 AuditOperation.AssignToManager,
-                new { ShopManagerID = DefaultShopManagerId },
+                new
+                {
+                    ShopManagerID = _assignmentSettingService.DefaultShopManagerId,
+                    StaffID = _assignmentSettingService.DefaultStaffId
+                },
                 assignedBy,
-                "Đơn hàng được phân công cho Shop Manager mặc định."
+                "Đơn hàng được phân công cho Shop Manager và Staff mặc định."
             );
         }
+
         public async Task AssignReturnOrderToManagerAsync(int orderId, int assignedBy)
         {
-            const int DefaultShopManagerId = 1;
-
             var assignment = new OrderAssignment
             {
                 OrderId = orderId,
-                ShopManagerId = DefaultShopManagerId,
+                ShopManagerId = _assignmentSettingService.DefaultShopManagerId,
+                StaffId = _assignmentSettingService.DefaultStaffId,
                 AssignmentDate = DateTime.UtcNow,
-                Comments = "Phân công xử lí đổi trả."
+                Comments = "Tự động phân công xử lý đơn đổi trả cho Shop Manager và Staff mặc định."
             };
 
             await _orderRepository.CreateAssignmentAsync(assignment);
@@ -172,9 +213,13 @@ namespace Infrastructure.HelperServices
             await _auditLogHandler.LogOrderActionAsync(
                 orderId,
                 AuditOperation.AssignToManager,
-                new { ShopManagerID = DefaultShopManagerId },
+                new
+                {
+                    ShopManagerID = _assignmentSettingService.DefaultShopManagerId,
+                    StaffID = _assignmentSettingService.DefaultStaffId
+                },
                 assignedBy,
-                "Đơn hàng đổi trả được phân công cho Shop Manager mặc định."
+                "Đơn hàng đổi trả được phân công cho Shop Manager và Staff mặc định."
             );
         }
         public async Task SendOrderNotificationAsync(int accountId, int orderId, string title, string message)
@@ -206,6 +251,39 @@ namespace Infrastructure.HelperServices
 
             await _notificationClient.SendNotificationAsync(notificationRequest);
         }
+        public async Task LogWarehouseStockChangeAsync(
+                                        int orderId,
+                                        int accountId,
+                                        List<OrderDetail> orderDetails,
+                                        int warehouseId)
+        {
+            var variantIds = orderDetails.Select(o => o.ProductVariantId).ToList();
+            var stockMap = await _warehouseStockAuditRepository.GetWarehouseStockMapAsync(variantIds, warehouseId);
+
+            foreach (var detail in orderDetails)
+            {
+                if (stockMap.TryGetValue(detail.ProductVariantId, out var warehouseStockId))
+                {
+                    await _stockAuditHandler.LogDecreaseStockAsync(
+                        warehouseStockId: warehouseStockId,
+                        quantityReduced: detail.Quantity,
+                        changedBy: accountId,
+                        note: $"Đơn hàng #{orderId} đã trừ {detail.Quantity} sản phẩm VariantId {detail.ProductVariantId}."
+                    );
+                }
+                else
+                {
+                    // Ghi log lỗi nếu không tìm thấy kho
+                    _logger.LogWarning($"Không tìm thấy WareHouseStock cho VariantId: {detail.ProductVariantId}, WareHouseId: {warehouseId}");
+                }
+            }
+        }
+        public async Task UpdateDefaultAssignmentAsync(int shopManagerId, int staffId)
+        {
+            _assignmentSettingService.UpdateDefaultAssignment(shopManagerId, staffId);
+        }
+
+
     }
 
 }

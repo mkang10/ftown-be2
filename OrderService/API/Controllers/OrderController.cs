@@ -1,5 +1,6 @@
 ﻿using Application.DTO.Request;
 using Application.DTO.Response;
+using Application.Interfaces;
 using Application.UseCases;
 using Domain.Common_Model;
 using Microsoft.AspNetCore.Mvc;
@@ -17,13 +18,15 @@ namespace API.Controllers
         private readonly GetOrderDetailHandler _getOrderDetailHandler;
         private readonly GetOrderItemsHandler _getOrderItemsHandler;
         private readonly GetReturnableOrdersHandler _getReturnableOrdersHandler;
+        private readonly IOrderProcessingHelper _orderProcessingHelper;
         public OrderController(CreateOrderHandler createOrderHandler, 
                                ILogger<OrderController> logger, 
                                GetOrdersByStatusHandler getOrdersByStatusHandler, 
                                GetOrderDetailHandler getOrderDetailHandler, 
                                GetOrderItemsHandler getOrderItemsHandler, 
                                UpdateOrderStatusHandler updateOrderStatusHandler,
-                               GetReturnableOrdersHandler getReturnableOrdersHandler)
+                               GetReturnableOrdersHandler getReturnableOrdersHandler,
+                               IOrderProcessingHelper orderProcessingHelper)
         {
             _createOrderHandler = createOrderHandler;
             _logger = logger;
@@ -32,6 +35,7 @@ namespace API.Controllers
             _getOrderDetailHandler = getOrderDetailHandler;
             _getOrderItemsHandler = getOrderItemsHandler;
             _getReturnableOrdersHandler = getReturnableOrdersHandler;
+            _orderProcessingHelper = orderProcessingHelper;
         }
 
         /// <summary>
@@ -144,7 +148,12 @@ namespace API.Controllers
             return Ok(new ResponseDTO(true, "Cập nhật trạng thái thành công!"));
         }
 
-
+        [HttpPost("assignment/defaults")]
+        public async Task<IActionResult> UpdateDefaultAssignment([FromBody] UpdateAssignmentSettingRequest request)
+        {
+            await _orderProcessingHelper.UpdateDefaultAssignmentAsync(request.ShopManagerId, request.StaffId);
+            return Ok(new { Success = true, Message = "Cập nhật thành công!" });
+        }
 
     }
 }

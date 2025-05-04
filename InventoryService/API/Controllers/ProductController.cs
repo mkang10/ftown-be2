@@ -4,6 +4,7 @@ using Application.UseCases;
 using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Nest;
@@ -23,6 +24,7 @@ namespace API.Controllers
         private readonly ElasticsearchService _elasticsearchService;
         private readonly FilterProductHandler _filterProductHandler;
         private readonly GetTopSellingProductHandler _getTopSellingProductHandler;
+        private readonly GetProductsByStyleHandler _getProductsByStyleHandler;
         public ProductController(
             GetAllProductsHandler getAllProductsHandler,
             GetProductDetailHandler getProductDetailHandler,
@@ -32,7 +34,8 @@ namespace API.Controllers
             CreateProductHandler createProductHandler,
             ElasticsearchService elasticsearchService,
             FilterProductHandler filterProductHandler,
-            GetTopSellingProductHandler getTopSellingProductHandler)
+            GetTopSellingProductHandler getTopSellingProductHandler,
+            GetProductsByStyleHandler getProductsByStyleHandler)
         {
             _getAllProductsHandler = getAllProductsHandler;
             _getProductDetailHandler = getProductDetailHandler;
@@ -43,6 +46,7 @@ namespace API.Controllers
             _elasticsearchService = elasticsearchService;
             _filterProductHandler = filterProductHandler;
             _getTopSellingProductHandler = getTopSellingProductHandler;
+            _getProductsByStyleHandler = getProductsByStyleHandler;
         }
 
         [HttpGet("view-all")]
@@ -67,7 +71,7 @@ namespace API.Controllers
         }
 
         [HttpGet("{productId}")]
-		public async Task<ActionResult<ResponseDTO<ProductDetailResponse>>> GetProductDetail(int productId, [FromQuery] int? accountId)
+        public async Task<ActionResult<ResponseDTO<ProductDetailResponse>>> GetProductDetail(int productId, [FromQuery] int? accountId)
 		{
 			var product = await _getProductDetailHandler.Handle(productId, accountId);
 
@@ -111,7 +115,18 @@ namespace API.Controllers
 
             return Ok(new ResponseDTO<ProductVariantResponse>(variant, true, "Lấy biến thể sản phẩm thành công!"));
         }
+        [HttpGet("by-style")]
+        public async Task<IActionResult> GetProductsByStyleName([FromQuery] string styleName, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            if (string.IsNullOrEmpty(styleName))
+            {
+                return BadRequest(new ResponseDTO(false, "StyleName không được bỏ trống."));
+            }
 
+            var result = await _getProductsByStyleHandler.HandleAsync(styleName, page, pageSize);
+
+            return Ok(new ResponseDTO<List<ProductListResponse>>(result, true, "Lấy danh sách sản phẩm theo style thành công."));
+        }
         // Endpoint tạo nhiều sản phẩm cùng lúc
         [HttpPost("create")]
         [ApiExplorerSettings(IgnoreApi = true)]

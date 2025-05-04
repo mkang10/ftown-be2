@@ -21,6 +21,14 @@ namespace Infrastructure.Repositories
 
         public async Task AddAuditLogAsync(string tableName, string recordId, string operation, int changedBy, string? changeData, string? comment)
         {
+            // ✅ Validate ChangedBy trước
+            bool accountExists = await _context.Accounts.AnyAsync(a => a.AccountId == changedBy);
+
+            if (!accountExists)
+            {
+                changedBy = 1 ; // Gán về SystemAccountId nếu account không tồn tại
+            }
+
             var auditLog = new AuditLog
             {
                 TableName = tableName,

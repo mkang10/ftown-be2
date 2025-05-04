@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Domain.Entities;
@@ -19,12 +19,9 @@ public partial class ShopManagerDetail
 
     public virtual Account Account { get; set; } = null!;
 
-    public virtual ICollection<CheckDetail> CheckDetails { get; set; } = new List<CheckDetail>();
-
     public virtual ICollection<ImportStoreDetail> ImportStoreDetails { get; set; } = new List<ImportStoreDetail>();
 
     public virtual ICollection<StoreExportStoreDetail> StoreExportStoreDetails { get; set; } = new List<StoreExportStoreDetail>();
 
     public virtual ICollection<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
 }
-

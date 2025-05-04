@@ -15,6 +15,7 @@ namespace Application.Enums
         CancelOrder,
         CompleteOrder,
         AssignToManager,
-        CreateReturnOrder
+        CreateReturnOrder,
+        UpdateStatus
     }
 }

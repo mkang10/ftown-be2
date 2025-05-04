@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Domain.Entities;
@@ -16,12 +16,6 @@ public partial class Payment
     public DateTime? TransactionDate { get; set; }
 
     public decimal Amount { get; set; }
-
-    public string? PaymentReference { get; set; }
-
-    public string? PaymentGatewayTransactionId { get; set; }
-
-    public string? PaymentNotes { get; set; }
 
     public long? OrderCode { get; set; }
 

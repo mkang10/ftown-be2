@@ -25,6 +25,7 @@ public partial class Warehouse
 
     public int? ShopManagerId { get; set; }
 
+
     public bool? IsOwnerWarehouse { get; set; }
 
     public string? UnusedCheckerIds { get; set; }

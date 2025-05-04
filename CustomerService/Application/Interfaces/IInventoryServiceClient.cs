@@ -14,5 +14,6 @@ namespace Application.Interfaces
         Task<ProductVariantResponse?> GetProductVariantByIdAsync(int productVariantId);
         Task<ProductVariantResponse?> GetProductVariantById(int variantId);
         Task<ProductVariantResponse?> GetProductVariantByDetails(int productId, string size, string color);
+        Task<List<ProductResponse>?> GetProductsByStyleNameAsync(string styleName, int page, int pageSize);
     }
 }
