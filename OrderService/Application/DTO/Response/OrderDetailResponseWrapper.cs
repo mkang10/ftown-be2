@@ -26,6 +26,8 @@ namespace Application.DTO.Response
         public string Status { get; set; } = null!;          
         public DateTime? CreatedDate { get; set; }
         public string? Ghnid { get; set; }
+        public bool? IsFeedback { get; set; }
+        public DateTime? CompletedDate { get; set; }
         public List<OrderItemResponse> OrderItems { get; set; } = new();
     }
 
