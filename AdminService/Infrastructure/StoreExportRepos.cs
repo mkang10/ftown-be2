@@ -25,5 +25,11 @@ namespace Infrastructure
         {
             return _context.SaveChangesAsync();
         }
+
+        public async Task AddRangeAndSaveAsync(IEnumerable<StoreExportStoreDetail> entities)
+        {
+            await _context.Set<StoreExportStoreDetail>().AddRangeAsync(entities);
+            await _context.SaveChangesAsync();
+        }
     }
 }

@@ -125,6 +125,23 @@ namespace Infrastructure
                     FirstOrDefaultAsync(a => a.TransferOrderId == id);
             return data;
         }
+        public async Task AddAsync(Transfer transfer)
+            => await _context.Transfers.AddAsync(transfer);
+
+
+        public async Task UpdateAsync(Transfer entity)
+        {
+            // Đánh dấu entity đã thay đổi
+            _context.Transfers.Update(entity);
+            // Lưu thay đổi xuống CSDL
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task AddRangeAsync(IEnumerable<TransferDetail> entities)
+        {
+            // EF Core đã hỗ trợ AddRangeAsync
+            await _context.Set<TransferDetail>().AddRangeAsync(entities);
+        }
     }
 
 

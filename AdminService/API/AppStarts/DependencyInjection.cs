@@ -48,6 +48,8 @@ namespace API.AppStarts
             services.AddScoped<IDispatchRepos, DispatchRepos>();
             services.AddScoped<IWarehouseStaffRepos, WarehouseStaffRepository>();
             services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+            services.AddScoped<ITransferDetailRepository, TransferDetailRepository>();
+            services.AddScoped<IDispatchDetailRepository, DispatchDetailRepos>();
 
             services.AddScoped<ReportService>();
             services.AddScoped<GetWareHouseIdHandler>();

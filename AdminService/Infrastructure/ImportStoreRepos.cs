@@ -25,7 +25,16 @@ namespace Infrastructure
         {
             return _context.SaveChangesAsync();
         }
+        public async Task UpdateRangeAsync(IEnumerable<ImportStoreDetail> entities)
+        {
+            if (entities == null) throw new ArgumentNullException(nameof(entities));
 
+            // Đánh dấu các entity cần cập nhật
+            _context.ImportStoreDetails.UpdateRange(entities);
+
+            // Lưu thay đổi
+            await _context.SaveChangesAsync();
+        }
         public async Task AddRangeAsync(IEnumerable<ImportStoreDetail> details)
        => await _context.ImportStoreDetails.AddRangeAsync(details);
     }

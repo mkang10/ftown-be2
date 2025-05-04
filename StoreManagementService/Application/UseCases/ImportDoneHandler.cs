@@ -43,6 +43,7 @@ namespace Application.UseCases
 
             // Cập nhật các ImportStoreDetail dựa trên thông tin từ confirmations và reload lại Import để cập nhật navigation properties
             await UpdateStoreDetailsAndReloadAsync(import, confirmations, staffId);
+            await _importRepos.SaveChangesAsync();
 
             // Kiểm tra nếu tất cả các ImportStoreDetail đều đạt trạng thái "Success" thì cập nhật Import thành "Done"
             if (await TryUpdateImportStatusToDoneAsync(import, staffId))
@@ -84,6 +85,7 @@ namespace Application.UseCases
             var currentStatus = import.Status.Trim();
             if (!string.Equals(currentStatus, "Approved", StringComparison.OrdinalIgnoreCase) &&
                                 !string.Equals(currentStatus, "Shortage", StringComparison.OrdinalIgnoreCase) &&
+                                                               
 
                 !string.Equals(currentStatus, "Partial Success", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(currentStatus, "Supplement Created", StringComparison.OrdinalIgnoreCase))
@@ -155,30 +157,43 @@ namespace Application.UseCases
         /// </summary>
         private async Task UpdateWarehouseForSuccessDetailsAsync(Import import, int staffId)
         {
-            var storeDetails = import.ImportDetails.SelectMany(d => d.ImportStoreDetails).ToList();
+            // Lấy tất cả các ImportStoreDetail từ import
+            var storeDetails = import.ImportDetails
+                                     .SelectMany(d => d.ImportStoreDetails)
+                                     .ToList();
+
+            // Lọc ra những detail thực sự success
             var successDetails = storeDetails
-                                 .Where(sd => string.Equals(sd.Status.Trim(), "Success", StringComparison.OrdinalIgnoreCase))
-                                 .ToList();
+                .Where(sd =>
+                    string.Equals(sd.Status?.Trim(),
+                                  "Success",
+                                  StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
-            if (successDetails.Any())
+            if (!storeDetails.Any())
             {
-                foreach (var detail in successDetails)
-                {
-                    await _wareHouseStockRepos.UpdateWarehouseStockForSingleDetailAsync(detail, detail.ImportDetail.ProductVariantId, staffId);
-                }
-
-                // Ví dụ: nếu tổng số ImportStoreDetail là 2 và cả 2 đều thành công,
-                // cập nhật Import thành "Success"; ngược lại là "Partial Success"
-                if (storeDetails.Count == 2 && successDetails.Count == 2)
-                {
-                    import.Status = "Success";
-                }
-                else
-                {
-                    import.Status = "Partial Success";
-                }
+                // Nếu không có detail nào, bạn có thể giữ nguyên trạng thái
+                // hoặc gán import.Status = "No Details";
+                return;
             }
+
+            // Cập nhật kho cho từng detail success
+            foreach (var detail in successDetails)
+            {
+                await _wareHouseStockRepos
+                    .UpdateWarehouseStockForSingleDetailAsync(
+                        detail,
+                        detail.ImportDetail.ProductVariantId,
+                        staffId);
+            }
+
+            // Nếu số lượng successDetails == tổng số storeDetails ⇒ Success
+            // Ngược lại ⇒ Partial Success
+            import.Status = (successDetails.Count == storeDetails.Count)
+                ? "Done"
+                : "Partial Success";
         }
+
 
         /// <summary>
         /// Nếu Import có trường OriginalImportId (đơn bổ sung), cập nhật số lượng của đơn gốc.

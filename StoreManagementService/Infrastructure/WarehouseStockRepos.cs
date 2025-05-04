@@ -14,10 +14,12 @@ namespace Infrastructure
     public class WareHouseStockRepos : IWareHouseStockRepos
     {
         private readonly FtownContext _context;
+        private readonly IStaffDetailRepository _staffDetail;
 
-        public WareHouseStockRepos(FtownContext context)
+        public WareHouseStockRepos(FtownContext context, IStaffDetailRepository staffDetail)
         {
             _context = context;
+            _staffDetail = staffDetail;
         }
         public async Task<IEnumerable<WareHousesStock>> GetByWarehouseAsync(int warehouseId)
             => await _context.WareHousesStocks
@@ -94,7 +96,7 @@ namespace Infrastructure
                         QuantityChange = actualReceivedQuan,
                         ActionDate = DateTime.Now,
                         ChangedBy = staffId,
-                        Note = $"Updated via Import Done. ImportDetailId: {importDetail.ImportDetailId}, ImportStoreId: {storeDetail.ImportStoreId}"
+                        Note = $"cập nhật {importDetail.Quantity} biến thể {importDetail.ProductVariant.Product.Name} vào kho thành công !"
                     };
                     _context.WareHouseStockAudits.Add(stockAudit);
                 }
@@ -111,20 +113,28 @@ namespace Infrastructure
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateWarehouseStockForSingleDetailAsync(ImportStoreDetail storeDetail, int productVariantId, int staffId)
+        public async Task UpdateWarehouseStockForSingleDetailAsync(
+    ImportStoreDetail storeDetail,
+    int productVariantId,
+    int staffId)
         {
-            // Lấy số lượng thực tế nhận được và warehouseId từ storeDetail
+            // 1. Lấy accountId từ staffId
+            var accountId = await _staffDetail.GetAccountIdByStaffIdAsync(staffId);
+          
+
+            // 2. Lấy số lượng và warehouseId
             int actualReceivedQuan = (int)storeDetail.ActualReceivedQuantity;
             int warehouseId = (int)storeDetail.WarehouseId;
 
-            // Tìm WareHousesStock theo WarehouseId và VariantId
+            // 3. Tìm hoặc tạo bản ghi kho
             var wareHouseStock = await _context.WareHousesStocks
-                .FirstOrDefaultAsync(ws => ws.WareHouseId == warehouseId && ws.VariantId == productVariantId);
+                .FirstOrDefaultAsync(ws =>
+                    ws.WareHouseId == warehouseId &&
+                    ws.VariantId == productVariantId);
 
-            string auditAction = "";
+            string auditAction;
             if (wareHouseStock == null)
             {
-                // Nếu chưa có bản ghi kho: tạo mới
                 wareHouseStock = new WareHousesStock
                 {
                     WareHouseId = warehouseId,
@@ -132,32 +142,31 @@ namespace Infrastructure
                     StockQuantity = actualReceivedQuan
                 };
                 _context.WareHousesStocks.Add(wareHouseStock);
-                // Lưu ngay để nhận WareHouseStockId
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();  // để có WareHouseStockId
                 auditAction = "CREATE";
             }
             else
             {
-                // Nếu đã có: tăng số lượng tồn kho
                 wareHouseStock.StockQuantity += actualReceivedQuan;
                 auditAction = "INCREASE";
             }
 
-            // Tạo WareHouseStockAudit cho giao dịch cập nhật kho
+            // 4. Tạo audit, dùng accountId cho ChangedBy
             var stockAudit = new WareHouseStockAudit
             {
-                WareHouseStockId = wareHouseStock.WareHouseStockId, // Đã có sau SaveChanges nếu là bản ghi mới
+                WareHouseStockId = wareHouseStock.WareHouseStockId,
                 Action = auditAction,
                 QuantityChange = actualReceivedQuan,
                 ActionDate = DateTime.Now,
-                ChangedBy = staffId,
-                Note = $"Updated via Import Done. ImportStoreId: {storeDetail.ImportStoreId}"
+                ChangedBy = accountId,
+                Note = $"cập nhật vào kho thành công !"
             };
             _context.WareHouseStockAudits.Add(stockAudit);
 
-            // Lưu lại các thay đổi cho WareHouseStock và WareHouseStockAudit
+            // 5. Lưu thay đổi
             await _context.SaveChangesAsync();
         }
+
 
 
         public async Task UpdateDispatchWarehouseStockAsync(Dispatch dispatch, int staffId)
