@@ -16,17 +16,20 @@ namespace Application.UseCases
         private readonly IAuditLogRepository _auditLogRepository;
         private readonly IOrderProcessingHelper _orderProcessingHelper;
         private readonly ILogger<UpdateReturnOrderStatusHandler> _logger;
+        private readonly IOrderRepository _orderRepository;
 
         public UpdateReturnOrderStatusHandler(
             IReturnOrderRepository returnOrderRepository,
             IAuditLogRepository auditLogRepository,
             IOrderProcessingHelper orderProcessingHelper,
-            ILogger<UpdateReturnOrderStatusHandler> logger)
+            ILogger<UpdateReturnOrderStatusHandler> logger,
+            IOrderRepository orderRepository)
         {
             _returnOrderRepository = returnOrderRepository;
             _auditLogRepository = auditLogRepository;
             _orderProcessingHelper = orderProcessingHelper;
             _logger = logger;
+            _orderRepository = orderRepository;
         }
 
         public async Task<bool> HandleAsync(int returnOrderId, string newStatus, int changedBy, string? comment)
@@ -40,12 +43,23 @@ namespace Application.UseCases
 
             var previousStatus = returnOrder.Status;
 
-            // Cập nhật trạng thái và thời gian cập nhật
+            // 1️⃣ Cập nhật trạng thái ReturnOrder
             returnOrder.Status = newStatus;
             returnOrder.UpdatedDate = DateTime.UtcNow;
             await _returnOrderRepository.UpdateAsync(returnOrder);
 
-            // Ghi log thay đổi
+            // 2️⃣ Cập nhật trạng thái Order nếu cần
+            if (newStatus == "Approved" || newStatus == "Rejected")
+            {
+                var order = await _orderRepository.GetOrderByIdAsync(returnOrder.OrderId);
+                if (order != null && order.Status == "Return Requested")
+                {
+                    var newOrderStatus = newStatus == "Approved" ? "Return Approved" : "Return Rejected";
+                    await _orderRepository.UpdateOrderStatusAsync(order.OrderId, newOrderStatus);
+                }
+            }
+
+            // 3️⃣ Ghi log thay đổi trạng thái ReturnOrder
             var changeData = JsonSerializer.Serialize(new
             {
                 OldStatus = previousStatus,
@@ -61,7 +75,7 @@ namespace Application.UseCases
                 comment
             );
 
-            // Gửi thông báo tái sử dụng method có sẵn
+            // 4️⃣ Gửi thông báo đến người dùng
             try
             {
                 var message = newStatus switch
@@ -85,6 +99,7 @@ namespace Application.UseCases
 
             return true;
         }
+
     }
 
 }

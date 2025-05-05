@@ -40,87 +40,88 @@ namespace Application.UseCases
             _mapper = mapper;
         }
 
-        public async Task<PaginatedResult<ReturnRequestResponse>> HandleAsync(
-    string? status,
-    string? returnOption,
-    DateTime? dateFrom,
-    DateTime? dateTo,
-    int? orderId,
-    int pageNumber,
-    int pageSize)
+        public async Task<PaginatedResult<ReturnRequestWrapper>> HandleAsync(
+                                                                string? status,
+                                                                string? returnOption,
+                                                                DateTime? dateFrom,
+                                                                DateTime? dateTo,
+                                                                int? orderId,
+                                                                int? returnOrderId,
+                                                                int pageNumber,
+                                                                int pageSize)
         {
-            // 1️⃣ Lấy trang ReturnOrder đã filter
             var pagedRo = await _returnOrderRepository.GetReturnOrdersAsync(
                 status,
                 returnOption,
                 dateFrom,
                 dateTo,
                 orderId,
+                returnOrderId,
                 pageNumber,
                 pageSize);
 
-            var dtoItems = new List<ReturnRequestResponse>();
+            var wrapperList = new List<ReturnRequestWrapper>();
 
             foreach (var ro in pagedRo.Items)
             {
-                // 2️⃣ Lấy thông tin chi tiết đơn hàng
                 var orderDetail = await GetOrderDetailForStaffAsync(ro.OrderId);
 
-                // 3️⃣ Parse hình ảnh
+                // Parse ảnh từ JSON
                 List<string>? images = null;
                 if (!string.IsNullOrEmpty(ro.ReturnImages))
                 {
                     images = JsonConvert.DeserializeObject<List<string>>(ro.ReturnImages);
                 }
 
-                // 4️⃣ Mapping ReturnItems (các sản phẩm muốn đổi/trả)
-                var returnItems = _mapper.Map<List<ReturnItemResponse>>(ro.ReturnOrderItems);
+                // Map ReturnOrderInfo + ReturnOrderDetailInfo
+                var returnOrderInfo = _mapper.Map<ReturnOrderInfo>(ro);
+                returnOrderInfo.AccountName = orderDetail?.FullName ?? "Không xác định";
+
+                var returnOrderDetailInfo = _mapper.Map<ReturnOrderDetailInfo>(ro);
+                returnOrderDetailInfo.ReturnImages = images;
+
+                // Map ReturnItems → ReturnOrderItemInfo
+                var returnItems = ro.ReturnOrderItems;
+                var returnOrderItemInfos = new List<ReturnOrderItemInfo>();
 
                 var variantIds = returnItems.Select(i => i.ProductVariantId).Distinct().ToList();
                 var variantDict = await _inventoryServiceClient.GetAllProductVariantsByIdsAsync(variantIds);
 
-                // Bổ sung thông tin còn thiếu từ ProductVariant
                 foreach (var item in returnItems)
                 {
                     if (variantDict.TryGetValue(item.ProductVariantId, out var variant))
                     {
-                        item.ProductName = variant.ProductName;
-                        item.Color = variant.Color;
-                        item.Size = variant.Size;
-                        item.ImageUrl = variant.ImagePath;
-                        item.Price = variant.Price;
+                        returnOrderItemInfos.Add(new ReturnOrderItemInfo
+                        {
+                            ProductVariantName = variant.ProductName,
+                            Size = variant.Size,
+                            Color = variant.Color,
+                            ImageUrl = variant.ImagePath,
+                            Quantity = item.Quantity,
+                            Price = variant.Price,
+                            PriceAtPurchase = orderDetail?.OrderItems
+                                .FirstOrDefault(x => x.ProductVariantId == item.ProductVariantId)?.PriceAtPurchase ?? 0,
+                            ShippingCost = orderDetail?.ShippingCost ?? 0
+                        });
                     }
                 }
 
-                // 5️⃣ Map ReturnOrder → ReturnRequestResponse
-                dtoItems.Add(new ReturnRequestResponse
+                wrapperList.Add(new ReturnRequestWrapper
                 {
-                    ReturnOrderId = ro.ReturnOrderId,
-                    OrderId = ro.OrderId,
-                    Status = ro.Status,
-                    CreatedDate = ro.CreatedDate,
-                    TotalRefundAmount = ro.TotalRefundAmount,
-                    RefundMethod = ro.RefundMethod,
-                    ReturnReason = ro.ReturnReason,
-                    ReturnOption = ro.ReturnOption,
-                    ReturnDescription = ro.ReturnDescription,
-                    ReturnImages = images,
-                    BankName = ro.BankName,
-                    BankAccountNumber = ro.BankAccountNumber,
-                    BankAccountName = ro.BankAccountName,
-                    Order = orderDetail,
-                    ReturnItems = returnItems // ✅ Thêm danh sách sản phẩm đổi/trả
+                    ReturnOrder = returnOrderInfo,
+                    ReturnOrderDetail = returnOrderDetailInfo,
+                    ReturnOrderItems = returnOrderItemInfos
                 });
             }
 
-            // 6️⃣ Trả kết quả phân trang
-            return new PaginatedResult<ReturnRequestResponse>(
-                items: dtoItems,
+            return new PaginatedResult<ReturnRequestWrapper>(
+                items: wrapperList,
                 totalCount: pagedRo.TotalCount,
                 pageNumber: pagedRo.PageNumber,
                 pageSize: pagedRo.PageSize
             );
         }
+
 
         private async Task<OrderDetailResponseWrapper?> GetOrderDetailForStaffAsync(int orderId)
         {

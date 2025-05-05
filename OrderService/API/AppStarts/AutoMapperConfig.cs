@@ -56,6 +56,22 @@ namespace API.AppStarts
                 .ForMember(dest => dest.Size, opt => opt.Ignore())
                 .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())
                 .ForMember(dest => dest.Price, opt => opt.Ignore());
+            CreateMap<ReturnOrder, ReturnOrderInfo>()
+            .ForMember(dest => dest.AccountName,
+                opt => opt.Ignore()); // Vì cần lấy từ OrderDetail
+
+            CreateMap<ReturnOrder, ReturnOrderDetailInfo>()
+                .ForMember(dest => dest.ReturnImages,
+                    opt => opt.Ignore()); // Parse thủ công từ JSON
+
+            CreateMap<ReturnOrderItem, ReturnOrderItemInfo>()
+                .ForMember(dest => dest.ProductVariantName, opt => opt.Ignore())
+                .ForMember(dest => dest.Size, opt => opt.Ignore())
+                .ForMember(dest => dest.Color, opt => opt.Ignore())
+                .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())
+                .ForMember(dest => dest.Price, opt => opt.Ignore())
+                .ForMember(dest => dest.PriceAtPurchase, opt => opt.Ignore())
+                .ForMember(dest => dest.ShippingCost, opt => opt.Ignore());
         }
     }
 }

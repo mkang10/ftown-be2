@@ -53,6 +53,7 @@ namespace Infrastructure.Repositories
                                                         DateTime? dateFrom,
                                                         DateTime? dateTo,
                                                         int? orderId,
+                                                        int? returnOrderId,
                                                         int pageNumber,
                                                         int pageSize)
         {
@@ -73,6 +74,8 @@ namespace Infrastructure.Repositories
                 query = query.Where(ro => ro.CreatedDate <= dateTo.Value);
             if (orderId.HasValue)
                 query = query.Where(ro => ro.OrderId == orderId.Value);
+            if (returnOrderId.HasValue)
+                query = query.Where(ro => ro.ReturnOrderId == returnOrderId.Value);
             query = query.OrderByDescending(ro => ro.CreatedDate);
             return await query.ToPaginatedResultAsync(pageNumber, pageSize);
         }

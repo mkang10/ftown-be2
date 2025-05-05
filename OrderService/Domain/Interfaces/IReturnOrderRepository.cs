@@ -20,6 +20,7 @@ namespace Domain.Interfaces
                                             DateTime? dateFrom,
                                             DateTime? dateTo,
                                             int? orderId,
+                                            int? returnOrderId,
                                             int pageNumber,
                                             int pageSize);
         Task<ReturnOrder?> GetByIdAsync(int returnOrderId);

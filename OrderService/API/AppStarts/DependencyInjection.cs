@@ -39,7 +39,7 @@ namespace API.AppStarts
             });
             services.AddHttpClient<INotificationClient, NotificationServiceClient>(client =>
             {
-                client.BaseAddress = new Uri("https://ftnotificationservice.azurewebsites.net/api/");
+                client.BaseAddress = new Uri("https://localhost:7270/api/");
             });
             services.AddHttpClient<IPayOSService, PayOSService>(client =>
             {
