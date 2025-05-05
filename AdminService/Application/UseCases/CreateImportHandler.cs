@@ -346,7 +346,7 @@ namespace Application.UseCases
                         {
                             ActualReceivedQuantity = null,
                             AllocatedQuantity = missing,
-                            Status = "Pending",
+                            Status = "Processing",
                             StaffDetailId = store.StaffDetailId,
                             WarehouseId = store.WarehouseId,
                             HandleBy = store.HandleBy
