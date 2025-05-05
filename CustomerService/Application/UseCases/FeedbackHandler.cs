@@ -89,7 +89,7 @@ namespace Application.UseCases
 
                 // Map DTO sang entity và lưu vào database
                 var feedbackEntity = _mapper.Map<Feedback>(request);
-                feedbackEntity.ImagePath = ImageString.ToString();
+                feedbackEntity.ImagePath = ImageString?.ToString();
                 var createdFeedback = await _commentRepository.CreateFeedback(feedbackEntity);
                 // Thêm feedback đã tạo vào danh sách kết quả
                 var feedbackGet = await _commentRepository.GetFeedBackById(createdFeedback.FeedbackId);

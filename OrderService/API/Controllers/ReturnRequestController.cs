@@ -106,13 +106,14 @@ namespace API.Controllers
 
         [HttpGet("all")]
         public async Task<IActionResult> GetAll(
-            [FromQuery] string? status,
-            [FromQuery] string? returnOption,
-            [FromQuery] DateTime? dateFrom,
-            [FromQuery] DateTime? dateTo,
-            [FromQuery] int? orderId,
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
+                                                [FromQuery] string? status,
+                                                [FromQuery] string? returnOption,
+                                                [FromQuery] DateTime? dateFrom,
+                                                [FromQuery] DateTime? dateTo,
+                                                [FromQuery] int? orderId,
+                                                [FromQuery] int? returnOrderId,
+                                                [FromQuery] int pageNumber = 1,
+                                                [FromQuery] int pageSize = 10)
         {
             var pagedResult = await _getAllReturnRequestsHandler.HandleAsync(
                 status,
@@ -120,11 +121,12 @@ namespace API.Controllers
                 dateFrom,
                 dateTo,
                 orderId,
+                returnOrderId,
                 pageNumber,
                 pageSize
             );
 
-            var response = new ResponseDTO<PaginatedResult<ReturnRequestResponse>>(
+            var response = new ResponseDTO<PaginatedResult<ReturnRequestWrapper>>(
                 pagedResult,
                 true,
                 "Lấy danh sách yêu cầu đổi trả thành công."
@@ -132,6 +134,7 @@ namespace API.Controllers
 
             return Ok(response);
         }
+
         [HttpPut("{returnOrderId}/status")]
         public async Task<IActionResult> UpdateReturnOrderStatus(int returnOrderId, [FromBody] UpdateOrderStatusRequest request)
         {
