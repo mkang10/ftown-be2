@@ -4,7 +4,7 @@ using Application.Interfaces;
 using Application.UseCases;
 using Domain.Interfaces;
 using Infrastructure.Clients;
-using Infrastructure.DBContext;
+using Infrastructure.DBContex;
 using Infrastructure.HelperServices;
 using Infrastructure.Repositories;
 using Infrastructure.Repository;

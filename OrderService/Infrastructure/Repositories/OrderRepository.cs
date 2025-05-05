@@ -1,6 +1,6 @@
 ﻿using Domain.Entities;
 using Domain.Interfaces;
-using Infrastructure.DBContext;
+using Infrastructure.DBContex;
 using Infrastructure.HelperServices.Models;
 using Infrastructure.HelperServices;
 using Microsoft.EntityFrameworkCore;

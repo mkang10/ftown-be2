@@ -1,7 +1,7 @@
 ﻿using Domain.Common_Model;
 using Domain.Entities;
 using Domain.Interfaces;
-using Infrastructure.DBContext;
+using Infrastructure.DBContex;
 using Infrastructure.HelperServices;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -54,6 +54,7 @@ namespace Infrastructure.Repositories
                                                         DateTime? dateTo,
                                                         int? orderId,
                                                         int? returnOrderId,
+                                                        int handledBy,
                                                         int pageNumber,
                                                         int pageSize)
         {
@@ -72,13 +73,21 @@ namespace Infrastructure.Repositories
 
             if (dateTo.HasValue)
                 query = query.Where(ro => ro.CreatedDate <= dateTo.Value);
+
             if (orderId.HasValue)
                 query = query.Where(ro => ro.OrderId == orderId.Value);
+
             if (returnOrderId.HasValue)
                 query = query.Where(ro => ro.ReturnOrderId == returnOrderId.Value);
+
+            //Chỉ lấy các đơn có người xử lý đúng với handledBy truyền vào
+            query = query.Where(ro => ro.HandledBy == handledBy);
+
             query = query.OrderByDescending(ro => ro.CreatedDate);
+
             return await query.ToPaginatedResultAsync(pageNumber, pageSize);
         }
+
 
         public async Task<ReturnOrder?> GetByIdAsync(int returnOrderId)
         {

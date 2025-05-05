@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.DBContext;
+namespace Infrastructure.DBContex;
 
 public partial class FtownContext : DbContext
 {
@@ -108,7 +108,9 @@ public partial class FtownContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=ftown-sql.database.windows.net;Database=Ftown;Uid=sqladminftown;Pwd=Tuongvy123456;TrustServerCertificate=True");
+
+        => optionsBuilder.UseSqlServer("Server=ftown-sql.database.windows.net;Database=Ftown;User Id=sqladminftown;Password=Tuongvy123456;TrustServerCertificate=True;");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Account>(entity =>
