@@ -1,7 +1,7 @@
 ﻿using Application.DTO.Request;
 using Domain.Entities;
 using Domain.Interfaces;
-using Infrastructure.DBContext;
+using Infrastructure.DBContex;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;

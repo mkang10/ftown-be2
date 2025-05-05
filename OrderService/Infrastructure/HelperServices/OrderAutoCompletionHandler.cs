@@ -1,7 +1,7 @@
 ﻿using Application.Enums;
 using Application.Interfaces;
 using Application.UseCases;
-using Infrastructure.DBContext;
+using Infrastructure.DBContex;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;

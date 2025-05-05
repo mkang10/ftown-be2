@@ -20,15 +20,17 @@ namespace Application.UseCases
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IOrderProcessingHelper _orderProcessingHelper;
         private readonly UpdateOrderStatusHandler _updateOrderStatusHandler;
+        private readonly IAssignmentSettingService _assignmentSettingService;
         public SubmitReturnRequestHandler(IDistributedCache cache, IReturnOrderRepository returnOrderRepository,
                                             ICloudinaryService cloudinaryService, IOrderProcessingHelper orderProcessingHelper,
-                                            UpdateOrderStatusHandler updateOrderStatusHandler)
+                                            UpdateOrderStatusHandler updateOrderStatusHandler, IAssignmentSettingService assignmentSettingService)
         {
             _cache = cache;
             _returnOrderRepository = returnOrderRepository;
             _cloudinaryService = cloudinaryService;
             _orderProcessingHelper = orderProcessingHelper;
             _updateOrderStatusHandler = updateOrderStatusHandler;
+            _assignmentSettingService = assignmentSettingService;
         }
 
         public async Task<SubmitReturnResponse?> Handle(SubmitReturnRequest request)
@@ -51,6 +53,7 @@ namespace Application.UseCases
                     mediaUrls.Add(mediaUrl);
                 }
             }
+            var shopManagerId = _assignmentSettingService.DefaultShopManagerId;
 
             // ✅ 2️⃣ Tạo đối tượng `ReturnOrder`
             var returnOrder = new ReturnOrder
@@ -65,7 +68,8 @@ namespace Application.UseCases
                 ReturnDescription = request.ReturnDescription,
                 Status = "Pending Processing",
                 CreatedDate = DateTime.UtcNow,
-                ReturnImages = mediaUrls.Any() ? JsonConvert.SerializeObject(mediaUrls) : null // ✅ Lưu URL ảnh/video vào JSON
+                ReturnImages = mediaUrls.Any() ? JsonConvert.SerializeObject(mediaUrls) : null, // ✅ Lưu URL ảnh/video vào JSON
+                HandledBy = shopManagerId
             };
 
             // ✅ 3️⃣ Nếu chọn phương thức hoàn tiền qua ngân hàng, lưu thông tin ngân hàng

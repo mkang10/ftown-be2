@@ -112,6 +112,7 @@ namespace API.Controllers
                                                 [FromQuery] DateTime? dateTo,
                                                 [FromQuery] int? orderId,
                                                 [FromQuery] int? returnOrderId,
+                                                [FromQuery] int handledBy,
                                                 [FromQuery] int pageNumber = 1,
                                                 [FromQuery] int pageSize = 10)
         {
@@ -122,6 +123,7 @@ namespace API.Controllers
                 dateTo,
                 orderId,
                 returnOrderId,
+                handledBy,
                 pageNumber,
                 pageSize
             );

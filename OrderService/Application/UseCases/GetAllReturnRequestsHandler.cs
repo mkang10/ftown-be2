@@ -47,6 +47,7 @@ namespace Application.UseCases
                                                                 DateTime? dateTo,
                                                                 int? orderId,
                                                                 int? returnOrderId,
+                                                                int handledBy,
                                                                 int pageNumber,
                                                                 int pageSize)
         {
@@ -57,6 +58,7 @@ namespace Application.UseCases
                 dateTo,
                 orderId,
                 returnOrderId,
+                handledBy,
                 pageNumber,
                 pageSize);
 
