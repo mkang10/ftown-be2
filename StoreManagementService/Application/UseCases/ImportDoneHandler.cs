@@ -401,24 +401,28 @@ namespace Application.UseCases
                         validDetails.Add(det);
                 }
 
-                // 3) Tính tổng số lượng và tổng giá trị
+                // 3) Tính tổng số lượng
                 var totalQty = validDetails.Sum(d => d.Quantity);
                 if (totalQty == 0)
                     continue;   // không có data để cập nhật
 
+                // 4) Tính tổng giá vốn
                 var totalCost = validDetails.Sum(d => (d.CostPrice ?? 0m) * d.Quantity);
                 var avgCost = totalCost / totalQty;
 
-                // Cộng thêm 30% lợi nhuận
+                // 5) Cộng thêm 30% lợi nhuận
                 var profitRate = 0.30m;
                 var avgCostWithProfit = avgCost * (1 + profitRate);
 
+                // 6) Làm tròn đến hàng đơn vị (0 chữ số sau dấu thập phân)
+                //    MidpointRounding.AwayFromZero để .5 trở lên sẽ làm tròn lên
+                var finalPrice = Math.Round(avgCostWithProfit, 0, MidpointRounding.AwayFromZero);
 
-                // 4) Cập nhật vào bảng ProductVariant
+                // 7) Cập nhật vào bảng ProductVariant
                 var variant = await _importRepos.GetProductVariantByIdAsync(variantId);
-                variant.Price = avgCost;
+                variant.Price = finalPrice;
 
-                // 5) Tạo AuditLog cho thay đổi giá
+                // 8) Tạo AuditLog cho thay đổi giá
                 var log = new AuditLog
                 {
                     TableName = "ProductVariant",

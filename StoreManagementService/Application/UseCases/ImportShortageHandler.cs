@@ -1,6 +1,7 @@
 ﻿using Domain.DTO.Request;
 using Domain.Entities;
 using Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
@@ -120,12 +121,81 @@ namespace Application.UseCases
             foreach (var item in updatedStoreDetails)
             {
                 await _wareHouseStockRepos.UpdateWarehouseStockForSingleDetailAsync(item.storeDetail, item.productVariantId, staffId);
+
+                if (string.Equals(import.ImportType?.Trim(), "Purchase", StringComparison.OrdinalIgnoreCase))
+                {
+                    await UpdateVariantPricesAsync(import, staffId);
+                }
             }
+
 
             // Lưu lại các bản ghi audit được thêm trong quá trình cập nhật tồn kho (nếu có)
             await _auditLogRepos.SaveChangesAsync();
-        }
 
+
+        }
+        private async Task UpdateVariantPricesAsync(Import import, int staffId)
+        {
+            // Lấy danh sách variant đã có trong import này
+            var variantIds = import.ImportDetails
+                                   .Select(d => d.ProductVariantId)
+                                   .Distinct();
+
+            foreach (var variantId in variantIds)
+            {
+                var accountId = await _staffDetailRepository.GetAccountIdByStaffIdAsync(staffId);
+                if (accountId == null)
+                    throw new KeyNotFoundException($"Không tìm thấy Account cho StaffId={staffId}");
+                // 1) Lấy tất cả ImportDetail cho variant này
+                var allDetails = await _importRepos.QueryImportDetails()
+                    .Include(d => d.Import)
+                    .Where(d => d.ProductVariantId == variantId)
+                    .ToListAsync();
+
+                // 2) Loại trừ detail từ những Import gắn với Transfer
+                var validDetails = new List<ImportDetail>();
+                foreach (var det in allDetails)
+                {
+                    var isFromTransfer = await _importRepos.HasTransferForImportAsync(det.ImportId);
+                    if (!isFromTransfer)
+                        validDetails.Add(det);
+                }
+
+                // 3) Tính tổng số lượng
+                var totalQty = validDetails.Sum(d => d.Quantity);
+                if (totalQty == 0)
+                    continue;   // không có data để cập nhật
+
+                // 4) Tính tổng giá vốn
+                var totalCost = validDetails.Sum(d => (d.CostPrice ?? 0m) * d.Quantity);
+                var avgCost = totalCost / totalQty;
+
+                // 5) Cộng thêm 30% lợi nhuận
+                var profitRate = 0.30m;
+                var avgCostWithProfit = avgCost * (1 + profitRate);
+
+                // 6) Làm tròn đến hàng đơn vị (0 chữ số sau dấu thập phân)
+                //    MidpointRounding.AwayFromZero để .5 trở lên sẽ làm tròn lên
+                var finalPrice = Math.Round(avgCostWithProfit, 0, MidpointRounding.AwayFromZero);
+
+                // 7) Cập nhật vào bảng ProductVariant
+                var variant = await _importRepos.GetProductVariantByIdAsync(variantId);
+                variant.Price = finalPrice;
+
+                // 8) Tạo AuditLog cho thay đổi giá
+                var log = new AuditLog
+                {
+                    TableName = "ProductVariant",
+                    RecordId = variantId.ToString(),
+                    Operation = "UPDATE",
+                    ChangeDate = DateTime.Now,
+                    ChangedBy = accountId,
+                    ChangeData = $"{{ \"OldPrice\": ..., \"NewPrice\": {avgCost} }}",
+                    Comment = "Cập nhật giá trung bình sau khi hoàn thành nhập"
+                };
+                _auditLogRepos.Add(log);
+            }
+        }
 
     }
 }
