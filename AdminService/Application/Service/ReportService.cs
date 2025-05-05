@@ -213,11 +213,11 @@ private Table CreateImportDetailTable(Import import)
     TableRow headerRow = new TableRow();
     headerRow.Append(CreateTableCell("STT", true));
     headerRow.Append(CreateTableCell("Tên sản phẩm", true));
-    headerRow.Append(CreateTableCell("SL nhập", true));
+    headerRow.Append(CreateTableCell("SL thực tế", true));
+    headerRow.Append(CreateTableCell("SL phân bổ", true));
     headerRow.Append(CreateTableCell("Đơn giá", true));
     headerRow.Append(CreateTableCell("Thành tiền", true));
     headerRow.Append(CreateTableCell("Kho", true));
-    headerRow.Append(CreateTableCell("SL phân bổ", true));
     headerRow.Append(CreateTableCell("Nhân viên kiểm nhập", true));
     headerRow.Append(CreateTableCell("Trạng thái", true));
     headerRow.Append(CreateTableCell("Ghi chú", true));
@@ -235,8 +235,9 @@ private Table CreateImportDetailTable(Import import)
         {
             string warehouseName = sd.Warehouse?.WarehouseName ?? GetWarehouseName(sd.WarehouseId ?? 0);
             string allocatedQty = sd.AllocatedQuantity.ToString();
-            string actualQty = (sd.ActualReceivedQuantity ?? 0).ToString();
-            string staffName = GetStaffName(sd.StaffDetailId ?? 0);
+                    string actualQty = sd.ActualReceivedQuantity.HasValue
+                        ? sd.ActualReceivedQuantity.Value.ToString()
+                        : "..."; string staffName = GetStaffName(sd.StaffDetailId ?? 0);
              
               
         
@@ -247,11 +248,12 @@ private Table CreateImportDetailTable(Import import)
             TableRow row = new TableRow();
             row.Append(CreateTableCell(stt.ToString()));
             row.Append(CreateTableCell(productName));
-            row.Append(CreateTableCell(detail.Quantity.ToString()));
+            row.Append(CreateTableCell(actualQty));
+           row.Append(CreateTableCell(allocatedQty));
+
             row.Append(CreateTableCell(FormatCurrency(detail.CostPrice ?? 0)));
             row.Append(CreateTableCell(FormatCurrency(detail.Quantity * (detail.CostPrice ?? 0))));
             row.Append(CreateTableCell(warehouseName));
-            row.Append(CreateTableCell(allocatedQty));
             row.Append(CreateTableCell(staffName));
             row.Append(CreateTableCell(status));
             row.Append(CreateTableCell(comment));

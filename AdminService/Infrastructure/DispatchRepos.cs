@@ -27,7 +27,19 @@ namespace Infrastructure
         {
             return _context.SaveChangesAsync();
         }
+        public async Task<int> GetApprovedOutboundQuantityAsync(int warehouseId, int variantId)
+        {
+            // Dùng DispatchStoreDetails vì WarehouseId nằm ở đây
+            var query = from dsd in _context.StoreExportStoreDetails
+                        join dd in _context.DispatchDetails on dsd.DispatchDetailId equals dd.DispatchDetailId
+                        join dj in _context.Dispatches on dd.DispatchId equals dj.DispatchId
+                        where dsd.WarehouseId == warehouseId
+                              && dd.VariantId == variantId
+                              && dj.Status == "Approved"
+                        select dsd.AllocatedQuantity;
 
+            return await query.SumAsync(q => (int?)q) ?? 0;
+        }
         public async Task<Dispatch?> GetDispatchByTransferIdAsync(int transferId)
         {
             var transfer = await _context.Transfers
@@ -57,7 +69,8 @@ namespace Infrastructure
                 Include(o => o.CreatedByNavigation).
                 Include(o => o.DispatchDetails)
                         .ThenInclude(od => od.StoreExportStoreDetails)
-                        .ThenInclude(od => od.HandleByNavigation).
+                        .ThenInclude(od => od.HandleByNavigation).ThenInclude(od => od.Account).
+
                 Include(o => o.DispatchDetails)
                         .ThenInclude(od => od.Variant.Product).
                 Include(o => o.DispatchDetails)
@@ -71,11 +84,18 @@ namespace Infrastructure
                         .ThenInclude(v => v.Size).
                 Include(o => o.DispatchDetails)
                         .ThenInclude(od => od.StoreExportStoreDetails)
-                        .ThenInclude(od => od.StaffDetail).
+                        .ThenInclude(od => od.StaffDetail).ThenInclude(od => od.Account).
                 FirstOrDefaultAsync(x => x.DispatchId == id);
             return data;
         }
 
+        public async Task ReloadAsync(Dispatch dispatch)
+        {
+            await _context.Entry(dispatch).ReloadAsync();
+        }
+        public async Task AddAsync(Dispatch dispatch)
+           => await _context.Dispatches.AddAsync(dispatch);
+       
         public async Task<StoreExportStoreDetail> GetStoreExportStoreDetailById(int importId)
         {
             var data = await _context.StoreExportStoreDetails

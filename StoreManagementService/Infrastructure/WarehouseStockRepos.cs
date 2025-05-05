@@ -14,10 +14,12 @@ namespace Infrastructure
     public class WareHouseStockRepos : IWareHouseStockRepos
     {
         private readonly FtownContext _context;
+        private readonly IStaffDetailRepository _staffDetail;
 
-        public WareHouseStockRepos(FtownContext context)
+        public WareHouseStockRepos(FtownContext context, IStaffDetailRepository staffDetail)
         {
             _context = context;
+            _staffDetail = staffDetail;
         }
         public async Task<IEnumerable<WareHousesStock>> GetByWarehouseAsync(int warehouseId)
             => await _context.WareHousesStocks
@@ -40,63 +42,83 @@ namespace Infrastructure
         }
         public async Task UpdateWarehouseStockAsync(Import import, int staffId)
         {
-            // Duyệt qua từng ImportDetail trong Import
-            foreach (var importDetail in import.ImportDetails)
-            {
-                int variantId = importDetail.ProductVariantId;
-                foreach (var storeDetail in importDetail.ImportStoreDetails)
-                {
-                    if (!storeDetail.ActualReceivedQuantity.HasValue || !storeDetail.WarehouseId.HasValue)
-                    {
-                        // Xử lý trường hợp giá trị null, ví dụ log lỗi, gán giá trị mặc định, hoặc bỏ qua cập nhật.
-                        continue; // hoặc throw exception với thông báo rõ ràng
-                    }
-                    int actualReceivedQuan = storeDetail.ActualReceivedQuantity.Value;
-                    int warehouseId = storeDetail.WarehouseId.Value;
+            // Chỉ xử lý các import có ImportType là Purchase
+            if (import.ImportType?.Trim() != "Purchase")
+                return;
 
-                    // Tìm WareHousesStock theo WarehouseId và VariantId
-                    var wareHouseStock = await _context.WareHousesStocks
+            // Tạo các cặp (ImportDetail, ImportStoreDetail) cần xử lý, chỉ những storeDetail chưa được xử lý (Status != "Done")
+            var detailStorePairs = import.ImportDetails
+       .SelectMany(d => d.ImportStoreDetails
+           .Where(sd => sd.ActualReceivedQuantity.HasValue
+                        && sd.WarehouseId.HasValue
+                        && sd.Status?.Trim() != "Success")
+           .Select(sd => new { Detail = d, StoreDetail = sd }))
+       .ToList();
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                foreach (var pair in detailStorePairs)
+                {
+                    var importDetail = pair.Detail;
+                    var storeDetail = pair.StoreDetail;
+
+                    int variantId = importDetail.ProductVariantId;
+                    int receivedQty = storeDetail.ActualReceivedQuantity!.Value;
+                    int warehouseId = storeDetail.WarehouseId!.Value;
+                    string productName = importDetail.ProductVariant?.Product?.Name ?? "[Unknown Product]";
+
+                    // Tìm WareHousesStock tương ứng
+                    var warehouseStock = await _context.WareHousesStocks
                         .FirstOrDefaultAsync(ws => ws.WareHouseId == warehouseId && ws.VariantId == variantId);
 
-                    string auditAction = "";
-                    if (wareHouseStock == null)
+                    string auditAction;
+                    if (warehouseStock == null)
                     {
-                        // Chưa có: tạo bản ghi mới
-                        wareHouseStock = new WareHousesStock
+                        warehouseStock = new WareHousesStock
                         {
                             WareHouseId = warehouseId,
                             VariantId = variantId,
-                            StockQuantity = actualReceivedQuan
+                            StockQuantity = receivedQty
                         };
-                        _context.WareHousesStocks.Add(wareHouseStock);
-                        // Lưu ngay để nhận WareHouseStockId
-                        await _context.SaveChangesAsync();
+                        _context.WareHousesStocks.Add(warehouseStock);
                         auditAction = "CREATE";
                     }
                     else
                     {
-                        // Đã có: tăng số lượng tồn kho
-                        wareHouseStock.StockQuantity += actualReceivedQuan;
+                        warehouseStock.StockQuantity += receivedQty;
                         auditAction = "INCREASE";
                     }
 
-                    // Tạo WareHouseStockAudit cho giao dịch cập nhật tồn kho
-                    var stockAudit = new WareHouseStockAudit
+                    // Đánh dấu storeDetail đã xử lý
+                    storeDetail.Status = "Done";
+                    _context.ImportStoreDetails.Update(storeDetail);
+
+                    // Tạo và thêm audit record
+                    var auditRecord = new WareHouseStockAudit
                     {
-                        WareHouseStockId = wareHouseStock.WareHouseStockId, // Đã được gán sau SaveChanges nếu là bản ghi mới
+                        WareHouseStock = warehouseStock,
                         Action = auditAction,
-                        QuantityChange = actualReceivedQuan,
+                        QuantityChange = receivedQty,
                         ActionDate = DateTime.Now,
                         ChangedBy = staffId,
-                        Note = $"Updated via Import Done. ImportDetailId: {importDetail.ImportDetailId}, ImportStoreId: {storeDetail.ImportStoreId}"
+                        Note = $"Nhập kho {receivedQty} x ‘{productName}’ thành công."
                     };
-                    _context.WareHouseStockAudits.Add(stockAudit);
+                    _context.WareHouseStockAudits.Add(auditRecord);
                 }
-            }
 
-            // Cuối cùng lưu lại các bản ghi audit (và các cập nhật tồn kho nếu có bản ghi cũ)
-            await _context.SaveChangesAsync();
+                // Lưu tất cả thay đổi và commit transaction
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
+
+
+
 
 
         public async Task SaveChangesAsync()
@@ -104,20 +126,28 @@ namespace Infrastructure
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateWarehouseStockForSingleDetailAsync(ImportStoreDetail storeDetail, int productVariantId, int staffId)
+        public async Task UpdateWarehouseStockForSingleDetailAsync(
+    ImportStoreDetail storeDetail,
+    int productVariantId,
+    int staffId)
         {
-            // Lấy số lượng thực tế nhận được và warehouseId từ storeDetail
+            // 1. Lấy accountId từ staffId
+            var accountId = await _staffDetail.GetAccountIdByStaffIdAsync(staffId);
+          
+
+            // 2. Lấy số lượng và warehouseId
             int actualReceivedQuan = (int)storeDetail.ActualReceivedQuantity;
             int warehouseId = (int)storeDetail.WarehouseId;
 
-            // Tìm WareHousesStock theo WarehouseId và VariantId
+            // 3. Tìm hoặc tạo bản ghi kho
             var wareHouseStock = await _context.WareHousesStocks
-                .FirstOrDefaultAsync(ws => ws.WareHouseId == warehouseId && ws.VariantId == productVariantId);
+                .FirstOrDefaultAsync(ws =>
+                    ws.WareHouseId == warehouseId &&
+                    ws.VariantId == productVariantId);
 
-            string auditAction = "";
+            string auditAction;
             if (wareHouseStock == null)
             {
-                // Nếu chưa có bản ghi kho: tạo mới
                 wareHouseStock = new WareHousesStock
                 {
                     WareHouseId = warehouseId,
@@ -125,32 +155,31 @@ namespace Infrastructure
                     StockQuantity = actualReceivedQuan
                 };
                 _context.WareHousesStocks.Add(wareHouseStock);
-                // Lưu ngay để nhận WareHouseStockId
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();  // để có WareHouseStockId
                 auditAction = "CREATE";
             }
             else
             {
-                // Nếu đã có: tăng số lượng tồn kho
                 wareHouseStock.StockQuantity += actualReceivedQuan;
                 auditAction = "INCREASE";
             }
 
-            // Tạo WareHouseStockAudit cho giao dịch cập nhật kho
+            // 4. Tạo audit, dùng accountId cho ChangedBy
             var stockAudit = new WareHouseStockAudit
             {
-                WareHouseStockId = wareHouseStock.WareHouseStockId, // Đã có sau SaveChanges nếu là bản ghi mới
+                WareHouseStockId = wareHouseStock.WareHouseStockId,
                 Action = auditAction,
                 QuantityChange = actualReceivedQuan,
                 ActionDate = DateTime.Now,
-                ChangedBy = staffId,
-                Note = $"Updated via Import Done. ImportStoreId: {storeDetail.ImportStoreId}"
+                ChangedBy = accountId,
+                Note = $"cập nhật vào kho thành công !"
             };
             _context.WareHouseStockAudits.Add(stockAudit);
 
-            // Lưu lại các thay đổi cho WareHouseStock và WareHouseStockAudit
+            // 5. Lưu thay đổi
             await _context.SaveChangesAsync();
         }
+
 
 
         public async Task UpdateDispatchWarehouseStockAsync(Dispatch dispatch, int staffId)

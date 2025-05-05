@@ -23,6 +23,10 @@ public partial class ProductVariant
 
     public decimal? Weight { get; set; }
 
+    public string? Status { get; set; }
+
+    public int? MaxStocks { get; set; }
+
     public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
 
     public virtual Color? Color { get; set; }
@@ -42,6 +46,4 @@ public partial class ProductVariant
     public virtual ICollection<TransferDetail> TransferDetails { get; set; } = new List<TransferDetail>();
 
     public virtual ICollection<WareHousesStock> WareHousesStocks { get; set; } = new List<WareHousesStock>();
-
-    public virtual ICollection<WishListItem> WishListItems { get; set; } = new List<WishListItem>();
 }

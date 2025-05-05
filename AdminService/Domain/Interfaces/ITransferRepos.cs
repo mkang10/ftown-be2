@@ -1,5 +1,6 @@
 ﻿using Domain.DTO.Response;
 using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +23,15 @@ namespace Domain.Interfaces
         Task<Transfer?> GetByIdWithDetailsAsync(int transferId);
         public Task<Transfer> GetJSONTransferOrderById(int id);
 
+        Task AddAsync(Transfer transfer);
 
+
+          Task UpdateAsync(Transfer entity);
+
+
+
+          Task AddRangeAsync(IEnumerable<TransferDetail> entities);
+       
     }
 
 

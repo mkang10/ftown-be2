@@ -8,6 +8,8 @@ namespace Domain.DTO.Response
 {
 	public class TokenResponse
 	{
-		public string? Token { get; set; }
-	}
+        public string? Token { get; set; }
+        public List<string> Errors { get; set; } = new List<string>();
+        public bool Success => Errors == null || !Errors.Any();
+    }
 }

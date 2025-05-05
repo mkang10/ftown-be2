@@ -33,8 +33,6 @@ public partial class Warehouse
 
     public int? UrgentSafetyStock { get; set; }
 
-    public virtual ICollection<CheckDetail> CheckDetails { get; set; } = new List<CheckDetail>();
-
     public virtual ICollection<ImportStoreDetail> ImportStoreDetails { get; set; } = new List<ImportStoreDetail>();
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();

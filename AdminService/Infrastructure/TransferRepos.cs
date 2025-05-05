@@ -103,13 +103,44 @@ namespace Infrastructure
                 Include(o => o.Import).
                     ThenInclude(od => od.ImportDetails).
                     ThenInclude(oc => oc.ImportStoreDetails).ThenInclude(oc => oc.Warehouse).
-
+  Include(o => o.Import).
+                    ThenInclude(od => od.ImportDetails).
+                    ThenInclude(oc => oc.ImportStoreDetails).ThenInclude(oc => oc.StaffDetail).ThenInclude(oc => oc.Account).
+                    Include(o => o.Import).
+                    ThenInclude(od => od.ImportDetails).
+                    ThenInclude(oc => oc.ImportStoreDetails).ThenInclude(oc => oc.HandleByNavigation).ThenInclude(oc => oc.Account).
+                Include(O => O.Dispatch).
                 Include(O => O.Dispatch).
                     ThenInclude(od => od.DispatchDetails).
                     ThenInclude(oc => oc.StoreExportStoreDetails).
-
+                     Include(o => o.Import).
+                    ThenInclude(od => od.ImportDetails).
+                    ThenInclude(oc => oc.ProductVariant).ThenInclude(oc => oc.Product).
+                     Include(o => o.Import).
+                    ThenInclude(od => od.ImportDetails).
+                    ThenInclude(oc => oc.ProductVariant).ThenInclude(oc => oc.Size).
+                     Include(o => o.Import).
+                    ThenInclude(od => od.ImportDetails).
+                    ThenInclude(oc => oc.ProductVariant).ThenInclude(oc => oc.Color).
                     FirstOrDefaultAsync(a => a.TransferOrderId == id);
             return data;
+        }
+        public async Task AddAsync(Transfer transfer)
+            => await _context.Transfers.AddAsync(transfer);
+
+
+        public async Task UpdateAsync(Transfer entity)
+        {
+            // Đánh dấu entity đã thay đổi
+            _context.Transfers.Update(entity);
+            // Lưu thay đổi xuống CSDL
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task AddRangeAsync(IEnumerable<TransferDetail> entities)
+        {
+            // EF Core đã hỗ trợ AddRangeAsync
+            await _context.Set<TransferDetail>().AddRangeAsync(entities);
         }
     }
 

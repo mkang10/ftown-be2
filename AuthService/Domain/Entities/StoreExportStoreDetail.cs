@@ -23,6 +23,8 @@ public partial class StoreExportStoreDetail
 
     public int? ActualQuantity { get; set; }
 
+    public int? DestinationId { get; set; }
+
     public virtual DispatchDetail? DispatchDetail { get; set; }
 
     public virtual ShopManagerDetail? HandleByNavigation { get; set; }

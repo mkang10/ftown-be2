@@ -11,7 +11,7 @@ namespace Domain.Interfaces
     {
         void Add(ImportStoreDetail importStore);
         Task SaveChangesAsync();
-
+        Task UpdateRangeAsync(IEnumerable<ImportStoreDetail> entities);
         Task AddRangeAsync(IEnumerable<ImportStoreDetail> details);
 
     }

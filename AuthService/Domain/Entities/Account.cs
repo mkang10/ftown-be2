@@ -27,8 +27,6 @@ public partial class Account
 
     public string? ImagePath { get; set; }
 
-    public virtual ICollection<AccountInterest> AccountInterests { get; set; } = new List<AccountInterest>();
-
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 
     public virtual ICollection<ConversationParticipant> ConversationParticipants { get; set; } = new List<ConversationParticipant>();
@@ -61,5 +59,5 @@ public partial class Account
 
     public virtual ICollection<StaffDetail> StaffDetails { get; set; } = new List<StaffDetail>();
 
-    public virtual ICollection<WishList> WishLists { get; set; } = new List<WishList>();
+    public virtual ICollection<WareHouseStockAudit> WareHouseStockAudits { get; set; } = new List<WareHouseStockAudit>();
 }

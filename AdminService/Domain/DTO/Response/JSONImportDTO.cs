@@ -34,7 +34,10 @@ namespace Domain.DTO.Response
 
         public int ImportId { get; set; }
 
-        public string ProductVariantName { get; set; }
+        public string Product { get; set; }
+        public string Size { get; set; }
+        public string Color { get; set; }
+
 
         public int Quantity { get; set; }
         public decimal? CostPrice { get; set; }
