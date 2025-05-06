@@ -60,7 +60,7 @@ namespace Application.UseCases
                 if (upd.ImageFile != null)
                 {
                     img.ImagePath = await _uploader.UploadImageAsync(upd.ImageFile);
-                    img.CreatedDate = DateTime.UtcNow;
+                    img.CreatedDate = DateTime.Now;
                 }
 
                 img.IsMain = upd.IsMain;
@@ -77,7 +77,7 @@ namespace Application.UseCases
                 {
                     ImagePath = url,
                     IsMain = add.IsMain,
-                    CreatedDate = DateTime.UtcNow,
+                    CreatedDate = DateTime.Now,
                     ProductId = product.ProductId
                 });
             }

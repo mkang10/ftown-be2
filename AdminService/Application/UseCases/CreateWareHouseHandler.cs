@@ -38,7 +38,7 @@ namespace Application.UseCases
                 WarehouseName = dto.WarehouseName,
                 WarehouseDescription = dto.WarehouseDescription,
                 Location = dto.Location,
-                CreatedDate = DateTime.UtcNow,
+                CreatedDate = DateTime.Now,
                 ImagePath = imagePath,
                 Email = dto.Email,
                 Phone = dto.Phone,

@@ -3,6 +3,7 @@ using Domain.DTO.Response.Domain.DTO.Response;
 using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,84 +41,94 @@ namespace Infrastructure
             _context.WareHousesStocks.Update(stock);
             return Task.CompletedTask;
         }
-        public async Task UpdateWarehouseStockAsync(Import import, int staffId)
-        {
-            // Chỉ xử lý các import có ImportType là Purchase
-            if (import.ImportType?.Trim() != "Purchase")
-                return;
-
-            // Tạo các cặp (ImportDetail, ImportStoreDetail) cần xử lý, chỉ những storeDetail chưa được xử lý (Status != "Done")
+       public async Task UpdateWarehouseStockAsync(
+    Import import,
+    int staffId,
+    List<int> confirmedStoreDetailIds)
+{
+            var accountId = await _staffDetail.GetAccountIdByStaffIdAsync(staffId);
+            // Chỉ lấy những storeDetail vừa xác nhận
             var detailStorePairs = import.ImportDetails
-       .SelectMany(d => d.ImportStoreDetails
-           .Where(sd => sd.ActualReceivedQuantity.HasValue
-                        && sd.WarehouseId.HasValue
-                        && sd.Status?.Trim() != "Success")
-           .Select(sd => new { Detail = d, StoreDetail = sd }))
-       .ToList();
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
+        .SelectMany(d => d.ImportStoreDetails
+            .Where(sd =>
+                sd.ActualReceivedQuantity.HasValue &&
+                sd.WarehouseId.HasValue &&
+                confirmedStoreDetailIds.Contains(sd.ImportStoreId)
+            )
+            .Select(sd => new { Detail = d, Store = sd }))
+        .ToList();
+
+    using var tx = await _context.Database.BeginTransactionAsync();
+    try
+    {
                 foreach (var pair in detailStorePairs)
                 {
-                    var importDetail = pair.Detail;
-                    var storeDetail = pair.StoreDetail;
+                    var detail = pair.Detail;
+                    var store = pair.Store;
 
-                    int variantId = importDetail.ProductVariantId;
-                    int receivedQty = storeDetail.ActualReceivedQuantity!.Value;
-                    int warehouseId = storeDetail.WarehouseId!.Value;
-                    string productName = importDetail.ProductVariant?.Product?.Name ?? "[Unknown Product]";
+                    int qty = store.ActualReceivedQuantity!.Value;
+                    int whId = store.WarehouseId!.Value;
+                    int variantId = detail.ProductVariantId;
+                    string productName = detail.ProductVariant?.Product?.Name?.Trim() ?? "[Unknown]";
 
-                    // Tìm WareHousesStock tương ứng
-                    var warehouseStock = await _context.WareHousesStocks
-                        .FirstOrDefaultAsync(ws => ws.WareHouseId == warehouseId && ws.VariantId == variantId);
+                    // Skip if already audited for same change
+                    bool alreadyAudited = await _context.WareHouseStockAudits.AnyAsync(a =>
+                        a.WareHouseStock.WareHouseId == whId &&
+                        a.WareHouseStock.VariantId == variantId &&
+                        a.QuantityChange == qty &&
+                        a.Note.Contains(productName)
+                    );
+                    if (alreadyAudited)
+                        continue;
 
-                    string auditAction;
-                    if (warehouseStock == null)
+                    // Find or create stock record
+                    var stock = await _context.WareHousesStocks
+                        .FirstOrDefaultAsync(s => s.WareHouseId == whId && s.VariantId == variantId);
+
+                    string action;
+                    if (stock == null)
                     {
-                        warehouseStock = new WareHousesStock
+                        stock = new WareHousesStock
                         {
-                            WareHouseId = warehouseId,
+                            WareHouseId = whId,
                             VariantId = variantId,
-                            StockQuantity = receivedQty
+                            StockQuantity = qty
                         };
-                        _context.WareHousesStocks.Add(warehouseStock);
-                        auditAction = "CREATE";
+                        _context.WareHousesStocks.Add(stock);
+                        action = "CREATE";
                     }
                     else
                     {
-                        warehouseStock.StockQuantity += receivedQty;
-                        auditAction = "INCREASE";
+                        stock.StockQuantity += qty;
+                        action = "INCREASE";
                     }
 
-                    // Đánh dấu storeDetail đã xử lý
-                    storeDetail.Status = "Done";
-                    _context.ImportStoreDetails.Update(storeDetail);
-
-                    // Tạo và thêm audit record
-                    var auditRecord = new WareHouseStockAudit
+                    // Add audit log
+                    _context.WareHouseStockAudits.Add(new WareHouseStockAudit
                     {
-                        WareHouseStock = warehouseStock,
-                        Action = auditAction,
-                        QuantityChange = receivedQty,
+                        WareHouseStock = stock,
+                        Action = action,
+                        QuantityChange = qty,
                         ActionDate = DateTime.Now,
-                        ChangedBy = staffId,
-                        Note = $"Nhập kho {receivedQty} x ‘{productName}’ thành công."
-                    };
-                    _context.WareHouseStockAudits.Add(auditRecord);
+                        ChangedBy = accountId,
+                        Note = $"Nhập kho thành công !"
+                    });
+
+                    // Mark store detail as processed
+                    store.Status = "Success";
+                    _context.ImportStoreDetails.Update(store);
                 }
 
-                // Lưu tất cả thay đổi và commit transaction
+                // Save all changes and commit
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                await tx.CommitAsync();
             }
             catch
             {
-                await transaction.RollbackAsync();
+                await tx.RollbackAsync();
                 throw;
             }
         }
-
-
 
 
 
@@ -182,67 +193,78 @@ namespace Infrastructure
 
 
 
-        public async Task UpdateDispatchWarehouseStockAsync(Dispatch dispatch, int staffId)
+        public async Task UpdateDispatchWarehouseStockAsync(
+    Dispatch dispatch,
+    int staffId,
+    List<int> confirmedStoreDetailIds)
         {
-
-
-            // Duyệt qua từng DispatchDetail trong Dispatch
-            foreach (var dispatchDetail in dispatch.DispatchDetails)
+            // 1. Bắt đầu transaction
+            using var tx = await _context.Database.BeginTransactionAsync();
+            try
             {
-                int variantId = dispatchDetail.VariantId;
-                foreach (var storeDetail in dispatchDetail.StoreExportStoreDetails)
+                // 2. Lấy accountId từ staffId
+                var accountId = await _staffDetail.GetAccountIdByStaffIdAsync(staffId);
+             
+
+                // 3. Duyệt qua các DispatchDetail và chỉ xử lý những storeDetail vừa confirmed
+                foreach (var dispatchDetail in dispatch.DispatchDetails)
                 {
-                    // Giả sử: Nếu không có giá trị ActualDispatchedQuantity, ta dùng AllocatedQuantity
-                    int actualDispatchedQuan = storeDetail.ActualQuantity.HasValue
-                        ? storeDetail.ActualQuantity.Value
-                        : storeDetail.AllocatedQuantity;
+                    int variantId = dispatchDetail.VariantId;
 
-                    int warehouseId = storeDetail.WarehouseId; // WarehouseId là int, không cần nullable
-
-                    // Tìm WareHousesStock theo WarehouseId và VariantId
-                    var wareHouseStock = await _context.WareHousesStocks
-                        .FirstOrDefaultAsync(ws => ws.WareHouseId == warehouseId && ws.VariantId == variantId);
-
-                    string auditAction = "";
-                    if (wareHouseStock == null)
+                    foreach (var storeDetail in dispatchDetail.StoreExportStoreDetails
+                                 .Where(sd => confirmedStoreDetailIds.Contains(sd.DispatchStoreDetailId)))
                     {
-                        // Nếu không có bản ghi: tạo mới với số lượng âm (giảm kho)
-                        wareHouseStock = new WareHousesStock
+                        // 3.1. Tính số lượng thực đã dispatch
+                        int actualDispatchedQty = storeDetail.ActualQuantity ?? storeDetail.AllocatedQuantity;
+                        int warehouseId = storeDetail.WarehouseId;
+
+                        // 3.2. Lấy hoặc tạo record kho
+                        var wareHouseStock = await _context.WareHousesStocks
+                            .FirstOrDefaultAsync(ws => ws.WareHouseId == warehouseId && ws.VariantId == variantId);
+
+                        string action;
+                        if (wareHouseStock == null)
                         {
-                            WareHouseId = warehouseId,
-                            VariantId = variantId,
-                            StockQuantity = -actualDispatchedQuan
+                            wareHouseStock = new WareHousesStock
+                            {
+                                WareHouseId = warehouseId,
+                                VariantId = variantId,
+                                StockQuantity = -actualDispatchedQty
+                            };
+                            _context.WareHousesStocks.Add(wareHouseStock);
+                            action = "CREATE";
+                        }
+                        else
+                        {
+                            wareHouseStock.StockQuantity -= actualDispatchedQty;
+                            action = "DECREASE";
+                        }
+
+                        // 3.3. Tạo audit log, EF Core sẽ tự liên kết wareHouseStock
+                        var stockAudit = new WareHouseStockAudit
+                        {
+                            WareHouseStock = wareHouseStock,
+                            Action = action,
+                            QuantityChange = -actualDispatchedQty,
+                            ActionDate = DateTime.Now,
+                            ChangedBy = accountId,
+                            Note = "Đơn hàng đã được xuất !"
                         };
-                        _context.WareHousesStocks.Add(wareHouseStock);
-                        // Lưu ngay để nhận WareHouseStockId
-                        await _context.SaveChangesAsync();
-                        auditAction = "CREATE";
+                        _context.WareHouseStockAudits.Add(stockAudit);
                     }
-                    else
-                    {
-                        // Nếu đã có: giảm số lượng tồn kho
-                        wareHouseStock.StockQuantity -= actualDispatchedQuan;
-                        auditAction = "DECREASE";
-                    }
-
-                    // Tạo WareHouseStockAudit cho giao dịch cập nhật tồn kho
-                    var stockAudit = new WareHouseStockAudit
-                    {
-                        WareHouseStockId = wareHouseStock.WareHouseStockId, // Đã được gán sau SaveChanges nếu là bản ghi mới
-                        Action = auditAction,
-                        // Ghi nhận sự thay đổi dưới dạng giá trị âm để thể hiện việc giảm kho
-                        QuantityChange = -actualDispatchedQuan,
-                        ActionDate = DateTime.Now,
-                        ChangedBy = staffId,
-                        Note = $"Updated via Dispatch Done. DispatchDetailId: {dispatchDetail.DispatchDetailId}, DispatchStoreDetailId: {storeDetail.DispatchStoreDetailId}"
-                    };
-                    _context.WareHouseStockAudits.Add(stockAudit);
                 }
-            }
 
-            // Cuối cùng lưu lại các bản ghi audit và cập nhật kho
-            await _context.SaveChangesAsync();
+                // 4. Lưu chung một lần và commit
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                throw;
+            }
         }
+
 
         public async Task<PaginatedResponseDTO<WarehouseStockDto>> GetAllWareHouse(int page, int pageSize, CancellationToken cancellationToken = default)
         {
@@ -268,56 +290,68 @@ namespace Infrastructure
 
             return new PaginatedResponseDTO<WarehouseStockDto>(data, total, page, pageSize);
         }
-        public async Task UpdateWarehouseStockForSingleDispatchDetailAsync(StoreExportStoreDetail storeDetail, int productVariantId, int staffId)
+        public async Task UpdateWarehouseStockForSingleDispatchDetailAsync(
+    StoreExportStoreDetail storeDetail,
+    int productVariantId,
+    int staffId)
         {
-            // Lấy số lượng thực tế đã dispatch (nếu có, nếu không lấy AllocatedQuantity)
-            int actualDispatchedQuan = storeDetail.ActualQuantity.HasValue
-                ? storeDetail.ActualQuantity.Value
-                : storeDetail.AllocatedQuantity;
+            // 0. Bắt đầu transaction
+            using var tx = await _context.Database.BeginTransactionAsync();
 
-            int warehouseId = storeDetail.WarehouseId; // Giả sử WarehouseId là int (không nullable)
-
-            // Tìm WareHousesStock theo WarehouseId và VariantId
-            var wareHouseStock = await _context.WareHousesStocks
-                .FirstOrDefaultAsync(ws => ws.WareHouseId == warehouseId && ws.VariantId == productVariantId);
-
-            string auditAction = "";
-            if (wareHouseStock == null)
+            try
             {
-                // Nếu chưa có bản ghi kho, tạo mới với StockQuantity âm để biểu thị việc giảm số lượng
-                wareHouseStock = new WareHousesStock
+                // 1. Lấy accountId từ staffId
+                var accountId = await _staffDetail.GetAccountIdByStaffIdAsync(staffId);
+
+                // 2. Tính số lượng thực tế đã dispatch
+                int actualDispatchedQty = storeDetail.ActualQuantity ?? storeDetail.AllocatedQuantity;
+                int warehouseId = storeDetail.WarehouseId;
+
+                // 3. Lấy hoặc tạo stock record
+                var wareHouseStock = await _context.WareHousesStocks
+                    .FirstOrDefaultAsync(ws => ws.WareHouseId == warehouseId && ws.VariantId == productVariantId);
+
+                string action;
+                if (wareHouseStock == null)
                 {
-                    WareHouseId = warehouseId,
-                    VariantId = productVariantId,
-                    StockQuantity = -actualDispatchedQuan
+                    wareHouseStock = new WareHousesStock
+                    {
+                        WareHouseId = warehouseId,
+                        VariantId = productVariantId,
+                        StockQuantity = -actualDispatchedQty
+                    };
+                    _context.WareHousesStocks.Add(wareHouseStock);
+                    action = "CREATE";
+                }
+                else
+                {
+                    wareHouseStock.StockQuantity -= actualDispatchedQty;
+                    action = "DECREASE";
+                }
+
+                // 4. Tạo audit log, EF Core sẽ tự gán foreign key cho WareHouseStock
+                var stockAudit = new WareHouseStockAudit
+                {
+                    WareHouseStock = wareHouseStock,
+                    Action = action,
+                    QuantityChange = -actualDispatchedQty,
+                    ActionDate = DateTime.Now,
+                    ChangedBy = accountId,
+                    Note = "Đơn hàng đã được xuất !"
                 };
-                _context.WareHousesStocks.Add(wareHouseStock);
-                // Lưu ngay để nhận WareHouseStockId
+                _context.WareHouseStockAudits.Add(stockAudit);
+
+                // 5. Commit tất cả thay đổi
                 await _context.SaveChangesAsync();
-                auditAction = "CREATE";
+                await tx.CommitAsync();
             }
-            else
+            catch
             {
-                // Nếu đã có: giảm số lượng tồn kho
-                wareHouseStock.StockQuantity -= actualDispatchedQuan;
-                auditAction = "DECREASE";
+                await tx.RollbackAsync();
+                throw;
             }
-
-            // Tạo WareHouseStockAudit cho giao dịch cập nhật kho (ghi nhận số lượng thay đổi dưới dạng số âm)
-            var stockAudit = new WareHouseStockAudit
-            {
-                WareHouseStockId = wareHouseStock.WareHouseStockId, // Đã được gán sau SaveChanges nếu là bản ghi mới
-                Action = auditAction,
-                QuantityChange = -actualDispatchedQuan, // Số lượng giảm nên giá trị âm
-                ActionDate = DateTime.Now,
-                ChangedBy = staffId,
-                Note = $"Updated via Dispatch Done. DispatchStoreDetailId: {storeDetail.DispatchStoreDetailId}"
-            };
-            _context.WareHouseStockAudits.Add(stockAudit);
-
-            // Lưu lại các thay đổi cho WareHousesStock và WareHouseStockAudit
-            await _context.SaveChangesAsync();
         }
+
     }
 }
 

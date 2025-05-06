@@ -335,6 +335,59 @@ namespace Application.UseCases
         }
 
 
+        
+        public async Task<ResponseDTO<ImportResponseDto>> CreateTRansferImportFromExcelAsync(IFormFile file, int warehouseId, int createdBy)
+        {
+            if (file == null || file.Length == 0)
+                return new ResponseDTO<ImportResponseDto>(null, false, "Vui lòng chọn file Excel.");
+
+            var details = new List<TransImportDetailDto>();
+            using (var stream = file.OpenReadStream())
+            using (var workbook = new XLWorkbook(stream))
+            {
+                var sheet = workbook.Worksheet(1);
+                var firstRow = sheet.FirstRowUsed();
+                if (firstRow == null)
+                    return new ResponseDTO<ImportResponseDto>(null, false, "File Excel không có dữ liệu.");
+
+                int row = firstRow.RowNumber() + 1;
+                while (true)
+                {
+                    var skuCell = sheet.Cell(row, 1);
+                    if (skuCell.IsEmpty()) break;
+
+                    string sku = skuCell.GetString().Trim();
+                    var variant = await _productVariantRepo.GetBySkuAsync(sku);
+                    if (variant == null)
+                        return new ResponseDTO<ImportResponseDto>(null, false, $"Dòng {row}: Không tìm thấy variant với SKU '{sku}'.");
+
+                    int qty = sheet.Cell(row, 2).GetValue<int>();
+
+                    details.Add(new TransImportDetailDto
+                    {
+                        ProductVariantId = variant.VariantId,
+                        Quantity = qty,
+                    });
+
+                    row++;
+                }
+            }
+
+            if (!details.Any())
+                return new ResponseDTO<ImportResponseDto>(null, false, "File Excel không có dòng dữ liệu hợp lệ.");
+
+            var dto = new TransImportDto
+            {
+                CreatedBy = createdBy,
+                WarehouseId = warehouseId,
+                ImportDetails = details,
+                IsUrgent = false
+                
+                
+            };
+
+            return await CreateTransferImportAsync(dto);
+        }
         private async Task<Dictionary<int, string>> EvaluateAutoApprovalAsync(Import importEntity, TransImportDto dto)
         {
             var detailComments = new Dictionary<int, string>();
@@ -466,59 +519,6 @@ namespace Application.UseCases
             }
 
             return null;
-        }
-
-        public async Task<ResponseDTO<ImportResponseDto>> CreateTRansferImportFromExcelAsync(IFormFile file, int warehouseId, int createdBy)
-        {
-            if (file == null || file.Length == 0)
-                return new ResponseDTO<ImportResponseDto>(null, false, "Vui lòng chọn file Excel.");
-
-            var details = new List<TransImportDetailDto>();
-            using (var stream = file.OpenReadStream())
-            using (var workbook = new XLWorkbook(stream))
-            {
-                var sheet = workbook.Worksheet(1);
-                var firstRow = sheet.FirstRowUsed();
-                if (firstRow == null)
-                    return new ResponseDTO<ImportResponseDto>(null, false, "File Excel không có dữ liệu.");
-
-                int row = firstRow.RowNumber() + 1;
-                while (true)
-                {
-                    var skuCell = sheet.Cell(row, 1);
-                    if (skuCell.IsEmpty()) break;
-
-                    string sku = skuCell.GetString().Trim();
-                    var variant = await _productVariantRepo.GetBySkuAsync(sku);
-                    if (variant == null)
-                        return new ResponseDTO<ImportResponseDto>(null, false, $"Dòng {row}: Không tìm thấy variant với SKU '{sku}'.");
-
-                    int qty = sheet.Cell(row, 2).GetValue<int>();
-
-                    details.Add(new TransImportDetailDto
-                    {
-                        ProductVariantId = variant.VariantId,
-                        Quantity = qty,
-                    });
-
-                    row++;
-                }
-            }
-
-            if (!details.Any())
-                return new ResponseDTO<ImportResponseDto>(null, false, "File Excel không có dòng dữ liệu hợp lệ.");
-
-            var dto = new TransImportDto
-            {
-                CreatedBy = createdBy,
-                WarehouseId = warehouseId,
-                ImportDetails = details,
-                IsUrgent = false
-                
-                
-            };
-
-            return await CreateTransferImportAsync(dto);
         }
 
 

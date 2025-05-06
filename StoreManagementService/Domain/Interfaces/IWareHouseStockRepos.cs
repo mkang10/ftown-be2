@@ -15,8 +15,14 @@ namespace Domain.Interfaces
         Task<WareHousesStock?> GetByWarehouseAndVariantAsync(int warehouseId, int variantId);
         Task<IEnumerable<WareHousesStock>> GetAllByVariantAsync(int variantId);
         Task UpdateAsync(WareHousesStock stock);
-        Task UpdateWarehouseStockAsync(Import import, int staffId);
-        Task UpdateDispatchWarehouseStockAsync(Dispatch dispatch, int staffId);
+        Task UpdateWarehouseStockAsync(
+            Import import,
+            int staffId,
+            List<int> confirmedStoreDetailIds);
+        Task UpdateDispatchWarehouseStockAsync(
+    Dispatch dispatch,
+    int staffId,
+    List<int> confirmedStoreDetailIds);
 
 
         Task SaveChangesAsync();

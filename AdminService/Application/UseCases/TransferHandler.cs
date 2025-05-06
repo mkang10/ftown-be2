@@ -48,7 +48,7 @@ namespace Application.UseCases
         {
             // 1. Map và chuẩn bị Transfer
             var newTransfer = _mapper.Map<Transfer>(request);
-            newTransfer.CreatedDate = DateTime.UtcNow;
+            newTransfer.CreatedDate = DateTime.Now;
             newTransfer.Status = "Approved";
             foreach (var detailDto in request.TransferDetails)
             {
@@ -110,7 +110,7 @@ namespace Application.UseCases
             var dispatch = new Dispatch
             {
                 CreatedBy = request.CreatedBy,
-                CreatedDate = DateTime.UtcNow,
+                CreatedDate = DateTime.Now,
                 Status = "Approved",
                 ReferenceNumber = !string.IsNullOrEmpty(request.DispatchReferenceNumber) && request.DispatchReferenceNumber.StartsWith("DIS")
                                   ? request.DispatchReferenceNumber
@@ -147,7 +147,7 @@ namespace Application.UseCases
             var import = new Import
             {
                 CreatedBy = request.CreatedBy,
-                CreatedDate = DateTime.UtcNow,
+                CreatedDate = DateTime.Now,
                 Status = "Approved",
                 ReferenceNumber = !string.IsNullOrEmpty(request.ImportReferenceNumber) && request.ImportReferenceNumber.StartsWith("IIN")
                                     ? request.ImportReferenceNumber
@@ -231,7 +231,7 @@ namespace Application.UseCases
                 TableName = tableName,
                 RecordId = recordId.ToString(),
                 Operation = operation,
-                ChangeDate = DateTime.UtcNow,
+                ChangeDate = DateTime.Now,
                 ChangedBy = changedBy,
                 ChangeData = JsonConvert.SerializeObject(entity, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }),
                 Comment = comment

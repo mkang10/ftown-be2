@@ -12,6 +12,8 @@ namespace Domain.DTO.Request
         public int VariantId { get; set; }
         public decimal Price { get; set; }
         public string? Status { get; set; }
+        public int? MaxStocks { get; set; }
+
         public IFormFile? ImageFile { get; set; }            // new property for upload
     }
 

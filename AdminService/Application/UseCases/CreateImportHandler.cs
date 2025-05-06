@@ -297,11 +297,12 @@ namespace Application.UseCases
                 var newImport = _mapper.Map<Import>(request);
                 newImport.CreatedBy = oldImport.CreatedBy;
                 newImport.ReferenceNumber = oldImport.ReferenceNumber;
-                newImport.CreatedDate = DateTime.UtcNow;
+                newImport.CreatedDate = DateTime.Now;
                 newImport.Status = "Approved";
-                newImport.ApprovedDate = null;
+                newImport.ApprovedDate = DateTime.Now;
                 newImport.CompletedDate = null;
                 newImport.OriginalImportId = oldImport.ImportId;
+                newImport.ImportType = "Supplement";
 
                 decimal totalCost = 0;
                 newImport.ImportDetails = new List<ImportDetail>();
@@ -350,6 +351,7 @@ namespace Application.UseCases
                             StaffDetailId = store.StaffDetailId,
                             WarehouseId = store.WarehouseId,
                             HandleBy = store.HandleBy
+
                         });
                     }
 
@@ -383,7 +385,7 @@ namespace Application.UseCases
                     TableName = "Import",
                     RecordId = newImport.ImportId.ToString(),
                     Operation = "CREATE",
-                    ChangeDate = DateTime.UtcNow,
+                    ChangeDate = DateTime.Now,
                     ChangedBy = oldImport.CreatedBy,
                     ChangeData = serializedNewImport,
                     Comment = "Tạo mới đơn import bổ sung dựa trên đơn cũ"
@@ -404,7 +406,7 @@ namespace Application.UseCases
                     TableName = "Import",
                     RecordId = oldImport.ImportId.ToString(),
                     Operation = "UPDATE",
-                    ChangeDate = DateTime.UtcNow,
+                    ChangeDate = DateTime.Now,
                     ChangedBy = oldImport.CreatedBy,
                     ChangeData = serializedOldImport,
                     Comment = "Cập nhật đơn cũ với status 'Supplement Created'"
@@ -486,11 +488,11 @@ namespace Application.UseCases
                 var importEntity = new Import
                 {
                     CreatedBy = oldImport.CreatedBy,
-                    CreatedDate = DateTime.UtcNow,
-                    ApprovedDate = DateTime.UtcNow,
+                    CreatedDate = DateTime.Now,
+                    ApprovedDate = DateTime.Now,
                     Status = "Pending",
                     ImportType = "Transfer",
-                    ReferenceNumber = $"SUP-TRS-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                    ReferenceNumber = oldImport.ReferenceNumber,
                     IsUrgent = oldImport.IsUrgent,
                     OriginalImportId = oldImport.ImportId,
                     ImportDetails = transferDetailsDto
@@ -602,7 +604,7 @@ namespace Application.UseCases
                 await _impRepos.SaveChangesAsync();
 
                 // 10.2 Gán status cho đơn supplement
-                importEntity.Status = "SupplementCreated";
+                importEntity.Status = "Supplement Created";
                 await _impRepos.UpdateAsync(importEntity);
                 await _impRepos.SaveChangesAsync();
 
@@ -675,7 +677,7 @@ namespace Application.UseCases
         {
             if (capableMap.Values.All(v => v == "Tự động phê duyệt"))
                 importEntity.Status = "Approved";
-            else if (capableMap.Values.All(v => v.StartsWith("Không đủ")))
+            else if (capableMap.Values.All(v => v.StartsWith("Không đủ sản phẩm")))
                 importEntity.Status = "Rejected";
             else
                 importEntity.Status = "Partially Approved";
@@ -751,9 +753,9 @@ namespace Application.UseCases
             var dispatch = new Dispatch
             {
                 CreatedBy = importEntity.CreatedBy,
-                CreatedDate = DateTime.UtcNow,
+                CreatedDate = DateTime.Now,
                 Status = "Approved",
-                ReferenceNumber = $"DP-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                ReferenceNumber = $"DP-{DateTime.Now:yyyyMMddHHmmss}",
                 Remarks = "Xuất hàng tự động cho supplement",
                 OriginalId = importEntity.ImportId
             };
@@ -771,7 +773,7 @@ namespace Application.UseCases
                 ImportId = importEntity.ImportId,
                 DispatchId = dispatch.DispatchId,
                 CreatedBy = importEntity.CreatedBy,
-                CreatedDate = DateTime.UtcNow,
+                CreatedDate = DateTime.Now,
                 Status = "Approved",
                 Remarks = "Tự động tạo cho supplement chuyển kho"
             };
@@ -915,7 +917,7 @@ namespace Application.UseCases
                 TableName = table,
                 RecordId = recordId,
                 Operation = "CREATE",
-                ChangeDate = DateTime.UtcNow,
+                ChangeDate = DateTime.Now,
                 ChangedBy = changedBy,
                 ChangeData = string.Empty,
                 Comment = comment

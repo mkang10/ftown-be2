@@ -19,7 +19,7 @@ namespace Infrastructure
             return await _db.WarehouseStaffs
                             .Where(ws => ws.WarehouseId == warehouseId
                                       && ws.Role == role
-                                      && ws.Warehouse.IsOwnerWarehouse == false)
+                                     )
                             .ToListAsync();
         }
     }
