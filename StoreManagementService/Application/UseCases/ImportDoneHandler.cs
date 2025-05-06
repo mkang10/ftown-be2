@@ -1,7 +1,10 @@
-﻿using Domain.DTO.Request;
+﻿using Azure;
+using Domain.DTO.Request;
 using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Identity.Client;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -27,50 +30,52 @@ namespace Application.UseCases
             _staffDetail = staffDetail;
         }
 
-       
+
 
         public async Task ProcessImportDoneAsync(int importId, int staffId, List<UpdateStoreDetailDto> confirmations)
         {
-            // Lấy Import với các ImportDetail và ImportStoreDetails đã được include
+            // 1. Load Import
             var import = await _importRepos.GetByIdAssignAsync(importId);
             if (import == null)
-            {
                 throw new Exception("Import không tồn tại");
-            }
 
-            // Kiểm tra trạng thái Import có cho phép cập nhật không
+            // 2. Validate status
             ValidateImportStatus(import);
 
-            // Cập nhật các ImportStoreDetail dựa trên thông tin từ confirmations và reload lại Import để cập nhật navigation properties
+            // 3. Cập nhật store-details rồi reload để có navigation mới
             await UpdateStoreDetailsAndReloadAsync(import, confirmations, staffId);
             await _importRepos.SaveChangesAsync();
 
-            // Kiểm tra nếu tất cả các ImportStoreDetail đều đạt trạng thái "Success" thì cập nhật Import thành "Done"
+            // Tạo list chứa đúng các ID vừa confirm
+            var confirmedIds = confirmations.Select(c => c.StoreDetailId).ToList();
+
+            // 4. Nếu toàn bộ detail đều Success
             if (await TryUpdateImportStatusToDoneAsync(import, staffId))
             {
-                // Nếu Import này là đơn bổ sung thì cập nhật số lượng thực nhận của đơn gốc
+                // 4.1 xử lý supplement
                 await UpdateOriginalImportFromSupplementsAsync(import, staffId);
 
-                // Cập nhật kho theo toàn bộ Import
-                await _wareHouseStockRepos.UpdateWarehouseStockAsync(import, staffId);
+                // 4.2 **Full update** chỉ trên các detail vừa xác nhận
+                await _wareHouseStockRepos
+                    .UpdateWarehouseStockAsync(import, staffId, confirmedIds);
             }
             else
             {
-                // Nếu không phải tất cả các ImportStoreDetail đều "Success"
-                // thì cập nhật Warehouse cho các ImportStoreDetail thành công riêng lẻ
-                // và cập nhật trạng thái Import thành "Success" hoặc "Partial Success"
+                // 5. **Partial update** cũng chỉ trên các detail vừa xác nhận
                 await UpdateWarehouseForSuccessDetailsAsync(import, staffId);
             }
+
+            // 6. Update variant prices nếu là Purchase
             if (string.Equals(import.ImportType?.Trim(), "Purchase", StringComparison.OrdinalIgnoreCase))
             {
                 await UpdateVariantPricesAsync(import, staffId);
             }
 
-            // Lưu các thay đổi: Import, WarehouseStock và AuditLog
+            // 7. Lưu tất cả thay đổi
             await _importRepos.SaveChangesAsync();
             await _auditLogRepos.SaveChangesAsync();
 
-            // Cập nhật Transfer nếu có liên quan
+            // 8. Sync transfer status
             await UpdateTransferStatusAsync(import, staffId);
         }
 
@@ -87,11 +92,11 @@ namespace Application.UseCases
                                 !string.Equals(currentStatus, "Shortage", StringComparison.OrdinalIgnoreCase) &&
                                                                
 
-                !string.Equals(currentStatus, "Partial Success", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(currentStatus, "Processing", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(currentStatus, "Supplement Created", StringComparison.OrdinalIgnoreCase))
 
             {
-                throw new InvalidOperationException("Chỉ cho phép chỉnh sửa các Import có trạng thái Approved , Partial Success, Shortage  và Supplement Created");
+                throw new InvalidOperationException("Chỉ cho phép chỉnh sửa các Import có trạng thái Approved , Processing, Shortage  và Supplement Created");
             }
         }
 
@@ -189,9 +194,20 @@ namespace Application.UseCases
 
             // Nếu số lượng successDetails == tổng số storeDetails ⇒ Success
             // Ngược lại ⇒ Partial Success
-            import.Status = (successDetails.Count == storeDetails.Count)
-                ? "Done"
-                : "Partial Success";
+            if (storeDetails.Any(sd =>
+    !string.IsNullOrEmpty(sd.Status) &&
+    sd.Status.Trim().Equals("Shortage", StringComparison.OrdinalIgnoreCase)))
+            {
+                import.Status = "Shortage";
+            }
+            else
+            {
+                // nếu không có Shortage thì như cũ: tất cả success → Done, ngược lại → Processing
+                import.Status = (successDetails.Count == storeDetails.Count)
+                    ? "Done"
+                    : "Processing";
+            }
+         
         }
 
 

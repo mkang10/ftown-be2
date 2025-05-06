@@ -251,7 +251,7 @@ namespace API.AppStarts
             CreateMap<Product, ProductDto>()
     .ForMember(dest => dest.ImagePath,
                opt => opt.MapFrom(src => src.ProductImages.Select(img => img.ImagePath).ToList()));
-            CreateMap<ProductVariant, ProductVariantDto>();
+            CreateMap<ProductVariant, ProductVariantDto>().ReverseMap();
 
             CreateMap<ProductEditDto, Product>()
             .ForMember(dest => dest.ProductImages, opt => opt.Ignore()); // Bỏ qua Images vì bạn xử lý riêng

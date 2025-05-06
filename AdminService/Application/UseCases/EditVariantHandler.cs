@@ -33,7 +33,7 @@ namespace Application.UseCases
                 // Map basic fields
                 variant.Price = dto.Price;
                 variant.Status = dto.Status;
-
+            variant.MaxStocks = dto.MaxStocks;
                 // Upload image if present
                 if (dto.ImageFile != null)
                 {

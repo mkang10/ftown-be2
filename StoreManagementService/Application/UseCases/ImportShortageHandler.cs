@@ -38,7 +38,7 @@ namespace Application.UseCases
             // Chỉ cho phép xử lý các Import có trạng thái Processing hoặc Partial Success
             if (!string.Equals(currentStatus, "Approved", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(currentStatus, "Shortage", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(currentStatus, "Partial Success", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(currentStatus, "Processing", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(currentStatus, "Supplement Created", StringComparison.OrdinalIgnoreCase)&&
                 !string.Equals(currentStatus, "Done", StringComparison.OrdinalIgnoreCase))
 
@@ -125,6 +125,26 @@ namespace Application.UseCases
                 if (string.Equals(import.ImportType?.Trim(), "Purchase", StringComparison.OrdinalIgnoreCase))
                 {
                     await UpdateVariantPricesAsync(import, staffId);
+                }
+            }
+            var transfer = await _importRepos.GetTransferByImportIdAsync(import.ImportId);
+            if (transfer != null)
+            {
+                // Nếu transfer chưa ở trạng thái Done, cứ đặt về Processing
+                if (!string.Equals(transfer.Status, "Done", StringComparison.OrdinalIgnoreCase))
+                {
+                    transfer.Status = "Processing";
+                    // Tạo audit log cho transfer
+                    _auditLogRepos.Add(new AuditLog
+                    {
+                        TableName = "Transfer",
+                        RecordId = transfer.TransferOrderId.ToString(),
+                        Operation = "UPDATE",
+                        ChangeDate = DateTime.Now,
+                        ChangedBy = accountId,
+                        ChangeData = $"Status set to Processing because child import {import.ImportId} updated",
+                        Comment = "Đơn chyển đang được xử lí !"
+                    });
                 }
             }
 

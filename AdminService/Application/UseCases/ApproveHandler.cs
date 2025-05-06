@@ -31,7 +31,7 @@ namespace Application.UseCases
 
             // Cập nhật trạng thái
             import.Status = "Approved";
-            import.ApprovedDate = DateTime.UtcNow;
+            import.ApprovedDate = DateTime.Now;
             import.CompletedDate = null; // Chưa hoàn thành
 
             // Cập nhật vào repository
@@ -49,7 +49,7 @@ namespace Application.UseCases
                 TableName = "Import",
                 RecordId = import.ImportId.ToString(),
                 Operation = "APPROVE",
-                ChangeDate = DateTime.UtcNow,
+                ChangeDate = DateTime.Now,
                 ChangedBy = changedBy,
                 ChangeData = serializedChangeData,
                 Comment = comments ?? "Đơn nhập hàng được phê duyệt"

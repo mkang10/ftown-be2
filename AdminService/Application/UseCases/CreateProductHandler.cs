@@ -65,7 +65,7 @@ namespace Application.UseCases
                 {
                     ImagePath = img.ImagePath,
                     IsMain = img.IsMain,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTime.Now
                 }).ToList()
             };
 
@@ -108,6 +108,7 @@ namespace Application.UseCases
             // 5. Tạo variant mới
             var variant = new ProductVariant
             {
+                MaxStocks = dto.MaxStocks,
                 ProductId = dto.ProductId,
                 SizeId = dto.SizeId,
                 ColorId = dto.ColorId,

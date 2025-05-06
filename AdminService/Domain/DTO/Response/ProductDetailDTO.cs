@@ -18,6 +18,8 @@ namespace Domain.DTO.Response
             public decimal Price { get; set; }
             public string? ImagePath { get; set; }
             public string Sku { get; set; } = string.Empty;
+            public int MaxStocks { get; set; }
+
             // ... các field khác
         }
 

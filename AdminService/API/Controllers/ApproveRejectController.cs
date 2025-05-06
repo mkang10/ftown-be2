@@ -67,7 +67,7 @@ namespace API.Controllers
                 byte[] slipBytes = _reportService.GenerateImportSlip(importEntity);
 
                 // 4. Trả về file để client download
-                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
+                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.Now:yyyyMMddHHmmss}.docx";
                 return File(
                     slipBytes,
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -168,7 +168,7 @@ namespace API.Controllers
 
                 // Gọi ReportService để tạo file biên bản nhập hàng
                 byte[] slipFile = _reportService.GenerateImportSlip(importEntity);
-                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
+                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.Now:yyyyMMddHHmmss}.docx";
                 return File(slipFile, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
             }
             catch (ArgumentException argEx)
@@ -208,7 +208,7 @@ namespace API.Controllers
 
                 // Sinh file biên bản nhập kho
                 byte[] slipFile = _reportService.GenerateImportSlip(importEntity);
-                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
+                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.Now:yyyyMMddHHmmss}.docx";
 
                 return File(
                     slipFile,
@@ -255,7 +255,7 @@ namespace API.Controllers
 
                 // Tạo báo cáo nhập bổ sung
                 byte[] reportFileBytes = _reportService.GenerateImportSupplementSlip(supplementImportEntity, oldImportEntity);
-                string fileName = $"PhieuNhapBoSung_{supplementImportEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
+                string fileName = $"PhieuNhapBoSung_{supplementImportEntity.ReferenceNumber}_{DateTime.Now:yyyyMMddHHmmss}.docx";
                 return File(reportFileBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
             }
             catch (ArgumentException argEx)

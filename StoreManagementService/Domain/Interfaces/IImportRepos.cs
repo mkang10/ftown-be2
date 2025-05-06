@@ -34,6 +34,9 @@ namespace Domain.Interfaces
 
         Task<Transfer> GetTransferByImportIdAsync(int importId);
 
+        Task<Transfer> GetTransferByDispatchIdAsync(int dispatchId);
+
+
         IQueryable<ImportDetail> QueryImportDetails();
 
         /// <summary>

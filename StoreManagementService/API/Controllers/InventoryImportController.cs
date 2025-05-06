@@ -159,7 +159,7 @@ namespace API.Controllers
 
                 // Chỉ đến đây nếu Status != "Rejected"
                 byte[] slipFile = _reportService.GenerateImportSlip(importEntity);
-                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
+                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.Now:yyyyMMddHHmmss}.docx";
 
                 return File(
                     slipFile,
@@ -216,7 +216,7 @@ namespace API.Controllers
 
                 // 5. Ngược lại (Approved) → sinh file và trả về
                 byte[] slipFile = _reportService.GenerateImportSlip(importEntity);
-                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.UtcNow:yyyyMMddHHmmss}.docx";
+                string fileName = $"PhieuNhap_{importEntity.ReferenceNumber}_{DateTime.Now:yyyyMMddHHmmss}.docx";
 
                 return File(
                     slipFile,

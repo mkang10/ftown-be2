@@ -19,63 +19,104 @@ namespace Application.UseCases
             }
 
         public async Task<PaginatedResponseDTO<ProductDto>>
-        GetAllProductsAsync(
-            string? nameFilter,
-            string? descriptionFilter,
-            int? categoryFilter,
-            string? originFilter,
-            string? modelFilter,
-            string? occasionFilter,
-            string? styleFilter,
-            string? materialFilter,
-            string? statusFilter,
-            int page,
-            int pageSize)
+GetAllProductsAsync(
+    string? nameFilter,
+    string? descriptionFilter,
+    int? categoryFilter,
+    string? originFilter,
+    string? modelFilter,
+    string? occasionFilter,
+    string? styleFilter,
+    string? materialFilter,
+    string? statusFilter,
+    string? skuFilter,    // ← Tham số mới
+    int page,
+    int pageSize)
         {
-            var all = await _repo.GetAllAsync();
+            // 1. Load toàn bộ Product kèm Category, Images, Variants
+            var all = await _repo.GetAllAsync(); // trả về IEnumerable<Product> đã Include các nav-props
 
-            var queried = all.Select(p => new ProductDto
-            {
-                ProductId = p.ProductId,
-                Name = p.Name,
-                Description = p.Description,
-                CategoryId = p.CategoryId,
-                CategoryName = p.Category?.Name,
-                ImagePath = p.ProductImages.FirstOrDefault(pi => pi.IsMain)?.ImagePath,
-                Origin = p.Origin,
-                Model = p.Model,
-                Occasion = p.Occasion,
-                Style = p.Style,
-                Material = p.Material,
-                Status = p.Status
-            });
+            // 2. Chuyển sang IQueryable để dễ chaining filter
+            var query = all.AsQueryable();
 
-            // Apply filters
+            // 3. Áp dụng các filter cơ bản
             if (!string.IsNullOrEmpty(nameFilter))
-                queried = queried.Where(d => d.Name.ToLower().Contains(nameFilter.ToLower()));
-            if (!string.IsNullOrEmpty(descriptionFilter))
-                queried = queried.Where(d => d.Description?.ToLower().Contains(descriptionFilter.ToLower()) == true);
-            if (categoryFilter.HasValue)
-                queried = queried.Where(d => d.CategoryId == categoryFilter.Value);
-            if (!string.IsNullOrEmpty(originFilter))
-                queried = queried.Where(d => d.Origin?.ToLower().Contains(originFilter.ToLower()) == true);
-            if (!string.IsNullOrEmpty(modelFilter))
-                queried = queried.Where(d => d.Model?.ToLower().Contains(modelFilter.ToLower()) == true);
-            if (!string.IsNullOrEmpty(occasionFilter))
-                queried = queried.Where(d => d.Occasion?.ToLower().Contains(occasionFilter.ToLower()) == true);
-            if (!string.IsNullOrEmpty(styleFilter))
-                queried = queried.Where(d => d.Style?.ToLower().Contains(styleFilter.ToLower()) == true);
-            if (!string.IsNullOrEmpty(materialFilter))
-                queried = queried.Where(d => d.Material?.ToLower().Contains(materialFilter.ToLower()) == true);
-            if (!string.IsNullOrEmpty(statusFilter))
-                queried = queried.Where(d => d.Status?.ToLower().Contains(statusFilter.ToLower()) == true);
+                query = query.Where(p =>
+                    p.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
 
-            var total = queried.Count();
-            var items = queried
+            if (!string.IsNullOrEmpty(descriptionFilter))
+                query = query.Where(p =>
+                    p.Description != null &&
+                    p.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase));
+
+            if (categoryFilter.HasValue)
+                query = query.Where(p => p.CategoryId == categoryFilter.Value);
+
+            if (!string.IsNullOrEmpty(originFilter))
+                query = query.Where(p =>
+                    p.Origin != null &&
+                    p.Origin.Contains(originFilter, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrEmpty(modelFilter))
+                query = query.Where(p =>
+                    p.Model != null &&
+                    p.Model.Contains(modelFilter, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrEmpty(occasionFilter))
+                query = query.Where(p =>
+                    p.Occasion != null &&
+                    p.Occasion.Contains(occasionFilter, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrEmpty(styleFilter))
+                query = query.Where(p =>
+                    p.Style != null &&
+                    p.Style.Contains(styleFilter, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrEmpty(materialFilter))
+                query = query.Where(p =>
+                    p.Material != null &&
+                    p.Material.Contains(materialFilter, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrEmpty(statusFilter))
+                query = query.Where(p =>
+                    p.Status != null &&
+                    p.Status.Contains(statusFilter, StringComparison.OrdinalIgnoreCase));
+
+            // 4. Áp dụng filter theo SKU của ProductVariant
+            if (!string.IsNullOrEmpty(skuFilter))
+            {
+                query = query.Where(p =>
+                    p.ProductVariants.Any(v =>
+                        v.Sku != null &&
+                        v.Sku.Contains(skuFilter, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            // 5. Đếm tổng số phần tử sau filter
+            var total = query.Count();
+
+            // 6. Phân trang và project sang DTO
+            var items = query
+                .OrderBy(p => p.ProductId)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .Select(p => new ProductDto
+                {
+                    ProductId = p.ProductId,
+                    Name = p.Name,
+                    Description = p.Description,
+                    CategoryId = p.CategoryId,
+                    CategoryName = p.Category.Name,
+                    ImagePath = p.ProductImages.FirstOrDefault(pi => pi.IsMain).ImagePath,
+                    Origin = p.Origin,
+                    Model = p.Model,
+                    Occasion = p.Occasion,
+                    Style = p.Style,
+                    Material = p.Material,
+                    Status = p.Status
+                })
                 .ToList();
 
+            // 7. Trả về kết quả phân trang
             return new PaginatedResponseDTO<ProductDto>(items, total, page, pageSize);
         }
     }

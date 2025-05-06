@@ -18,6 +18,9 @@ namespace Domain.DTO.Response
         public string? Barcode { get; set; }
         public decimal? Weight { get; set; }
         public string? Status { get; set; }
+
+        public int? MaxStock { get; set; }
+
     }
 
 }

@@ -116,6 +116,8 @@ namespace API.Controllers
                 [FromQuery] string? style,
                 [FromQuery] string? material,
                 [FromQuery] string? status,
+                                [FromQuery] string? skuFilter,
+
                 [FromQuery] int page = 1,
                 [FromQuery] int pageSize = 10)
         {
@@ -129,6 +131,7 @@ namespace API.Controllers
                 style,
                 material,
                 status,
+                skuFilter,
                 page,
                 pageSize);
             return Ok(result);

@@ -42,7 +42,8 @@ namespace Application.UseCases
                     Sku = variant.Sku,
                     Barcode = variant.Barcode,
                     Weight = variant.Weight,
-                    Status = variant.Status
+                    Status = variant.Status,
+                    MaxStock = (int)variant.MaxStocks
                 };
 
                 return new ResponseDTO<ProductVariantDetailDTO>(

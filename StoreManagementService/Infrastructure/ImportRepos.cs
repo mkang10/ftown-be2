@@ -457,5 +457,15 @@ namespace Infrastructure
             return variant;
         }
 
+        public async Task<Transfer> GetTransferByDispatchIdAsync(int dispatchId)
+        {
+            // Lấy Transfer mà có trong collection Imports tồn tại Import có importId bằng giá trị truyền vào
+            var transfer = await _context.Transfers
+                .Include(t => t.Import)
+                .Include(t => t.Dispatch)
+        .FirstOrDefaultAsync(t => t.DispatchId == dispatchId);
+
+            return transfer;
+        }
     }
 }

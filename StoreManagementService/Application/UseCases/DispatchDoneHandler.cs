@@ -30,110 +30,120 @@ namespace Application.UseCases
 
 
 
-        public async Task ProcessDispatchDoneAsync(int dispatchId, int staffId, List<UpdateStoreDetailDto> confirmations)
+        public async Task ProcessDispatchDoneAsync(
+     int dispatchId,
+     int staffId,
+     List<UpdateStoreDetailDto> confirmations)
         {
-            // 1. Lấy Dispatch với các DispatchDetail và StoreExportStoreDetails đã được include
+            // 1. Lấy Dispatch với các DispatchDetail và StoreExportStoreDetails đã include
             var dispatch = await _dispatchRepos.GetByIdAssignAsync(dispatchId);
             if (dispatch == null)
-            {
                 throw new Exception("Đơn xuất hàng không tồn tại");
-            }
 
-            // Kiểm tra trạng thái Dispatch: chỉ cho phép xử lý khi là "Processing" hoặc "Partial Success"
+            // 2. Validate status
             if (!string.Equals(dispatch.Status.Trim(), "Approved", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(dispatch.Status.Trim(), "Partial Success", StringComparison.OrdinalIgnoreCase))
+                !string.Equals(dispatch.Status.Trim(), "Processing", StringComparison.OrdinalIgnoreCase))
+
             {
-                throw new InvalidOperationException("Chỉ cho phép chỉnh sửa các đơn xuất hàng có trạng thái Processing hoặc Partial Success");
+                throw new InvalidOperationException(
+                    "Chỉ cho phép chỉnh sửa các đơn xuất hàng có trạng thái Approved hoặc Processing");
             }
 
-            // 2. Cập nhật trạng thái của từng StoreExportStoreDetail dựa trên confirmations
+            // Danh sách các DispatchStoreDetailId vừa confirm
+            var confirmedIds = confirmations.Select(c => c.StoreDetailId).ToList();
+
+            // 3. Cập nhật trạng thái của từng StoreExportStoreDetail
             await UpdateDispatchStoreDetails(dispatch, confirmations, staffId);
-
-            // Lưu thay đổi tạm thời cho StoreExportStoreDetails
             await _dispatchRepos.SaveChangesAsync();
-
-            // Reload Dispatch để đảm bảo navigation properties được cập nhật mới nhất
             await _dispatchRepos.ReloadAsync(dispatch);
 
-            // Lấy tất cả các StoreExportStoreDetail từ DispatchDetails
+            // 4. Tính list tất cả storeDetail và những storeDetail thành công
             var storeDetails = dispatch.DispatchDetails
                                        .SelectMany(dd => dd.StoreExportStoreDetails)
                                        .ToList();
 
-            // Đếm các store detail có Status "Success" (so sánh bỏ qua khoảng trắng)
             var successDetails = storeDetails
-                                 .Where(sd => !string.IsNullOrEmpty(sd.Status) &&
-                                              string.Equals(sd.Status.Trim(), "Success", StringComparison.OrdinalIgnoreCase))
-                                 .ToList();
+                .Where(sd => !string.IsNullOrEmpty(sd.Status) &&
+                             string.Equals(sd.Status.Trim(), "Success", StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
-            // 3. Cập nhật trạng thái Dispatch nếu tất cả StoreExportStoreDetail đều thành công
-            if (storeDetails.Count > 0 && storeDetails.Count == successDetails.Count &&
+            // 5. Nếu tất cả đều Success → mark Done, update supplement → full-batch stock update
+            if (storeDetails.Count > 0 &&
+                storeDetails.Count == successDetails.Count &&
                 !string.Equals(dispatch.Status.Trim(), "Done", StringComparison.OrdinalIgnoreCase))
             {
                 UpdateDispatchStatusToDone(dispatch, staffId);
 
-                // Nếu Dispatch có trường OriginalDispatchId (đơn bổ sung), cập nhật đơn gốc nếu cần
+                // Nếu là supplement, cập nhật dispatch gốc
                 if (dispatch.OriginalId.HasValue && dispatch.OriginalId.Value > 0)
                 {
-                    var supplementDispatches = await _dispatchRepos.GetAllByOriginalDispatchIdAsync(dispatch.OriginalId.Value);
-                    if (supplementDispatches != null && supplementDispatches.All(d => string.Equals(d.Status.Trim(), "Done", StringComparison.OrdinalIgnoreCase)))
+                    var supplement = await _dispatchRepos.GetAllByOriginalDispatchIdAsync(dispatch.OriginalId.Value);
+                    if (supplement != null && supplement.All(d => d.Status.Trim().Equals("Done", StringComparison.OrdinalIgnoreCase)))
                     {
-                        var originalDispatch = await _dispatchRepos.GetByIdAsync(dispatch.OriginalId.Value);
-                        if (originalDispatch != null && !string.Equals(originalDispatch.Status.Trim(), "Done", StringComparison.OrdinalIgnoreCase))
-                        {
-                            UpdateDispatchStatusToDone(originalDispatch, staffId);
-                        }
+                        var original = await _dispatchRepos.GetByIdAsync(dispatch.OriginalId.Value);
+                        if (original != null && !original.Status.Trim().Equals("Done", StringComparison.OrdinalIgnoreCase))
+                            UpdateDispatchStatusToDone(original, staffId);
                     }
                 }
 
-                // Cập nhật kho dựa trên toàn bộ Dispatch (từ các StoreExportStoreDetail)
-                await _wareHouseStockRepos.UpdateDispatchWarehouseStockAsync(dispatch, staffId);
+                // Full‐batch update: chỉ trên confirmedIds
+                await _wareHouseStockRepos.UpdateDispatchWarehouseStockAsync(
+                    dispatch,
+                    staffId,
+                    confirmedIds
+                );
             }
             else
             {
-                // Nếu không phải tất cả StoreExportStoreDetail đều thành công:
-                // Với từng store detail có Status "Success", cập nhật kho riêng lẻ và tạo AuditLog
-                if (successDetails.Count > 0)
+                // 6. Partial‐batch: chỉ update những successDetails vừa confirm
+                var toProcess = successDetails
+                    .Where(sd => confirmedIds.Contains(sd.DispatchStoreDetailId))
+                    .ToList();
+
+                if (toProcess.Any())
                 {
-                    foreach (var detail in successDetails)
+                    foreach (var detail in toProcess)
                     {
-                        // Giả sử mỗi StoreExportStoreDetail nằm trong DispatchDetail và có thông tin Variant (VariantId)
                         await _wareHouseStockRepos.UpdateWarehouseStockForSingleDispatchDetailAsync(
-                            detail, detail.DispatchDetail.VariantId, staffId);
+                            detail,
+                            detail.DispatchDetail.VariantId,
+                            staffId
+                        );
                     }
 
-                    // Nếu số lượng store detail của Dispatch là 2 và cả 2 đều thành công,
-                    // có thể cập nhật Dispatch.Status thành "Success", nếu phù hợp với logic nghiệp vụ
-                    if (storeDetails.Count == 2 && successDetails.Count == 2)
+                    // Cập nhật status tổng của Dispatch
+                    // Cập nhật status tổng của Dispatch
+                    if (toProcess.Count == storeDetails.Count)
                     {
-                        dispatch.Status = "Success";
+                        // tất cả đều thành công
+                        dispatch.Status = "Done";
                     }
+
                     else
                     {
-                        dispatch.Status = "Partial Success";
+                        dispatch.Status = "Processing";
                     }
+                    
                 }
             }
 
-            // Lưu các thay đổi cuối cùng cho Dispatch và AuditLog
+            // 7. Lưu và ghi AuditLog cho Dispatch, stock
             await _dispatchRepos.SaveChangesAsync();
             await _auditLogRepos.SaveChangesAsync();
 
-            // 4. Cập nhật trạng thái Transfer nếu có
-            // Giả sử mỗi Transfer có duy nhất một Dispatch và một Import, lấy Transfer liên quan qua dispatchId
+
+            // 8. Cập nhật Transfer nếu có
             var transfer = await _importRepos.GetTransferByImportIdAsync(dispatch.DispatchId);
             if (transfer != null)
             {
                 int accountId = await _staffRepos.GetAccountIdByStaffIdAsync(staffId);
-                bool dispatchDone = transfer.Dispatch != null &&
-                                    string.Equals(transfer.Dispatch.Status.Trim(), "Done", StringComparison.OrdinalIgnoreCase);
-                bool importDone = transfer.Import != null &&
-                                  string.Equals(transfer.Import.Status.Trim(), "Done", StringComparison.OrdinalIgnoreCase);
+                bool dispDone = transfer.Dispatch?.Status.Trim().Equals("Done", StringComparison.OrdinalIgnoreCase) == true;
+                bool impDone = transfer.Import?.Status.Trim().Equals("Done", StringComparison.OrdinalIgnoreCase) == true;
 
-                if (dispatchDone && importDone && !string.Equals(transfer.Status.Trim(), "Done", StringComparison.OrdinalIgnoreCase))
+                if (dispDone && impDone && !transfer.Status.Trim().Equals("Done", StringComparison.OrdinalIgnoreCase))
                 {
                     transfer.Status = "Done";
-                    var auditLogTransfer = new AuditLog
+                    _auditLogRepos.Add(new AuditLog
                     {
                         TableName = "Transfer",
                         RecordId = transfer.TransferOrderId.ToString(),
@@ -141,14 +151,13 @@ namespace Application.UseCases
                         ChangeDate = DateTime.Now,
                         ChangedBy = accountId,
                         ChangeData = "Status updated to Done",
-                        Comment = "Đơn xuất hàng và nhập hàng đã hoàn thành"
-                    };
-                    _auditLogRepos.Add(auditLogTransfer);
-
+                        Comment = "Đơn xuất và nhập hàng đã hoàn thành"
+                    });
                     await _auditLogRepos.SaveChangesAsync();
                 }
             }
         }
+
 
         private async Task UpdateDispatchStoreDetails(Dispatch dispatch, List<UpdateStoreDetailDto> confirmations, int staffId)
         {

@@ -33,7 +33,7 @@ namespace Application.UseCases
 
             // Cập nhật trạng thái và hoàn thành đơn import
             import.Status = "Rejected";
-            import.CompletedDate = DateTime.UtcNow;
+            import.CompletedDate = DateTime.Now;
 
             // Cập nhật lại đơn import qua repository
             await _repository.UpdateAsync(import);
@@ -51,7 +51,7 @@ namespace Application.UseCases
                 TableName = "Import",
                 RecordId = import.ImportId.ToString(),
                 Operation = "REJECT",
-                ChangeDate = DateTime.UtcNow,
+                ChangeDate = DateTime.Now,
                 ChangedBy = changedBy,
                 ChangeData = serializedChangeData,
                 Comment = comments ?? "Đơn nhập hàng bị từ chối"

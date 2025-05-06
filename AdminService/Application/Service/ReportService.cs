@@ -98,7 +98,7 @@ namespace Application.Services
                     // PHẦN TIÊU ĐỀ CHUNG
                     AddParagraph(body, "BIÊN BẢN NHẬP BỔ SUNG", true, "32", JustificationValues.Center);
                     AddParagraph(body, $"Reference Number: {supplementImport.ReferenceNumber}", false, "24", JustificationValues.Center);
-                    AddParagraph(body, $"Ngày tạo báo cáo: {DateTime.UtcNow:dd/MM/yyyy HH:mm:ss}", false, "24", JustificationValues.Center);
+                    AddParagraph(body, $"Ngày tạo báo cáo: {DateTime.Now:dd/MM/yyyy HH:mm:ss}", false, "24", JustificationValues.Center);
                     AddParagraph(body, " ", false, "24");
 
                     // PHẦN 1: THÔNG TIN ĐƠN NHẬP CŨ
