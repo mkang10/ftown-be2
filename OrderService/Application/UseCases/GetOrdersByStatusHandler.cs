@@ -27,20 +27,29 @@ namespace Application.UseCases
         public async Task<PaginatedResult<OrderResponse>> HandleAsync(string? status, int? accountId, int pageNumber, int pageSize)
         {
             var paginatedOrders = await _orderRepository.GetOrdersByStatusPagedAsync(status, accountId, pageNumber, pageSize);
-
             var orderResponses = _mapper.Map<List<OrderResponse>>(paginatedOrders.Items);
 
+            // ✅ 1. Lấy tất cả ProductVariantId từ toàn bộ đơn hàng
+            var allVariantIds = orderResponses
+                .SelectMany(o => o.Items)
+                .Select(i => i.ProductVariantId)
+                .Distinct()
+                .ToList();
+
+            // ✅ 2. Gọi batch API để lấy thông tin tất cả variant một lần
+            var variantDict = await _inventoryServiceClient.GetAllProductVariantsByIdsAsync(allVariantIds);
+
+            // ✅ 3. Gán thông tin variant vào từng item
             foreach (var order in orderResponses)
             {
                 foreach (var item in order.Items)
                 {
-                    var variantDetails = await _inventoryServiceClient.GetProductVariantByIdAsync(item.ProductVariantId);
-                    if (variantDetails != null)
+                    if (variantDict.TryGetValue(item.ProductVariantId, out var variant))
                     {
-                        item.ProductName = variantDetails.ProductName;
-                        item.Color = variantDetails.Color;
-                        item.Size = variantDetails.Size;
-                        item.ImageUrl = variantDetails.ImagePath;
+                        item.ProductName = variant.ProductName;
+                        item.Color = variant.Color;
+                        item.Size = variant.Size;
+                        item.ImageUrl = variant.ImagePath;
                     }
                 }
             }
@@ -52,6 +61,7 @@ namespace Application.UseCases
                 paginatedOrders.PageSize
             );
         }
+
 
     }
 
