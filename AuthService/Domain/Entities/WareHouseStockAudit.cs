@@ -19,7 +19,7 @@ public partial class WareHouseStockAudit
 
     public string? Note { get; set; }
 
-    public virtual StaffDetail? ChangedByNavigation { get; set; }
+    public virtual Account? ChangedByNavigation { get; set; }
 
     public virtual WareHousesStock WareHouseStock { get; set; } = null!;
 }

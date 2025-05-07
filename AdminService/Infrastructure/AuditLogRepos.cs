@@ -39,7 +39,7 @@ public class AuditLogRepository : IAuditLogRepos
     public async Task<IEnumerable<AuditLog>> GetByRecordIdAsync(string tableName, string recordId)
     {
         return await _context.AuditLogs
-            .Where(log => log.TableName == tableName && log.RecordId == recordId)
+            .Where(log => log.TableName == tableName && log.RecordId == recordId).Include(t => t.ChangedByNavigation)
             .OrderByDescending(log => log.ChangeDate)
             .ToListAsync();
     }
@@ -62,7 +62,7 @@ public class AuditLogRepository : IAuditLogRepos
     public async Task<List<AuditLog>> GetAuditLogsByTableAndRecordIdAsync(string tableName, string recordId)
     {
         return await _context.AuditLogs
-            .Where(a => a.TableName == tableName && a.RecordId == recordId)
+            .Where(a => a.TableName == tableName && a.RecordId == recordId).Include(t => t.ChangedByNavigation)
             .ToListAsync();
     }
 }

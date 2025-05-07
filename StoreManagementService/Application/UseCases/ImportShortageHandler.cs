@@ -1,6 +1,8 @@
 ﻿using Domain.DTO.Request;
 using Domain.Entities;
 using Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,27 +15,35 @@ namespace Application.UseCases
         private readonly IImportRepos _importRepos;
         private readonly IAuditLogRepos _auditLogRepos;
         private readonly IWareHouseStockRepos _wareHouseStockRepos;
+        private readonly IStaffDetailRepository _staffDetailRepository;
 
-        public ImportShortageHandler(IWareHouseStockRepos wareHouseStockRepos, IImportRepos importRepos, IAuditLogRepos auditLogRepos)
+        public ImportShortageHandler(IStaffDetailRepository staffDetailRepository, IWareHouseStockRepos wareHouseStockRepos, IImportRepos importRepos, IAuditLogRepos auditLogRepos)
         {
             _importRepos = importRepos;
             _auditLogRepos = auditLogRepos;
             _wareHouseStockRepos = wareHouseStockRepos;
+            _staffDetailRepository = staffDetailRepository;
         }
 
         public async Task ImportIncompletedAsync(int importId, int staffId, List<UpdateStoreDetailDto> confirmations)
         {
+            var accountId = await _staffDetailRepository.GetAccountIdByStaffIdAsync(staffId);
+
             var import = await _importRepos.GetByIdAssignAsync(importId);
             if (import == null)
             {
                 throw new Exception("Import không tồn tại");
             }
-
+            var currentStatus = import.Status.Trim();
             // Chỉ cho phép xử lý các Import có trạng thái Processing hoặc Partial Success
-            if (!string.Equals(import.Status, "Processing", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(import.Status, "Partial Success", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(currentStatus, "Approved", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(currentStatus, "Shortage", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(currentStatus, "Partial Success", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(currentStatus, "Supplement Created", StringComparison.OrdinalIgnoreCase)&&
+                !string.Equals(currentStatus, "Done", StringComparison.OrdinalIgnoreCase))
+
             {
-                throw new InvalidOperationException("Chỉ cho phép chỉnh sửa các Import có trạng thái Processing hoặc Partial Success");
+                throw new InvalidOperationException("Chỉ cho phép chỉnh sửa các Import có trạng thái Approved , Partial Success, Shortage  và Supplement Created");
             }
 
             // Danh sách các store detail được cập nhật để dùng cho việc cập nhật tồn kho sau này
@@ -42,6 +52,7 @@ namespace Application.UseCases
             // Duyệt qua từng ImportDetail và ImportStoreDetail
             foreach (var importDetail in import.ImportDetails)
             {
+
                 foreach (var storeDetail in importDetail.ImportStoreDetails)
                 {
                     // Tìm thông tin xác nhận tương ứng
@@ -71,8 +82,8 @@ namespace Application.UseCases
                         RecordId = storeDetail.ImportStoreId.ToString(),
                         Operation = "UPDATE",
                         ChangeDate = DateTime.Now,
-                        ChangedBy = staffId,
-                        ChangeData = $"Status updated to Shortage and ActualReceivedQuantity set to {storeDetail.ActualReceivedQuantity}",
+                        ChangedBy = accountId,
+                        ChangeData = $"Trạng thái được cập nhật thành thiếu hàng và số lượng thực tế được cập nhật : {storeDetail.ActualReceivedQuantity}",
                         Comment = storeDetail.Comments
                     };
                     _auditLogRepos.Add(auditLogDetail);
@@ -88,7 +99,7 @@ namespace Application.UseCases
             // Nếu có bất kỳ ImportStoreDetail nào có trạng thái Shortage, cập nhật Import status thành Partial Success
             if (import.ImportDetails.Any(id => id.ImportStoreDetails.Any(sd => string.Equals(sd.Status, "Shortage", StringComparison.OrdinalIgnoreCase))))
             {
-                import.Status = "Partial Success";
+                import.Status = "Shortage";
                 import.CompletedDate = DateTime.Now;
 
                 var auditLogImport = new AuditLog
@@ -97,9 +108,9 @@ namespace Application.UseCases
                     RecordId = import.ImportId.ToString(),
                     Operation = "UPDATE",
                     ChangeDate = DateTime.Now,
-                    ChangedBy = staffId,
+                    ChangedBy = accountId,
                     ChangeData = "Status updated to Partial Success",
-                    Comment = "Some ImportStoreDetails have status Shortage"
+                    Comment = "Trạng thái đơn nhập hàng được cập nhật thành Shortage"
                 };
                 _auditLogRepos.Add(auditLogImport);
 
@@ -110,12 +121,81 @@ namespace Application.UseCases
             foreach (var item in updatedStoreDetails)
             {
                 await _wareHouseStockRepos.UpdateWarehouseStockForSingleDetailAsync(item.storeDetail, item.productVariantId, staffId);
+
+                if (string.Equals(import.ImportType?.Trim(), "Purchase", StringComparison.OrdinalIgnoreCase))
+                {
+                    await UpdateVariantPricesAsync(import, staffId);
+                }
             }
+
 
             // Lưu lại các bản ghi audit được thêm trong quá trình cập nhật tồn kho (nếu có)
             await _auditLogRepos.SaveChangesAsync();
-        }
 
+
+        }
+        private async Task UpdateVariantPricesAsync(Import import, int staffId)
+        {
+            // Lấy danh sách variant đã có trong import này
+            var variantIds = import.ImportDetails
+                                   .Select(d => d.ProductVariantId)
+                                   .Distinct();
+
+            foreach (var variantId in variantIds)
+            {
+                var accountId = await _staffDetailRepository.GetAccountIdByStaffIdAsync(staffId);
+                if (accountId == null)
+                    throw new KeyNotFoundException($"Không tìm thấy Account cho StaffId={staffId}");
+                // 1) Lấy tất cả ImportDetail cho variant này
+                var allDetails = await _importRepos.QueryImportDetails()
+                    .Include(d => d.Import)
+                    .Where(d => d.ProductVariantId == variantId)
+                    .ToListAsync();
+
+                // 2) Loại trừ detail từ những Import gắn với Transfer
+                var validDetails = new List<ImportDetail>();
+                foreach (var det in allDetails)
+                {
+                    var isFromTransfer = await _importRepos.HasTransferForImportAsync(det.ImportId);
+                    if (!isFromTransfer)
+                        validDetails.Add(det);
+                }
+
+                // 3) Tính tổng số lượng
+                var totalQty = validDetails.Sum(d => d.Quantity);
+                if (totalQty == 0)
+                    continue;   // không có data để cập nhật
+
+                // 4) Tính tổng giá vốn
+                var totalCost = validDetails.Sum(d => (d.CostPrice ?? 0m) * d.Quantity);
+                var avgCost = totalCost / totalQty;
+
+                // 5) Cộng thêm 30% lợi nhuận
+                var profitRate = 0.30m;
+                var avgCostWithProfit = avgCost * (1 + profitRate);
+
+                // 6) Làm tròn đến hàng đơn vị (0 chữ số sau dấu thập phân)
+                //    MidpointRounding.AwayFromZero để .5 trở lên sẽ làm tròn lên
+                var finalPrice = Math.Round(avgCostWithProfit, 0, MidpointRounding.AwayFromZero);
+
+                // 7) Cập nhật vào bảng ProductVariant
+                var variant = await _importRepos.GetProductVariantByIdAsync(variantId);
+                variant.Price = finalPrice;
+
+                // 8) Tạo AuditLog cho thay đổi giá
+                var log = new AuditLog
+                {
+                    TableName = "ProductVariant",
+                    RecordId = variantId.ToString(),
+                    Operation = "UPDATE",
+                    ChangeDate = DateTime.Now,
+                    ChangedBy = accountId,
+                    ChangeData = $"{{ \"OldPrice\": ..., \"NewPrice\": {avgCost} }}",
+                    Comment = "Cập nhật giá trung bình sau khi hoàn thành nhập"
+                };
+                _auditLogRepos.Add(log);
+            }
+        }
 
     }
 }

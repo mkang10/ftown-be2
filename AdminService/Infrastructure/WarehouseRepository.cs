@@ -39,6 +39,10 @@ namespace Infrastructure
                 .FirstOrDefaultAsync(w => w.IsOwnerWarehouse == true);
         }
 
+      
+        public async Task<IEnumerable<Warehouse>> GetAllAsync()
+            => await _context.Warehouses.ToListAsync();
+    
 
     }
 

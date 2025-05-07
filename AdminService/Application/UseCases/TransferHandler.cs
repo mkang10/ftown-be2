@@ -277,7 +277,7 @@ namespace Application.UseCases
         public async Task<JSONTransferDispatchImportGet> GetJSONTransferById(int id)
         {
             var data = await _transferRepos.GetJSONTransferOrderById(id);
-            var data2 = await _dispatchRepos.GetJSONDispatchById(id);
+            var data2 = await _dispatchRepos.GetJSONDispatchById(data.DispatchId);
 
             if (data == null)
             {

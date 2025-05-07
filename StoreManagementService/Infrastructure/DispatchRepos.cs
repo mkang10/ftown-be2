@@ -244,15 +244,7 @@ namespace Infrastructure
                 Comments = s.Comments,
                 StaffDetailId = s.StaffDetailId,
                 DispatchDetailId = s.DispatchDetailId,
-                HandleBy = s.HandleBy,
-                HandleByName = s.HandleByNavigation != null && s.HandleByNavigation.Account != null
-                                           ? s.HandleByNavigation.Account.FullName : null,
-                ProductName = s.DispatchDetail != null && s.DispatchDetail.Variant != null
-                                           ? s.DispatchDetail.Variant.Product.Name : string.Empty,
-                SizeName = s.DispatchDetail != null && s.DispatchDetail.Variant != null
-                                           ? s.DispatchDetail.Variant.Size.SizeName : string.Empty,
-                ColorName = s.DispatchDetail != null && s.DispatchDetail.Variant != null
-                                           ? s.DispatchDetail.Variant.Color.ColorName : string.Empty
+                
             });
 
             // Apply sorting
@@ -265,10 +257,7 @@ namespace Infrastructure
                 "status" => desc ? projected.OrderByDescending(x => x.Status) : projected.OrderBy(x => x.Status),
                 "comments" => desc ? projected.OrderByDescending(x => x.Comments) : projected.OrderBy(x => x.Comments),
                 "dispatchdetailid" => desc ? projected.OrderByDescending(x => x.DispatchDetailId) : projected.OrderBy(x => x.DispatchDetailId),
-                "handleby" => desc ? projected.OrderByDescending(x => x.HandleBy) : projected.OrderBy(x => x.HandleBy),
-                "productname" => desc ? projected.OrderByDescending(x => x.ProductName) : projected.OrderBy(x => x.ProductName),
-                "sizename" => desc ? projected.OrderByDescending(x => x.SizeName) : projected.OrderBy(x => x.SizeName),
-                "colorname" => desc ? projected.OrderByDescending(x => x.ColorName) : projected.OrderBy(x => x.ColorName),
+              
                 _ => desc ? projected.OrderByDescending(x => x.DispatchStoreDetailId) : projected.OrderBy(x => x.DispatchStoreDetailId),
             };
 

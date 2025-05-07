@@ -34,6 +34,8 @@ namespace Application.UseCases
         private readonly IWarehouseStaffRepos _wsRepos;
         private readonly IDispatchDetailRepository _dispatchDetail;
         private readonly IStoreExportRepos _storeExportRepos;
+        private readonly IStaffDetailRepository _staffRepos;
+
         public CreateImportHandler(
             IWarehouseRepository warehouseRepo,
             IWareHouseStockRepos stockRepo,
@@ -46,7 +48,8 @@ namespace Application.UseCases
             IImportStoreRepos importStoreRepo,
             IWarehouseStaffRepos wsRepos,
             IDispatchDetailRepository dispatchDetail,
-            IStoreExportRepos storeExportRepos)
+            IStoreExportRepos storeExportRepos,
+            IStaffDetailRepository staffRepos)
         {
             _warehouseRepo = warehouseRepo;
             _stockRepo = stockRepo;
@@ -60,44 +63,33 @@ namespace Application.UseCases
             _wsRepos = wsRepos;
             _dispatchDetail = dispatchDetail;
             _storeExportRepos = storeExportRepos;
+            _staffRepos = staffRepos;
         }
 
         public async Task<ResponseDTO<ImportResponseDto>> CreateTransferImportAsync(TransImportDto dto)
         {
             try
             {
-                // 1. Validate
-                // 1. Validate DTO and stock levels
                 var validation = ValidateDto(dto) ?? await ValidateStockLimitsAsync(dto);
                 if (validation != null)
                     return validation;
 
-                // 2. Create and save Import
                 var importEntity = BuildImportEntity(dto);
 
-                // 3. Auto-approve/reject based on business rules
-                await EvaluateAutoApprovalAsync(importEntity, dto);
 
-               
+                var capableMap = await EvaluateAutoApprovalAsync(importEntity, dto);
+
                 await SaveImportAsync(importEntity);
-              
 
-                // 3. Audit log for Import
-                await CreateAuditLogAsync(
-                    table: "Import",
-                    recordId: importEntity.ImportId.ToString(),
-                    changedBy: importEntity.CreatedBy,
-                    comment: "Tạo yêu cầu nhập hàng"
-                );
+                await CreateAuditLogAsync("Import", importEntity.ImportId.ToString(), importEntity.CreatedBy, "Tạo yêu cầu nhập hàng");
 
-                // 4. Load Warehouse
+
                 var warehouse = await _warehouseRepo.GetByIdAsync(dto.WarehouseId);
                 if (warehouse == null)
                     return new ResponseDTO<ImportResponseDto>(null, false, "Không tìm thấy warehouse.");
 
                 var allWarehouses = await _warehouseRepo.GetAllAsync();
 
-                // 2. Tách warehouses khác để dùng cho export
                 var otherWarehouseIds = allWarehouses
                     .Where(w => w.WarehouseId != dto.WarehouseId)
                     .Select(w => w.WarehouseId)
@@ -117,20 +109,30 @@ namespace Application.UseCases
                 var exportUnused = GetInitialUnusedCheckers(warehouse.UnusedCheckerIds, exportCheckers);
 
                 // 6. Create and save ImportStoreDetails
-                var storeDetails = BuildStoreDetails(importEntity, dto.WarehouseId, (int)warehouse.ShopManagerId, allCheckers, unused);
+                var storeDetails = BuildStoreDetails(importEntity, dto.WarehouseId, (int)warehouse.ShopManagerId, allCheckers, unused, capableMap);
                 await _importStoreRepo.AddRangeAsync(storeDetails);
                 await _importRepo.SaveChangesAsync();
+
 
                 // 7. Audit log for each StoreDetail
                 foreach (var sd in storeDetails)
                 {
-                    await CreateAuditLogAsync(
-                        table: "ImportStoreDetail",
-                        recordId: sd.ImportStoreId.ToString(),
-                        changedBy: importEntity.CreatedBy,
-                        comment: $"Tạo mới ImportStoreDetail cho ImportId {importEntity.ImportId}"
-                    );
+                    string comment = sd.Status == "Processing"
+                        ? $"Tạo mới detail cho import {importEntity.ImportId}"
+                        : "Tạo detail với trạng thái Rejected do không đủ khả năng nhập";
+                    await CreateAuditLogAsync("ImportStoreDetail", sd.ImportStoreId.ToString(), importEntity.CreatedBy, comment);
                 }
+
+                if (capableMap.Values.All(v => v == "Tự động phê duyệt"))
+                    importEntity.Status = "Approved";
+                else if (capableMap.Values.All(v => v == "Không đủ sản phẩm"))
+                    importEntity.Status = "Rejected";
+                else
+                    importEntity.Status = "Partially Approved";
+
+
+                await _importRepo.UpdateAsync(importEntity);
+                await _importRepo.SaveChangesAsync();
 
                 // 8. Update Warehouse unused list
                 warehouse.UnusedCheckerIds = string.Join(",", unused);
@@ -150,7 +152,7 @@ namespace Application.UseCases
                             table: "ImportStoreDetail",
                             recordId: sd.ImportStoreId.ToString(),
                             changedBy: importEntity.CreatedBy,
-                            comment: "Cập nhật trạng thái từ Processing → Rejected do Import bị từ chối"
+                            comment: "Cập nhật trạng thái từ Processing → Rejected do đơn nhập hàng bị từ chối"
                         );
                     }
                     // Lưu các thay đổi
@@ -164,135 +166,151 @@ namespace Application.UseCases
                         "Đơn nhập đã bị từ chối, các đơn con đã được chuyển sang trạng thái Rejected."
                     );
                 }
-
-
-                // === BƯỚC 9: Nếu tự phê duyệt thành công thì sinh Dispatch → Transfer → Details ===
-                if (importEntity.Status == "Approved")
+                if (importEntity.Status == "Approved" || importEntity.Status == "Partially Approved")
                 {
-                    // 9.1 Tạo Dispatch trước
-                    var dispatch = new Dispatch
+                    // Lọc chỉ những storeDetails có Status == "Processing"
+                    var toDispatch = storeDetails.Where(sd => sd.Status == "Processing").ToList();
+                    if (toDispatch.Any())
                     {
-                        CreatedBy = importEntity.CreatedBy,
-                        CreatedDate = DateTime.UtcNow,
-                        Status = "Approved",
-                        ReferenceNumber = $"DP-{DateTime.UtcNow:yyyyMMddHHmmss}",
-                        Remarks = "Dispatch tự động cho Transfer",
-                        OriginalId = importEntity.ImportId  // hoặc transferOrderId nếu bạn muốn
-                    };
-                    await _dispatchRepos.AddAsync(dispatch);
-                    await _dispatchRepos.SaveChangesAsync();
-
-                    await CreateAuditLogAsync(
-                        table: "Dispatch",
-                        recordId: dispatch.DispatchId.ToString(),
-                        changedBy: dispatch.CreatedBy,
-                        comment: "Tạo Dispatch tự động sau phê duyệt Import"
-                    );
-
-                    // 9.2 Tạo Transfer, gán DispatchId từ dispatch vừa tạo
-                    var transfer = new Transfer
-                    {
-                        ImportId = importEntity.ImportId,
-                        DispatchId = dispatch.DispatchId,
-                        CreatedBy = importEntity.CreatedBy,
-                        CreatedDate = DateTime.UtcNow,
-                        Status = "Approved",
-                        Remarks = "Tự động sinh khi Import được phê duyệt"
-                    };
-                    await _transferRepo.AddAsync(transfer);
-
-                    await CreateAuditLogAsync(
-                        table: "Transfer",
-                        recordId: transfer.TransferOrderId.ToString(),
-                        changedBy: transfer.CreatedBy,
-                        comment: "Tạo Transfer tự động liên kết Dispatch"
-                    );
-
-                    // 9.3 Tạo TransferDetail
-                    var transferDetails = importEntity.ImportDetails
-                        .SelectMany(impD =>
+                        // 9.1 Tạo Dispatch
+                        var dispatch = new Dispatch
                         {
-                            var allocations = storeDetails
-                                .Where(sd => sd.ImportDetailId == impD.ImportDetailId)
-                                .ToList();
+                            CreatedBy = importEntity.CreatedBy,
+                            CreatedDate = DateTime.Now,
+                            Status = "Approved",
+                            ReferenceNumber = $"DP-{DateTime.Now:yyyyMMddHHmmss}",
+                            Remarks = "Đơn xuất hàng tự động cho chuyển hàng",
+                            OriginalId = importEntity.ImportId
+                        };
+                        await _dispatchRepos.AddAsync(dispatch);
+                        await _dispatchRepos.SaveChangesAsync();
+                        await CreateAuditLogAsync("Dispatch", dispatch.DispatchId.ToString(), dispatch.CreatedBy,
+                            "Tạo đơn xuất hàng tự động sau khi phê duyệt đơn nhập hàng thành công");
 
-                            if (allocations.Any())
+                        // 9.2 Tạo Transfer
+                        var transfer = new Transfer
+                        {
+                            ImportId = importEntity.ImportId,
+                            DispatchId = dispatch.DispatchId,
+                            CreatedBy = importEntity.CreatedBy,
+                            CreatedDate = DateTime.Now,
+                            Status = "Approved",
+                            Remarks = "Tự động được tạo khi đơn nhập hàng được phê duyệt"
+                        };
+                        await _transferRepo.AddAsync(transfer);
+                        await _importRepo.SaveChangesAsync();
+                        await CreateAuditLogAsync("Transfer", transfer.TransferOrderId.ToString(), transfer.CreatedBy,
+                            "Tạo đơn chuyển hàng tự động liên kết với đơn xuất hàng");
+
+                        // 9.3 Tạo TransferDetail chỉ từ toDispatch
+                        var transferDetails = toDispatch
+                            .Select(sd => new TransferDetail
                             {
-                                return allocations.Select(sd => new TransferDetail
-                                {
-                                    TransferOrderId = transfer.TransferOrderId,
-                                    VariantId = impD.ProductVariantId,
-                                    Quantity = sd.AllocatedQuantity
-                                });
-                            }
-                            else
+                                TransferOrderId = transfer.TransferOrderId,
+                                VariantId = sd.ImportDetail.ProductVariantId,  // hoặc ánh xạ tương ứng
+                                Quantity = sd.AllocatedQuantity
+                            })
+                            .ToList();
+                        await _transferDetailRepo.AddRangeAndSaveAsync(transferDetails);
+                        foreach (var td in transferDetails)
+                        {
+                            await CreateAuditLogAsync("TransferDetail", td.TransferOrderDetailId.ToString(), transfer.CreatedBy,
+                                $"Tạo đơn chuyển hàng chi tiết (variant {td.VariantId})");
+                        }
+
+                        // 9.4 Tạo DispatchDetail chỉ từ transferDetails
+                        var dispatchDetails = transferDetails
+                            .Select(td => new DispatchDetail
                             {
-                                return new[]
-                                {
-                    new TransferDetail
-                    {
-                        TransferOrderId = transfer.TransferOrderId,
-                        VariantId       = impD.ProductVariantId,
-                        Quantity        = impD.Quantity
-                    }
-                                };
+                                DispatchId = dispatch.DispatchId,
+                                VariantId = td.VariantId,
+                                Quantity = td.Quantity
+                            })
+                            .ToList();
+                        await _dispatchDetail.AddRangeAndSaveAsync(dispatchDetails);
+                        await _dispatchRepos.SaveChangesAsync();
+                        foreach (var dd in dispatchDetails)
+                        {
+                            await CreateAuditLogAsync("DispatchDetail", dd.DispatchDetailId.ToString(), dispatch.CreatedBy,
+                                $"Tạo đơn xuất hàng chi tiết (variant {dd.VariantId})");
+                        }
+
+                        // 9.5 Tạo StoreExportStoreDetail chỉ từ dispatchDetails
+                        int totalQty = dispatchDetails.Sum(dd => dd.Quantity);
+                        var stores = await GetStoresByAvailableStockAsync(
+                            variantId: dispatchDetails[0].VariantId,
+                            excludeWarehouseId: dto.WarehouseId,
+                            isUrgent: dto.IsUrgent
+                        );
+
+                        var exportDetails = new List<StoreExportStoreDetail>();
+                        var singleStore = stores.FirstOrDefault(s => s.available >= totalQty);
+                        if (singleStore != default)
+                        {
+                            var whEntity = allWarehouses.Single(w => w.WarehouseId == singleStore.warehouseId);
+                            var checkers = exportCheckers.Where(c => c.WarehouseId == whEntity.WarehouseId).ToList();
+                            var unusedCheckers = GetInitialUnusedCheckers(whEntity.UnusedCheckerIds, checkers);
+                            exportDetails = BuildExportStoreDetails(
+                                dispatchDetails,
+                                warehouseId: whEntity.WarehouseId,
+                                shopManagerId: (int)whEntity.ShopManagerId,
+                                allCheckers: checkers,
+                                unused: unusedCheckers,
+                                destinationId: dto.WarehouseId
+                            );
+                        }
+                        else
+                        {
+                            int remaining = totalQty;
+                            foreach (var s in stores)
+                            {
+                                if (remaining <= 0) break;
+                                if (s.available <= 0) continue;
+
+                                int take = Math.Min(s.available, remaining);
+                                var partialDispatches = dispatchDetails
+                                    .Select(dd => new DispatchDetail
+                                    {
+                                        DispatchDetailId = dd.DispatchDetailId,
+                                        VariantId = dd.VariantId,
+                                        Quantity = (int)Math.Ceiling((double)dd.Quantity * take / totalQty)
+                                    })
+                                    .ToList();
+
+                                var diff = partialDispatches.Sum(pd => pd.Quantity) - take;
+                                if (diff != 0)
+                                    partialDispatches[0].Quantity -= diff;
+
+                                var whEntity = allWarehouses.Single(w => w.WarehouseId == s.warehouseId);
+                                var checkers = exportCheckers.Where(c => c.WarehouseId == whEntity.WarehouseId).ToList();
+                                var unusedCheckers = GetInitialUnusedCheckers(whEntity.UnusedCheckerIds, checkers);
+                                var partDetails = BuildExportStoreDetails(
+                                    partialDispatches,
+                                    warehouseId: whEntity.WarehouseId,
+                                    shopManagerId: (int)whEntity.ShopManagerId,
+                                    allCheckers: checkers,
+                                    unused: unusedCheckers,
+                                    destinationId: dto.WarehouseId
+                                );
+                                exportDetails.AddRange(partDetails);
+                                remaining -= take;
                             }
-                        })
-                        .ToList();
 
-                    await _transferDetailRepo.AddRangeAndSaveAsync(transferDetails);
+                            if (remaining > 0)
+                                throw new InvalidOperationException("Tổng hàng tồn của các kho vẫn không đủ để xuất.");
+                        }
 
-                    foreach (var td in transferDetails)
-                    {
-                        await CreateAuditLogAsync(
-                            table: "TransferDetail",
-                            recordId: td.TransferOrderDetailId.ToString(),
-                            changedBy: transfer.CreatedBy,
-                            comment: $"Tạo TransferDetail (Variant {td.VariantId})"
-                        );
-                    }
-
-                    // 9.4 Tạo DispatchDetail
-                    var dispatchDetails = transferDetails.Select(td => new DispatchDetail
-                    {
-                        DispatchId = dispatch.DispatchId,
-                        VariantId = td.VariantId,
-                        Quantity = td.Quantity
-                    }).ToList();
-
-                    await _dispatchDetail.AddRangeAndSaveAsync(dispatchDetails);
-                    await _dispatchRepos.SaveChangesAsync();
-
-                    foreach (var dd in dispatchDetails)
-                    {
-                        await CreateAuditLogAsync(
-                            table: "DispatchDetail",
-                            recordId: dd.DispatchDetailId.ToString(),
-                            changedBy: dispatch.CreatedBy,
-                            comment: $"Tạo DispatchDetail (Variant {dd.VariantId})"
-                        );
-                    }
-
-                    // 9.5 Tạo StoreExportStoreDetail
-                    var exportDetails = BuildExportStoreDetails(
-     dispatchDetails,
-     dto.WarehouseId,
-     (int)warehouse.ShopManagerId,
-     exportCheckers,
-     exportUnused
- );
-
-                    await _storeExportRepos.AddRangeAndSaveAsync(exportDetails);
-                    foreach (var ed in exportDetails)
-                    {
-                        await CreateAuditLogAsync(
-                            table: "StoreExportStoreDetail",
-                            recordId: ed.DispatchStoreDetailId.ToString(),
-                            changedBy: dispatch.CreatedBy,
-                            comment: $"Tạo StoreExportStoreDetail cho DispatchDetail {ed.DispatchDetailId}"
-                        );
+                        // 9.7 Lưu và audit log cho exportDetails
+                        await _storeExportRepos.AddRangeAndSaveAsync(exportDetails);
+                        foreach (var ed in exportDetails)
+                        {
+                            await CreateAuditLogAsync("StoreExportStoreDetail", ed.DispatchStoreDetailId.ToString(), dispatch.CreatedBy,
+                                $"Tạo export detail cho DispatchDetail {ed.DispatchDetailId} từ kho {ed.WarehouseId}");
+                        }
                     }
                 }
+
+
 
                 var resultDto = new ImportResponseDto
                 {
@@ -300,8 +318,15 @@ namespace Application.UseCases
                 };
 
 
-                return new ResponseDTO<ImportResponseDto>(resultDto, true,
-            "Tạo đơn nhập hàng thành công.");
+                return new ResponseDTO<ImportResponseDto>(
+        new ImportResponseDto { ImportId = importEntity.ImportId },
+        true,
+        importEntity.Status == "Rejected"
+            ? "Tất cả các detail đều bị từ chối."
+            : importEntity.Status == "Approved"
+                ? "Tất cả detail đều được duyệt."
+                : "Một số detail bị từ chối, các detail còn lại đã được tiếp tục xử lý."
+    );
             }
             catch (Exception ex)
             {
@@ -313,35 +338,22 @@ namespace Application.UseCases
         private async Task<Dictionary<int, string>> EvaluateAutoApprovalAsync(Import importEntity, TransImportDto dto)
         {
             var detailComments = new Dictionary<int, string>();
-            bool allCapable = true;
-
-            // Lấy flag isUrgent trực tiếp từ DTO (nullable bool)
 
             foreach (var detail in dto.ImportDetails)
             {
-                // Truyền flag isUrgent lấy từ request
-                var stores = await GetStoresByAvailableStockAsync(
-                    detail.ProductVariantId,
-                    dto.WarehouseId,
-                    dto.IsUrgent);
-                var maxAvailable = stores.Any() ? stores.Max(s => s.available) : 0;
+                var stores = await GetStoresByAvailableStockAsync(detail.ProductVariantId, dto.WarehouseId, dto.IsUrgent);
+                var totalAvailable = stores.Where(s => s.available > 0).Sum(s => s.available);
 
-                if (maxAvailable < detail.Quantity)
-                {
-                    allCapable = false;
-                    detailComments[detail.ProductVariantId] =
-                        $"Không đủ khả năng nhập (cần: {detail.Quantity}, tối đa: {maxAvailable})";
-                }
+                if (totalAvailable < detail.Quantity)
+                    detailComments[detail.ProductVariantId] = "Không đủ sản phẩm";
                 else
-                {
-                    detailComments[detail.ProductVariantId] =
-                        "Đơn Nhập Hàng Tự Động bởi hệ thống";
-                }
+                    detailComments[detail.ProductVariantId] = "Tự động phê duyệt";
             }
 
-            importEntity.Status = allCapable ? "Approved" : "Rejected";
+            // không set importEntity.Status ở đây nữa
             return detailComments;
         }
+
 
         // Nếu tất cả chi tiết đều có thể nhập tại ít nhất 1 kho con
 
@@ -350,20 +362,21 @@ namespace Application.UseCases
     int warehouseId,
     int shopManagerId,
     IEnumerable<WarehouseStaff> allCheckers,
-    List<int> unused)
+    List<int> unused,
+    int destinationId)
         {
-            var details = new List<StoreExportStoreDetail>();
+            // Lấy danh sách staff còn unused; nếu hết thì reset
+            if (!unused.Any())
+                unused = allCheckers.Select(w => w.StaffDetailId).ToList();
 
+            // Chọn 1 nhân viên random cho toàn bộ export của kho này
+            int chosenStaff = unused[_rng.Next(unused.Count)];
+            // Bỏ người đó khỏi danh sách unused
+            unused.Remove(chosenStaff);
+
+            var details = new List<StoreExportStoreDetail>();
             foreach (var dd in dispatchDetails)
             {
-                // Nếu đã dùng hết checker thì reset lại từ đầu
-                if (!unused.Any())
-                    unused = allCheckers.Select(w => w.StaffDetailId).ToList();
-
-                int idx = _rng.Next(unused.Count);
-                int chosen = unused[idx];
-                unused.RemoveAt(idx);
-
                 details.Add(new StoreExportStoreDetail
                 {
                     DispatchDetailId = dd.DispatchDetailId,
@@ -371,14 +384,14 @@ namespace Application.UseCases
                     AllocatedQuantity = dd.Quantity,
                     Status = "Processing",
                     Comments = "Đơn xuất hàng được sinh tự động",
-                    StaffDetailId = chosen,
-                    HandleBy = shopManagerId
+                    StaffDetailId = chosenStaff,
+                    HandleBy = shopManagerId,
+                    DestinationId = destinationId
                 });
             }
 
             return details;
         }
-
         private async Task<List<(int warehouseId, int available)>> GetStoresByAvailableStockAsync(
     int variantId,
     int excludeWarehouseId,
@@ -391,8 +404,10 @@ namespace Application.UseCases
 
             // Ưu tiên kho con (IsOwnerWarehouse = false) trước, rồi kho tổng
             var storesOrdered = allWarehouses
-                .OrderBy(w => w.IsOwnerWarehouse)
-                .ToList();
+     // những kho có IsOwnerWarehouse = true sẽ ở đầu
+     .OrderByDescending(w => w.IsOwnerWarehouse)
+     // nếu muốn tiếp tục sắp xếp theo tên hoặc một trường khác:
+     .ToList();
 
             var result = new List<(int warehouseId, int available)>();
 
@@ -514,6 +529,7 @@ namespace Application.UseCases
             var importEntity = new Import
             {
                 CreatedBy = dto.CreatedBy,
+                ApprovedDate = DateTime.Now,
                 CreatedDate = DateTime.Now,
                 Status = "Pending",
                 ImportType = "Transfer",
@@ -554,31 +570,38 @@ namespace Application.UseCases
         }
 
         private List<ImportStoreDetail> BuildStoreDetails(
-            Import importEntity,
-            int warehouseId,
-            int shopManagerId,
-            IEnumerable<WarehouseStaff> allCheckers,
-            List<int> unused)
+    Import importEntity,
+    int warehouseId,
+    int shopManagerId,
+    IEnumerable<WarehouseStaff> allCheckers,
+    List<int> unused,
+    Dictionary<int, string> detailComments)
         {
-            var details = new List<ImportStoreDetail>();
+            // Lấy danh sách staff còn unused; nếu hết thì reset
+            if (!unused.Any())
+                unused = allCheckers.Select(w => w.StaffDetailId).ToList();
 
+            // Chọn 1 nhân viên random cho toàn bộ import trên warehouse này
+            int chosenStaff = unused[_rng.Next(unused.Count)];
+            // Bỏ người đó khỏi danh sách unused
+            unused.Remove(chosenStaff);
+
+            var details = new List<ImportStoreDetail>();
             foreach (var det in importEntity.ImportDetails)
             {
-                if (!unused.Any())
-                    unused = allCheckers.Select(w => w.StaffDetailId).ToList();
-
-                int idx = _rng.Next(unused.Count);
-                int chosen = unused[idx];
-                unused.RemoveAt(idx);
+                var comment = detailComments[det.ProductVariantId];
+                var status = comment.StartsWith("Không đủ sản phẩm") ? "Rejected" : "Processing";
 
                 details.Add(new ImportStoreDetail
                 {
                     ImportDetailId = det.ImportDetailId,
                     WarehouseId = warehouseId,
                     AllocatedQuantity = det.Quantity,
-                    Status = "Processing",
-                    Comments = "Đơn Nhập Hàng Tự Động bởi hệ thống",
-                    StaffDetailId = chosen,
+                    Status = status,
+                    Comments = status == "Processing"
+                                          ? "Tự động tạo bởi hệ thống"
+                                          : $"Rejected: {comment}",
+                    StaffDetailId = chosenStaff,
                     HandleBy = shopManagerId
                 });
             }

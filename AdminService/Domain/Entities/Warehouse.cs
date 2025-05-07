@@ -25,7 +25,6 @@ public partial class Warehouse
 
     public int? ShopManagerId { get; set; }
 
-
     public bool? IsOwnerWarehouse { get; set; }
 
     public string? UnusedCheckerIds { get; set; }
@@ -33,8 +32,6 @@ public partial class Warehouse
     public int? SafetyStock { get; set; }
 
     public int? UrgentSafetyStock { get; set; }
-
-    public virtual ICollection<CheckDetail> CheckDetails { get; set; } = new List<CheckDetail>();
 
     public virtual ICollection<ImportStoreDetail> ImportStoreDetails { get; set; } = new List<ImportStoreDetail>();
 

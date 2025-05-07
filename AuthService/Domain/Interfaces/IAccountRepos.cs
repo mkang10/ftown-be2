@@ -5,7 +5,8 @@ namespace Application.Interfaces
 {
     public interface IAccountRepos
     {
-        Task<Account> GetUserByUsernameAsync(string email);
+        Task<Account> GetUserByEmail(string email);
+        Task<Account> GetUserByUsernameAsync(string fullname);
         Task AddUserAsync(Account user);
 
         Task AddStaffAsync(StaffDetail staff);

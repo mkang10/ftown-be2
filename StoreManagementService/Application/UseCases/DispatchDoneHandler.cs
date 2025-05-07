@@ -1,6 +1,7 @@
 ﻿using Domain.DTO.Request;
 using Domain.Entities;
 using Domain.Interfaces;
+using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,16 +14,18 @@ namespace Application.UseCases
     {
         private readonly IDispatchRepos _dispatchRepos;
         private readonly IImportRepos _importRepos;
+        private readonly IStaffDetailRepository _staffRepos;
 
         private readonly IAuditLogRepos _auditLogRepos;
         private readonly IWareHouseStockRepos _wareHouseStockRepos;
 
-        public DispatchDoneHandler(IImportRepos importRepos, IWareHouseStockRepos wareHouseStockRepos, IDispatchRepos dispatchRepos, IAuditLogRepos auditLogRepos)
+        public DispatchDoneHandler(IStaffDetailRepository staffRepos, IImportRepos importRepos, IWareHouseStockRepos wareHouseStockRepos, IDispatchRepos dispatchRepos, IAuditLogRepos auditLogRepos)
         {
             _dispatchRepos = dispatchRepos;
             _auditLogRepos = auditLogRepos;
             _wareHouseStockRepos = wareHouseStockRepos;
             _importRepos = importRepos;
+            _staffRepos = staffRepos;
         }
 
 
@@ -33,14 +36,14 @@ namespace Application.UseCases
             var dispatch = await _dispatchRepos.GetByIdAssignAsync(dispatchId);
             if (dispatch == null)
             {
-                throw new Exception("Dispatch không tồn tại");
+                throw new Exception("Đơn xuất hàng không tồn tại");
             }
 
             // Kiểm tra trạng thái Dispatch: chỉ cho phép xử lý khi là "Processing" hoặc "Partial Success"
-            if (!string.Equals(dispatch.Status.Trim(), "Processing", StringComparison.OrdinalIgnoreCase) &&
+            if (!string.Equals(dispatch.Status.Trim(), "Approved", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(dispatch.Status.Trim(), "Partial Success", StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException("Chỉ cho phép chỉnh sửa các Dispatch có trạng thái Processing hoặc Partial Success");
+                throw new InvalidOperationException("Chỉ cho phép chỉnh sửa các đơn xuất hàng có trạng thái Processing hoặc Partial Success");
             }
 
             // 2. Cập nhật trạng thái của từng StoreExportStoreDetail dựa trên confirmations
@@ -121,6 +124,7 @@ namespace Application.UseCases
             var transfer = await _importRepos.GetTransferByImportIdAsync(dispatch.DispatchId);
             if (transfer != null)
             {
+                int accountId = await _staffRepos.GetAccountIdByStaffIdAsync(staffId);
                 bool dispatchDone = transfer.Dispatch != null &&
                                     string.Equals(transfer.Dispatch.Status.Trim(), "Done", StringComparison.OrdinalIgnoreCase);
                 bool importDone = transfer.Import != null &&
@@ -135,9 +139,9 @@ namespace Application.UseCases
                         RecordId = transfer.TransferOrderId.ToString(),
                         Operation = "UPDATE",
                         ChangeDate = DateTime.Now,
-                        ChangedBy = staffId,
+                        ChangedBy = accountId,
                         ChangeData = "Status updated to Done",
-                        Comment = "Both Import and Dispatch have status Done"
+                        Comment = "Đơn xuất hàng và nhập hàng đã hoàn thành"
                     };
                     _auditLogRepos.Add(auditLogTransfer);
 
@@ -148,6 +152,9 @@ namespace Application.UseCases
 
         private async Task UpdateDispatchStoreDetails(Dispatch dispatch, List<UpdateStoreDetailDto> confirmations, int staffId)
         {
+            var accountId = await _staffRepos.GetAccountIdByStaffIdAsync(staffId);
+            if (accountId == null)
+                throw new KeyNotFoundException($"Không tìm thấy Account cho StaffId={staffId}");
             foreach (var dispatchDetail in dispatch.DispatchDetails)
             {
                 foreach (var storeDetail in dispatchDetail.StoreExportStoreDetails)
@@ -173,11 +180,9 @@ namespace Application.UseCases
                         RecordId = storeDetail.DispatchStoreDetailId.ToString(),
                         Operation = "UPDATE",
                         ChangeDate = DateTime.Now,
-                        ChangedBy = staffId,
+                        ChangedBy = accountId,
                         ChangeData = "Status updated to Success",
-                        Comment = string.IsNullOrEmpty(confirmation.Comment)
-                                  ? "Dispatch confirmed successfully"
-                                  : confirmation.Comment
+                        Comment = "Đã xuất hàng thành công !"
                     };
                     _auditLogRepos.Add(auditLogDetail);
                 }
@@ -185,8 +190,11 @@ namespace Application.UseCases
             // Không gọi SaveChangesAsync() ở đây để tránh lỗi đồng thời trên cùng một DbContext.
         }
 
-        private void UpdateDispatchStatusToDone(Dispatch dispatch, int staffId)
+        private async Task UpdateDispatchStatusToDone(Dispatch dispatch, int staffId)
         {
+            var accountId = await _staffRepos.GetAccountIdByStaffIdAsync(staffId);
+            if (accountId == null)
+                throw new KeyNotFoundException($"Không tìm thấy Account cho StaffId={staffId}");
             dispatch.Status = "Done";
             dispatch.CompletedDate = DateTime.Now;
             var auditLogDispatch = new AuditLog
@@ -195,9 +203,9 @@ namespace Application.UseCases
                 RecordId = dispatch.DispatchId.ToString(),
                 Operation = "UPDATE",
                 ChangeDate = DateTime.Now,
-                ChangedBy = staffId,
+                ChangedBy = accountId,
                 ChangeData = "Status updated to Done",
-                Comment = "All StoreExportStoreDetails have status Success"
+                Comment = "Tất cả đơn xuất hàng đã được xuất khỏi kho !"
             };
             _auditLogRepos.Add(auditLogDispatch);
         }

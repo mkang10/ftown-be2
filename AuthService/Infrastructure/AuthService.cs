@@ -13,6 +13,7 @@ using Domain.DTO.Request;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Google.Apis.Auth;
+using System.Text.RegularExpressions;
 
 namespace Infrastructure.Services
 {
@@ -29,7 +30,7 @@ namespace Infrastructure.Services
 
         public async Task<LoginResponse> AuthenticateAsync(string email, string password)
         {
-            var account = await _accountRepos.GetUserByUsernameAsync(email);
+            var account = await _accountRepos.GetUserByEmail(email);
 
             if (account != null && VerifyPassword(password, account.PasswordHash))
             {
@@ -72,47 +73,97 @@ namespace Infrastructure.Services
             return null;
         }
 
-       
+        private List<string> ValidateRegisterDto(RegisterReq dto)
+        {
+            var errors = new List<string>();
+
+            if (dto == null)
+            {
+                errors.Add("Dữ liệu đăng ký không được để trống.");
+                return errors;
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Username) || dto.Username.Length < 3 || dto.Username.Length > 50)
+                errors.Add("Username phải có độ dài từ 3 đến 50 ký tự.");
+
+            if (string.IsNullOrWhiteSpace(dto.Email) ||
+                !Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                errors.Add("Email không hợp lệ.");
+
+            if (string.IsNullOrEmpty(dto.Password) || dto.Password.Length < 8)
+                errors.Add("Password phải có ít nhất 8 ký tự.");
+            else
+            {
+                if (!Regex.IsMatch(dto.Password, @"[A-Z]"))
+                    errors.Add("Password phải chứa ít nhất một chữ hoa.");
+                if (!Regex.IsMatch(dto.Password, @"[a-z]"))
+                    errors.Add("Password phải chứa ít nhất một chữ thường.");
+                if (!Regex.IsMatch(dto.Password, @"\d"))
+                    errors.Add("Password phải chứa ít nhất một chữ số.");
+                if (!Regex.IsMatch(dto.Password, @"[!@#$%^&*(),.?""{}|<>]"))
+                    errors.Add("Password phải chứa ít nhất một ký tự đặc biệt.");
+            }
+
+            return errors;
+        }
+
 
         public async Task<TokenResponse> RegisterAsync(RegisterReq registerDTO)
         {
-            var existingUser = await _accountRepos.GetUserByUsernameAsync(registerDTO.Username);
+            var response = new TokenResponse();
 
-            if (existingUser != null)
-                return new TokenResponse { Token = null };
+            // 1. Validate đầu vào
+            var errors = ValidateRegisterDto(registerDTO);
+            if (errors.Any())
+            {
+                response.Errors = errors;
+                return response;
+            }
 
-            // Tạo tài khoản mới
+            // 2. Kiểm tra username đã tồn tại
+            var existingUserByUsername = await _accountRepos.GetUserByUsernameAsync(registerDTO.Username);
+            if (existingUserByUsername != null)
+            {
+                response.Errors.Add("Username đã tồn tại, vui lòng chọn tên khác.");
+                return response;
+            }
+
+            // 3. Kiểm tra email đã tồn tại
+            var existingUserByEmail = await _accountRepos.GetUserByEmail(registerDTO.Email);
+            if (existingUserByEmail != null)
+            {
+                response.Errors.Add("Email đã tồn tại, vui lòng sử dụng email khác.");
+                return response;
+            }
+
+            // 4. Tạo Account mới
             var account = new Account
             {
                 FullName = registerDTO.Username,
                 PasswordHash = HashPassword(registerDTO.Password),
                 Email = registerDTO.Email,
-                RoleId = 1,
-                // Các trường khác nếu có
+                RoleId = 1
             };
-
-            // Thêm tài khoản vào database
             await _accountRepos.AddUserAsync(account);
 
-           
+            // 5. Tạo CustomerDetail mặc định
             var customerDetail = new CustomerDetail
             {
                 AccountId = account.AccountId,
-                        LoyaltyPoints = 0,                       // Mặc định là 0 điểm
-                        MembershipLevel = "Basic",               // Mức thành viên mặc định
-                        DateOfBirth = null,
-                        Gender = null,
-                        CustomerType = null,
-                        PreferredPaymentMethod = null
-                    };
-                    await _accountRepos.AddCustomerAsync(customerDetail);
-                    
+                LoyaltyPoints = 0,
+                MembershipLevel = "Basic",
+                DateOfBirth = null,
+                Gender = null,
+                CustomerType = null,
+                PreferredPaymentMethod = null
+            };
+            await _accountRepos.AddCustomerAsync(customerDetail);
 
-            // Tạo JWT token cho tài khoản mới
-            string token = GenerateJwtToken(account.FullName, "user", account.AccountId, account.Email);
-
-            return new TokenResponse { Token = token };
+            // 6. Sinh JWT và trả về
+            response.Token = GenerateJwtToken(account.FullName, "user", account.AccountId, account.Email);
+            return response;
         }
+
 
         private string GenerateJwtToken(string username, string roleName, int userId, string email)
         {
@@ -165,11 +216,11 @@ namespace Infrastructure.Services
             return computedHash.SequenceEqual(hashBytes.Skip(16).Take(20));
         }
 
-      
+
 
         public async Task<LoginResponse> AuthenticateWithGoogleAsync(string idToken)
         {
-            // 1. Xác thực idToken với Google
+            // 1. Validate idToken với Google
             var settings = new GoogleJsonWebSignature.ValidationSettings()
             {
                 Audience = new[] { _configuration["Google:ClientId"] }
@@ -183,30 +234,52 @@ namespace Infrastructure.Services
             catch (InvalidJwtException)
             {
                 // Token không hợp lệ
-                return null;
+                return new LoginResponse
+                {
+                    Token = null,
+                    Errors = new List<string> { "Google token không hợp lệ." }
+                };
             }
 
-            // 2. Lấy email từ payload
+            // 2. Lấy email và tên
             string email = payload.Email;
             string fullName = payload.Name;
 
-            // 3. Kiểm tra account đã tồn tại chưa
-            var account = await _accountRepos.GetUserByUsernameAsync(email);
-            if (account == null)
+            // 3. Kiểm tra email đã tồn tại chưa
+            var existing = await _accountRepos.GetUserByEmail(email);
+            Account account;
+
+            if (existing != null)
             {
-                // Tạo tài khoản mới
+                // Email đã từng được đăng ký
+                if (!string.IsNullOrEmpty(existing.PasswordHash))
+                {
+                    // Trường hợp user đã đăng ký bằng username/password
+                    return new LoginResponse
+                    {
+                        Token = null,
+                        Errors = new List<string> { "Email này đã tồn tại. Vui lòng đăng nhập bằng tài khoản và mật khẩu." }
+                    };
+                }
+
+                // Trường hợp đã từng đăng nhập Google trước đó => cho phép tiếp tục
+                account = existing;
+            }
+            else
+            {
+                // 4. Chưa có tài khoản, tạo mới
                 account = new Account
                 {
                     FullName = fullName,
                     Email = email,
-                    PasswordHash = null,    // không dùng password truyền thống
-                    RoleId = 1,       // default user
+                    PasswordHash = null,    // sẽ login bằng Google
+                    RoleId = 1,
                     IsActive = true
                 };
                 await _accountRepos.AddUserAsync(account);
 
-                // Tạo chi tiết customer
-                var customerDetail = new CustomerDetail
+                // Tạo detail mặc định
+                var detail = new CustomerDetail
                 {
                     AccountId = account.AccountId,
                     LoyaltyPoints = 0,
@@ -216,10 +289,10 @@ namespace Infrastructure.Services
                     CustomerType = null,
                     PreferredPaymentMethod = null
                 };
-                await _accountRepos.AddCustomerAsync(customerDetail);
+                await _accountRepos.AddCustomerAsync(detail);
             }
 
-            // 4. Nếu account bị khoá hoặc inactive
+            // 5. Kiểm tra active
             if (!(bool)account.IsActive)
             {
                 return new LoginResponse
@@ -232,11 +305,12 @@ namespace Infrastructure.Services
                         RoleId = account.RoleId,
                         IsActive = account.IsActive,
                         Email = account.Email
-                    }
+                    },
+                    Errors = new List<string> { "Tài khoản của bạn đang bị khóa." }
                 };
             }
 
-            // 5. Sinh JWT và trả về
+            // 6. Sinh JWT
             string token = GenerateJwtToken(
                 account.FullName,
                 "user",
@@ -244,7 +318,7 @@ namespace Infrastructure.Services
                 account.Email
             );
 
-            object roleDetails = await _accountRepos.GetRoleDetailsAsync(account);
+            var roleDetails = await _accountRepos.GetRoleDetailsAsync(account);
 
             return new LoginResponse
             {
