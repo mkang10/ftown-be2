@@ -256,8 +256,14 @@ namespace API.AppStarts
             CreateMap<ProductEditDto, Product>()
             .ForMember(dest => dest.ProductImages, opt => opt.Ignore()); // Bỏ qua Images vì bạn xử lý riêng
 
-            
-          
+            CreateMap<UpdateStaffDetailRequest, StaffDetail>().ReverseMap();
+            CreateMap<UpdateShopmanagerDetailRequest, ShopManagerDetail>().ReverseMap();
+            CreateMap<UpdateAccountShopManagerStaffRequest, Account>().ReverseMap();
+
+            CreateMap<ChatBotDStatusTO, ChatBot>().ReverseMap();
+            CreateMap<ChatBotDTO, ChatBot>().ReverseMap();
+            CreateMap<ChatBotListDTO, ChatBot>().ReverseMap();
+
 
         }
     }

@@ -37,7 +37,8 @@ namespace Application.UseCases
         {
             try
             {
-                var dataCheck = _userManagementRepository.GetUserByGmail(user.Email);
+                string Image = null;
+                var dataCheck = await _userManagementRepository.GetUserByGmail(user.Email);
                 if (dataCheck != null)
                 {
                     throw new Exception("User email ton tai!");
@@ -64,14 +65,16 @@ namespace Application.UseCases
                     {
                         throw new Exception("Error Picture!");
                     }
-                    user.ImagePath = uploadResult.SecureUrl.ToString();
+                    Image = uploadResult.SecureUrl.ToString();
 
                 }
 
                 // Encrypte
-                user.PasswordHash = HashPassword("funkytown123");
 
                 var map = _mapper.Map<Domain.Entities.Account>(user);
+                map.PasswordHash = HashPassword("funkytown123");
+
+                map.ImagePath = Image;
                 var userCreate = await _userManagementRepository.CreateUser(map);
                 var result = _mapper.Map<UserRequestDTO>(userCreate);
                 string token = null;
@@ -104,6 +107,11 @@ namespace Application.UseCases
                     {
                         AccountId = result.AccountId,
                         JoinDate = DateTime.UtcNow,
+                        Role = "Nhân viên thực tập",
+                        JobTitle = "Nhân viên",
+                        Department = "Nhân viên",
+                        Salary = 120000,
+                        EmploymentType = "Nhân viên"
                     };
                     var staff = await _userManagementRepository.CreateStaffDetail(staffDetail);
                 }

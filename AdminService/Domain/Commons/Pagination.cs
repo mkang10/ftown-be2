@@ -8,7 +8,7 @@ namespace Domain.Commons
 {
     public class Pagination<T> : List<T>
     {
-        public List<T> Items { get; private set; } 
+        public List<T> Items { get; private set; }
 
         public int CurrentPage { get; private set; }
         public int TotalPages { get; private set; }
@@ -26,6 +26,7 @@ namespace Domain.Commons
             PageSize = pageSize;
             CurrentPage = pageNumber;
             TotalPages = (int)Math.Ceiling(count / (double)pageSize);
+            Items = items;
             AddRange(items);
         }
     }

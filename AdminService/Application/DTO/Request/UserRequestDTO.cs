@@ -32,7 +32,7 @@ namespace Application.DTO.Request
 
         public string? ImagePath { get; set; }
 
-        
+
     }
     public class CreateUserFullResponseDTO
     {
@@ -43,12 +43,10 @@ namespace Application.DTO.Request
 
     public class CreateUserRequestWithPasswordDTO
     {
-        
+
         public string FullName { get; set; } = null!;
 
         public string Email { get; set; } = null!;
-
-        public string PasswordHash { get; set; } = null!;
 
         public string? PhoneNumber { get; set; }
 
@@ -61,11 +59,11 @@ namespace Application.DTO.Request
         public bool? IsActive { get; set; }
 
         public int RoleId { get; set; }
-        public IFormFile ImgFile { get; set; }
-        public string? ImagePath { get; set; }
+        public IFormFile? ImgFile { get; set; }
     }
 
-    public class CreateShopmanagerDetailRequest    {
+    public class CreateShopmanagerDetailRequest
+    {
         public int AccountId { get; set; }
 
         public int StoreId { get; set; }
@@ -77,6 +75,66 @@ namespace Application.DTO.Request
         public string? ManagerCertifications { get; set; }
 
         public string? OfficeContact { get; set; }
+    }
+
+    public class UpdateShopmanagerDetailRequest
+    {
+        public int? AccountId { get; set; }
+
+        public int? StoreId { get; set; }
+
+        public DateTime? ManagedDate { get; set; }
+
+        public int? YearsOfExperience { get; set; }
+
+        public string? ManagerCertifications { get; set; }
+
+        public string? OfficeContact { get; set; }
+    }
+    public class UpdateStaffDetailRequest
+    {
+        public int? StoreId { get; set; }
+
+        public DateTime? JoinDate { get; set; }
+
+        public string? Role { get; set; } = null!;
+
+        public string? JobTitle { get; set; } = null!;
+
+        public string? Department { get; set; } = null!;
+
+        public decimal? Salary { get; set; }
+
+        public string? EmploymentType { get; set; }
+
+    }
+
+    public class UpdateAccountShopManagerStaffRequest
+    {
+        public string FullName { get; set; } = null!;
+
+        public string Email { get; set; } = null!;
+
+        public string? PasswordHash { get; set; }
+
+        public string? PhoneNumber { get; set; }
+
+        public string? Address { get; set; }
+
+        public DateTime? CreatedDate { get; set; }
+
+        public DateTime? LastLoginDate { get; set; }
+
+        public bool? IsActive { get; set; }
+
+        public int RoleId { get; set; }
+
+        public IFormFile? ImgFile { get; set; }
+
+        public UpdateShopmanagerDetailRequest ShopManagerDetail { get; set; } = new();
+        public UpdateStaffDetailRequest StaffDetail { get; set; } = new();
+
+
     }
 
 

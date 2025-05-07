@@ -50,6 +50,8 @@ namespace API.AppStarts
             services.AddScoped<IWarehouseRepository, WarehouseRepository>();
             services.AddScoped<ITransferDetailRepository, TransferDetailRepository>();
             services.AddScoped<IDispatchDetailRepository, DispatchDetailRepos>();
+            services.AddScoped<IChatBotRepository, ChatBotRepository>();
+
 
             services.AddScoped<ReportService>();
             services.AddScoped<GetWareHouseIdHandler>();
@@ -72,11 +74,15 @@ namespace API.AppStarts
             services.AddScoped<GetVariantHandler>();
             services.AddScoped<EditVariantHandler>();
             services.AddScoped<DashboardHandler>();
+            services.AddScoped<AuthAdminHandler>();
 
             //ducanh
             services.AddScoped<DispatchHandler>();
             services.AddScoped<ImportStoreDetailHandler>();
             services.AddScoped<RedisHandler>();
+
+            services.AddScoped<CreateAccountShopManagerDetail>();
+            services.AddScoped<ChatbotHandler>();
             services.AddScoped<IDashboardRepository, DashboardRepository>();
 
             services.AddScoped<IUserManagementRepository, UserManagementRepository>();

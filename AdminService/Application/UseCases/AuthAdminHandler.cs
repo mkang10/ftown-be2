@@ -35,7 +35,7 @@ namespace Application.UseCases
         {
             var data = await _userManagementRepository.GetUserByGmail(email);
 
-            if (email == _adminAccount.Account && VerifyPassword(password, _adminAccount.Password) == true)
+            if (email == _adminAccount.Account && password == _adminAccount.Password)
             {
                 string token = GenerateJwtToken(data.Email, data.Role.RoleName, data.AccountId, data.Email);
 

@@ -14,13 +14,13 @@ namespace Application.Interfaces
         public Task<Pagination<UserRequestDTO>> GetAllUserAscyn(PaginationParameter paginationParameter);
         public Task<UserRequestDTO> createUser(CreateUserRequestWithPasswordDTO user);
         public Task<bool> deleteUser(int id);
-        public Task<bool> updateUser(int id, CreateUserRequestWithPasswordDTO user);
-        public Task<bool> banUser(int id, BanUserRequestDTO user);
+        public Task<bool> updateUser(int id, UpdateAccountShopManagerStaffRequest user);
+        public Task<bool> banUser(int id);
 
 
 
         public Task<CreateShopmanagerDetailRequest> CreateShopmanagerDetail(CreateShopmanagerDetailRequest user);
-        public Task<bool> UpdateShopmanagerDetail(int id, CreateShopmanagerDetailRequest user);
+        public Task<bool> UpdateShopmanagerDetail(int id, UpdateShopmanagerDetailRequest user);
         public Task<CreateShopmanagerDetailRequest> getShopmanagerDetaibyid(int id);
 
 

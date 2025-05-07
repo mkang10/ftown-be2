@@ -39,7 +39,7 @@ namespace API.Controllers
 
         
         [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateUser(int id, CreateShopmanagerDetailRequest user)
+        public async Task<IActionResult> UpdateUser(int id, UpdateShopmanagerDetailRequest user)
         {
             try
             {

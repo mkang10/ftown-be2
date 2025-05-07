@@ -34,7 +34,7 @@ namespace Application.UseCases
             _cloudinary = cloudinary;
         }
 
-        public async Task<bool> banUser(int id, BanUserRequestDTO user)
+        public async Task<bool> banUser(int id)
         {
             try
             {
@@ -43,8 +43,7 @@ namespace Application.UseCases
                 {
                     return false;
                 }
-
-                _mapper.Map(user, userData);
+                userData.IsActive = false;
                 await _userManagementRepository.UpdateUser(userData);
                 return true;
             }
@@ -59,6 +58,7 @@ namespace Application.UseCases
         {
             try
             {
+                string Image = null;
                 // check roleid
                 if (user.RoleId != 2 && user.RoleId != 3)
                 {
@@ -81,14 +81,10 @@ namespace Application.UseCases
                     {
                         throw new Exception("Error Picture!");
                     }
-                    user.ImagePath = uploadResult.SecureUrl.ToString();
-
+                    Image = uploadResult.SecureUrl.ToString();
                 }
-
-                // Encrypte
-                user.PasswordHash = EncryptPassword("funkytown123");
-
                 var map = _mapper.Map<Domain.Entities.Account>(user);
+                map.ImagePath = Image;
                 var userCreate = await _userManagementRepository.CreateUser(map);
                 var result = _mapper.Map<UserRequestDTO>(userCreate);
                 return result;
@@ -153,19 +149,6 @@ namespace Application.UseCases
         {
             try
             {
-                var cacheKey = "UserAccounts";
-                var db = _redis.GetDatabase();
-
-                // check cache null or not ?
-                var cachedData = await db.StringGetAsync(cacheKey);
-                if (cachedData.HasValue)
-                {
-                    // if not null , deserialize object
-                    var cachedResult = JsonConvert.DeserializeObject<Pagination<UserRequestDTO>>(cachedData);
-                    return cachedResult;
-                }
-
-                // if null cache, get data from db and write it down cache
                 var trips = await _userManagementRepository.GetAllUser(paginationParameter);
                 if (!trips.Any())
                 {
@@ -179,8 +162,6 @@ namespace Application.UseCases
                     trips.TotalCount,
                     trips.CurrentPage,
                     trips.PageSize);
-                await db.StringSetAsync(cacheKey, JsonConvert.SerializeObject(paginationResult), TimeSpan.FromMinutes(300));
-
                 return paginationResult;
             }
 
@@ -191,7 +172,7 @@ namespace Application.UseCases
         }
 
 
-        public async Task<bool> updateUser(int id, CreateUserRequestWithPasswordDTO user)
+        public async Task<bool> updateUser(int id, UpdateAccountShopManagerStaffRequest user)
         {
             try
             {
@@ -201,18 +182,24 @@ namespace Application.UseCases
                     throw new Exception("No data!");
                 }
 
+                // Cập nhật thông tin chung của account
                 _mapper.Map(user, userData);
-
                 await _userManagementRepository.UpdateUser(userData);
 
-                var db = _redis.GetDatabase();
-                //delete old cache
-                await db.KeyDeleteAsync("UserAccounts");
-                var paginationParameter = new PaginationParameter();
-                // call and wite new cache to redis
-                var updatedUsers = await _userManagementRepository.GetAllUser(paginationParameter);
-                await db.StringSetAsync("UserAccounts", JsonConvert.SerializeObject(updatedUsers), TimeSpan.FromMinutes(300));
+                // Check role để xử lý chi tiết
+                if (userData.RoleId == 2)
+                {
+                    // Gán AccountId nếu cần
+                    user.ShopManagerDetail.AccountId = id;
 
+                    // Gọi hàm cập nhật Shop Manager
+                    await UpdateShopmanagerDetail(id, user.ShopManagerDetail);
+                }
+                else if (userData.RoleId == 3)
+                {
+                    // Gọi hàm cập nhật Staff
+                    await UpdateStaffDetail(id, user.StaffDetail);
+                }
                 return true;
             }
             catch (Exception ex)
@@ -220,6 +207,7 @@ namespace Application.UseCases
                 throw new Exception("An error occurred: " + ex.Message);
             }
         }
+
 
         public async Task<CreateShopmanagerDetailRequest> CreateShopmanagerDetail(CreateShopmanagerDetailRequest user)
         {
@@ -249,7 +237,7 @@ namespace Application.UseCases
             }
         }
 
-        public async Task<bool> UpdateShopmanagerDetail(int id, CreateShopmanagerDetailRequest user)
+        public async Task<bool> UpdateShopmanagerDetail(int id, UpdateShopmanagerDetailRequest user)
         {
             try
             {
@@ -262,6 +250,28 @@ namespace Application.UseCases
                 _mapper.Map(user, userData);
 
                 await _userManagementRepository.UpdateShopmanagerDetail(userData);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("An error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<bool> UpdateStaffDetail(int id, UpdateStaffDetailRequest user)
+        {
+            try
+            {
+                var userData = await _userManagementRepository.GetStaffDetailById(id);
+                if (userData == null)
+                {
+                    throw new Exception("No data!");
+                }
+
+                _mapper.Map(user, userData);
+
+                await _userManagementRepository.UpdateStaffDetail(userData);
 
                 return true;
             }
