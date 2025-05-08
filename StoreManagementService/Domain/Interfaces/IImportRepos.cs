@@ -13,6 +13,12 @@ namespace Domain.Interfaces
 {
     public interface IImportRepos
     {
+        Task<Transfer?> GetTransferByIdAsync(int transferId);
+
+        IQueryable<Transfer> QueryTransfers();
+
+        IQueryable<ImportStoreDetail> QueryImportStoreDetailsByImportId(int importId);
+
         Task<StaffDetail?> GetStaffDetailByIdAsync(int staffDetailId);
 
         Task<PaginatedResponseDTO<ImportStoreDetailDto>> GetImportStoreDetailByStaffDetailAsync(ImportStoreDetailFilterDtO filter);

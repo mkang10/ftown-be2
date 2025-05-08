@@ -45,7 +45,7 @@ namespace Application.UseCases
 
             // 1️⃣ Cập nhật trạng thái ReturnOrder
             returnOrder.Status = newStatus;
-            returnOrder.UpdatedDate = DateTime.UtcNow;
+            returnOrder.UpdatedDate = DateTime.Now;
             await _returnOrderRepository.UpdateAsync(returnOrder);
 
             // 2️⃣ Cập nhật trạng thái Order nếu cần

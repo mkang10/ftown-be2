@@ -141,18 +141,44 @@ namespace API.Controllers
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Edit([FromForm] EditProductVariantDto dto)
         {
-            // 1. Thực hiện cập nhật variant
-            var result = await _editVariantHandler.EditProductVariantAsync(dto);
-            if (!result.Status)
-                return NotFound(result);
+            try
+            {
+                // 1. Thực hiện cập nhật variant
+                var result = await _editVariantHandler.EditProductVariantAsync(dto);
+                if (!result.Status)
+                {
+                    // Trả về ResponseDTO nếu không tìm thấy hoặc cập nhật thất bại
+                    var notFoundResponse = new ResponseDTO<string>(
+                        data: null,
+                        status: false,
+                        message: result.Message
+                    );
+                    return NotFound(notFoundResponse);
+                }
 
-            // 2. Nếu thành công, clear cache
-            string instanceName = "ProductInstance";  // 👈 Đặt InstanceName của bạn tại đây
-            var resultMessage = await _redisHandler.ClearInstanceCacheAsync(instanceName);
+                // 2. Nếu thành công, clear cache
+                string instanceName = "ProductInstance";  // 👈 Đặt InstanceName của bạn tại đây
+                var cacheMessage = await _redisHandler.ClearInstanceCacheAsync(instanceName);
 
-            // 3. Trả về message từ Redis handler
-            return Ok(new { Message = resultMessage });
+                // 3. Trả về ResponseDTO<string>
+                var response = new ResponseDTO<string>(
+                    data: cacheMessage,
+                    status: true,
+                    message: "Đã cập nhật biến thể thành công !"
+                );
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                var errorResponse = new ResponseDTO<string>(
+                    data: null,
+                    status: false,
+                    message: $"Đã xảy ra lỗi: {ex.Message}"
+                );
+                return StatusCode(500, errorResponse);
+            }
         }
+
 
 
         [HttpGet("color")]
@@ -180,29 +206,37 @@ namespace API.Controllers
                 await _editProductHandler.EditAsync(id, dto);
 
                 // 2. Nếu thành công, clear cache
-                string instanceName = "ProductInstance";  // 👈 Đặt InstanceName tại đây
+                string instanceName = "ProductInstance";
                 var resultMessage = await _redisHandler.ClearInstanceCacheAsync(instanceName);
 
-                // 3. Trả về message từ Redis handler
-                return Ok(new { Message = resultMessage });
+                // 3. Trả về ResponseDTO<string>
+                var response = new ResponseDTO<string>(
+                    data: resultMessage,
+                    status: true,
+                    message: "Đã cập nhật sản phẩm thành công !"
+                );
+                return Ok(response);
             }
             catch (KeyNotFoundException)
             {
-                return NotFound(new ResponseDTO<string>(
-                    null,
-                    false,
-                    $"Product with id={id} not found"
-                ));
+                var notFoundResponse = new ResponseDTO<string>(
+                    data: null,
+                    status: false,
+                    message: $"Product with id={id} not found"
+                );
+                return NotFound(notFoundResponse);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<string>(
-                    null,
-                    false,
-                    $"An error occurred: {ex.Message}"
-                ));
+                var errorResponse = new ResponseDTO<string>(
+                    data: null,
+                    status: false,
+                    message: $"An error occurred: {ex.Message}"
+                );
+                return StatusCode(500, errorResponse);
             }
         }
+
 
 
 

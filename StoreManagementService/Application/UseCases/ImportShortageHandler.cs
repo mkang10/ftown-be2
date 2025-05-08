@@ -27,12 +27,22 @@ namespace Application.UseCases
 
         public async Task ImportIncompletedAsync(int importId, int staffId, List<UpdateStoreDetailDto> confirmations)
         {
+
             var accountId = await _staffDetailRepository.GetAccountIdByStaffIdAsync(staffId);
 
             var import = await _importRepos.GetByIdAssignAsync(importId);
             if (import == null)
             {
                 throw new Exception("Import không tồn tại");
+            }
+            var transfer = await _importRepos.GetTransferByImportIdAsync(import.ImportId);
+            if (transfer != null &&
+                !string.Equals(transfer.Dispatch?.Status?.Trim(), "Done", StringComparison.OrdinalIgnoreCase))
+            {
+                // Không cho phép đánh dấu import Done nếu dispatch chưa Done
+                throw new InvalidOperationException(
+                    "Không thể hoàn thành nhập hàng khi đơn xuất hàng chưa có trạng thái Done"
+                );
             }
             var currentStatus = import.Status.Trim();
             // Chỉ cho phép xử lý các Import có trạng thái Processing hoặc Partial Success
@@ -127,7 +137,6 @@ namespace Application.UseCases
                     await UpdateVariantPricesAsync(import, staffId);
                 }
             }
-            var transfer = await _importRepos.GetTransferByImportIdAsync(import.ImportId);
             if (transfer != null)
             {
                 // Nếu transfer chưa ở trạng thái Done, cứ đặt về Processing

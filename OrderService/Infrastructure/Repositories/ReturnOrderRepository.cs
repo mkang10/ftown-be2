@@ -83,7 +83,7 @@ namespace Infrastructure.Repositories
             //Chỉ lấy các đơn có người xử lý đúng với handledBy truyền vào
             query = query.Where(ro => ro.HandledBy == handledBy);
 
-            query = query.OrderByDescending(ro => ro.CreatedDate);
+            query = query.OrderByDescending(ro => ro.ReturnOrderId);
 
             return await query.ToPaginatedResultAsync(pageNumber, pageSize);
         }
