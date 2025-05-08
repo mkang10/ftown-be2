@@ -74,10 +74,10 @@ namespace Infrastructure
             // 3. Count & Paging
             var total = await q.CountAsync();
             var data = await q
-                .OrderBy(oa => oa.AssignmentId)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+    .OrderByDescending(oa => oa.AssignmentId)   // sort giảm dần
+    .Skip((page - 1) * pageSize)
+    .Take(pageSize)
+    .ToListAsync();
 
             return (data, total);
         }
