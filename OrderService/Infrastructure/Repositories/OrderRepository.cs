@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Domain.Common_Model;
+using Application.Enums;
 
 namespace Infrastructure.Repositories
 {
@@ -76,6 +77,7 @@ namespace Infrastructure.Repositories
                 .Include(o => o.OrderDetails)
                 .Include(o => o.Payments)
                 .OrderByDescending(o => o.CreatedDate)
+                .AsNoTracking()
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(status))
@@ -95,21 +97,25 @@ namespace Infrastructure.Repositories
         {
             var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
 
+            
+            var completed = OrderStatus.Completed.ToString().ToLower(); // "completed"
+
             var orders = await _context.Orders
+                .AsNoTracking()
+                .Where(o =>
+                    o.AccountId == accountId &&
+                    o.Status.ToLower() == completed &&       // không phân biệt hoa thường
+                    o.CompletedDate.HasValue &&
+                    o.CompletedDate.Value >= sevenDaysAgo
+                )
                 .Include(o => o.OrderDetails)
-                .Include(o => o.Payments)
-                .Where(o => o.AccountId == accountId &&
-                            o.Status == "completed" &&
-                            _context.AuditLogs.Any(al =>
-                                al.TableName == "Orders" &&
-                                al.Operation == "completed" &&
-                                al.RecordId == o.OrderId.ToString() &&
-                                al.ChangeDate >= sevenDaysAgo))
                 .OrderByDescending(o => o.CreatedDate)
                 .ToListAsync();
 
             return orders;
         }
+
+
         public async Task UpdateOrderStatusAsync(int orderId, string newStatus)
         {
             var order = await _context.Orders.FindAsync(orderId);
