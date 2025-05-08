@@ -10,7 +10,7 @@ namespace Application.DTO.Request
     public class SubmitReturnRequest
     {
         public string ReturnCheckoutSessionId { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
+        public string? Email { get; set; } = string.Empty;
         public string ReturnReason { get; set; } = string.Empty;
         public string ReturnOption { get; set; } = string.Empty;
         public string RefundMethod { get; set; } = string.Empty;
