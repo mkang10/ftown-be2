@@ -93,10 +93,6 @@ namespace API.Controllers
                 return BadRequest(new ResponseDTO<string>(null, false, "ReturnCheckoutSessionId không hợp lệ."));
             }
 
-            if (string.IsNullOrEmpty(request.Email))
-            {
-                return BadRequest(new ResponseDTO<string>(null, false, "Email là bắt buộc khi gửi yêu cầu đổi trả."));
-            }
 
             var submitResponse = await _submitReturnRequestHandler.Handle(request);
             return submitResponse == null

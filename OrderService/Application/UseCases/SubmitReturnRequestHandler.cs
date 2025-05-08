@@ -60,7 +60,7 @@ namespace Application.UseCases
             {
                 OrderId = returnCheckoutData.OrderId,
                 AccountId = returnCheckoutData.AccountId,
-                Email = request.Email,
+                Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email,
                 TotalRefundAmount = returnCheckoutData.TotalRefundAmount,
                 ReturnReason = request.ReturnReason,
                 ReturnOption = request.ReturnOption,
