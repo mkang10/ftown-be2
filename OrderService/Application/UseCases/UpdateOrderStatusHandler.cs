@@ -47,9 +47,9 @@ namespace Application.UseCases
                 }
             }
 
-            if (newStatus.ToLowerInvariant() == "completed" && order.CompletedDate == null)
+            if (newStatus.ToLowerInvariant() == "Completed" && order.CompletedDate == null)
             {
-                order.CompletedDate = DateTime.UtcNow;
+                order.CompletedDate = DateTime.Now;
             }
 
             await _orderRepository.UpdateOrderStatusWithOrderAsync(order, newStatus);

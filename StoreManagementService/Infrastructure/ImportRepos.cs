@@ -21,7 +21,17 @@ namespace Infrastructure
         {
             _context = context;
         }
-
+        public IQueryable<ImportStoreDetail> QueryImportStoreDetailsByImportId(int importId)
+        {
+            // Từ ImportDetails lọc theo importId, rồi SelectMany ra ImportStoreDetails
+            return _context.ImportDetails
+                .AsNoTracking()                                    // Chỉ đọc, không track entity
+                .Where(d => d.ImportId == importId)                // Chọn đúng Import
+                .Include(d => d.ImportStoreDetails)
+                .ThenInclude(sd => sd.ImportDetail) // Eager-load navigation
+                .SelectMany(d => d.ImportStoreDetails)             // Lấy tất cả store‐details
+                .AsQueryable();
+        }
         public async Task<Import> AddAsync(Import inventoryImport)
         {
             await _context.Imports.AddAsync(inventoryImport);
@@ -255,7 +265,21 @@ namespace Infrastructure
         {
             await _context.SaveChangesAsync();
         }
+        public IQueryable<Transfer> QueryTransfers()
+        {
+            return _context.Transfers
+                           .Include(t => t.Dispatch)    // Nếu cần dữ liệu từ Dispatch
+                           .Include(t => t.Import)      // Nếu cần dữ liệu từ Import
+                           .AsQueryable();
+        }
 
+        public async Task<Transfer?> GetTransferByIdAsync(int transferId)
+        {
+            return await _context.Transfers
+                .Include(t => t.Dispatch)      // Nếu cần dữ liệu từ Dispatch
+                .Include(t => t.Import)        // Nếu cần dữ liệu từ Import
+                .FirstOrDefaultAsync(t => t.TransferOrderId == transferId);
+        }
         public async Task<Import?> GetByIdAsync(int importId)
         {
             return await _context.Imports
@@ -276,10 +300,13 @@ namespace Infrastructure
         public async Task<Import> GetByIdAsyncWithDetails(int id)
         {
             return await _context.Imports
+                .Where(i => i.ImportId == id)
                 .Include(i => i.ImportDetails)
                     .ThenInclude(d => d.ImportStoreDetails)
-                .FirstOrDefaultAsync(i => i.ImportId == id);
+                .AsSplitQuery()               // <<< thêm dòng này
+                .FirstOrDefaultAsync();
         }
+
 
         public async Task<List<Import>> GetAllByOriginalImportIdAsync(int originalImportId)
         {
