@@ -56,11 +56,53 @@ namespace API.Controllers
             }
         }
         [HttpGet]
-        public async Task<IActionResult> GetAllUserAccount([FromQuery] PaginationParameter paginationParameter)
+        public async Task<IActionResult> GetAllUserAccount(int id, [FromQuery] PaginationParameter paginationParameter)
         {
             try
             {
-                var result = await _service.GetAllUserAscyn(paginationParameter);
+                var result = await _service.GetAllUserAscyn(id, paginationParameter);
+
+                if (result == null)
+                {
+                    var notFoundResponse = new MessageRespondDTO<object>(null, false, StatusSuccess.Wrong.ToString());
+                    return NotFound(notFoundResponse);
+                }
+                else
+                {
+                    var metadata = new
+                    {
+                        result.TotalCount,
+                        result.PageSize,
+                        result.CurrentPage,
+                        result.TotalPages,
+                        result.HasNext,
+                        result.HasPrevious
+                    };
+
+                    Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(metadata));
+                }
+                var successResponse = new MessageRespondDTO<object>(new
+                {
+                    result.Items,
+                    result.CurrentPage,
+                    result.TotalPages,
+                    result.PageSize,
+                    result.TotalCount,
+                }, true, StatusSuccess.Success.ToString());
+                return Ok(successResponse);
+            }
+            catch (Exception ex)
+            {
+                var errorResponse = new MessageRespondDTO<object>(null, false, "An error occurred: " + ex.Message);
+                return BadRequest(errorResponse);
+            }
+        }
+        [HttpGet("search")]
+        public async Task<IActionResult> GetUserByGmailController(string id, [FromQuery] PaginationParameter paginationParameter)
+        {
+            try
+            {
+                var result = await _service.GetUserByGmailHandler(id, paginationParameter);
 
                 if (result == null)
                 {

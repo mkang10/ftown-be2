@@ -10,7 +10,8 @@ namespace Domain.Interfaces
 {
     public interface IUserManagementRepository
     {
-        public Task<Pagination<Account>> GetAllUser(PaginationParameter paginationParameter);
+        public Task<Pagination<Account>> GetAllUser(int id, PaginationParameter paginationParameter);
+
         Task<object?> GetRoleDetailsAsync(Account account);
 
         public Task<Account> CreateUser(Account user);
@@ -28,6 +29,7 @@ namespace Domain.Interfaces
         public Task<Account> GetUserById(int id);
         public Task<Account> GetUserByName(string name);
         public Task<Account> GetUserByGmail(string gmail);
+        public Task<Pagination<Account>> SearchUsers(string keyword, PaginationParameter paginationParameter);
 
         public Task<List<Role>> GetAllRole();
         public Task<Role> CreateRole(Role role);

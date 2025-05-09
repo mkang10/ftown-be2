@@ -68,14 +68,29 @@ namespace Infrastructure.Repositories
         }
 
 
-        public async Task<Pagination<Account>> GetAllUser(PaginationParameter paginationParameter)
+        public async Task<Pagination<Account>> GetAllUser(int id, PaginationParameter paginationParameter)
         {
-            var itemCount = await _context.Accounts.CountAsync();
-            var items = await _context.Accounts.Include(o => o.Role)
-                                    .Skip((paginationParameter.PageIndex - 1) * paginationParameter.PageSize)
-                                    .Take(paginationParameter.PageSize)
-                                    .AsNoTracking()
-                                    .ToListAsync();
+            IQueryable<Account> query = _context.Accounts.Include(o => o.Role);
+            switch (id)
+            {
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                    query = query.Where(a => a.RoleId == id);
+                    break;
+                default:
+                    break;
+            }
+
+            var itemCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((paginationParameter.PageIndex - 1) * paginationParameter.PageSize)
+                .Take(paginationParameter.PageSize)
+                .AsNoTracking()
+                .ToListAsync();
+
             var result = new Pagination<Account>(items, itemCount, paginationParameter.PageIndex, paginationParameter.PageSize);
             return result;
         }
@@ -101,6 +116,23 @@ namespace Infrastructure.Repositories
         {
             var data = await _context.Accounts.Include(o=>o.Role).SingleOrDefaultAsync(x => x.Email.Equals(gmail));
             return data;
+        }
+
+        public async Task<Pagination<Account>> SearchUsers(string keyword, PaginationParameter paginationParameter)
+        {
+            IQueryable<Account> query = _context.Accounts
+                .Include(o => o.Role)
+                .Where(x => x.Email.Contains(keyword) || x.FullName.Contains(keyword));
+
+            var itemCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((paginationParameter.PageIndex - 1) * paginationParameter.PageSize)
+                .Take(paginationParameter.PageSize)
+                .AsNoTracking()
+                .ToListAsync();
+
+            return new Pagination<Account>(items, itemCount, paginationParameter.PageIndex, paginationParameter.PageSize);
         }
 
         public async Task<Account> GetUserById(int id)

@@ -11,7 +11,9 @@ namespace Application.Interfaces
 {
     public interface IUserManagementService
     {
-        public Task<Pagination<UserRequestDTO>> GetAllUserAscyn(PaginationParameter paginationParameter);
+        public Task<Pagination<UserRequestDTO>> GetAllUserAscyn(int id, PaginationParameter paginationParameter);
+        public  Task<Pagination<UserRequestDTO>> GetUserByGmailHandler(string gmail, PaginationParameter paginationParameter);
+
         public Task<UserRequestDTO> createUser(CreateUserRequestWithPasswordDTO user);
         public Task<bool> deleteUser(int id);
         public Task<bool> updateUser(int id, UpdateAccountShopManagerStaffRequest user);

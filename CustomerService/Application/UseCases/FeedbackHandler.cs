@@ -103,7 +103,9 @@ namespace Application.UseCases
                 orderToUpdate.IsFeedback = true;
                 await _commentRepository.UpdateStatusIsFeedback(orderToUpdate);
             }
+
             return createdFeedbacks; // Trả về danh sách feedback đã tạo
+
         }
 
 
@@ -133,20 +135,11 @@ namespace Application.UseCases
 
         public async Task<Pagination<FeedbackRequestDTO>> GetAllFeedbackByProductId(int id, PaginationParameter paginationParameter)
         {
-            var cacheKey = $"Feedback_Product_{id}_{paginationParameter.PageIndex}_{paginationParameter.PageSize}";
-            var db = _redis.GetDatabase();
-
-            // (tuỳ chọn) đọc cache nếu có
-            var cached = await db.StringGetAsync(cacheKey);
-            if (cached.HasValue)
-            {
-                return JsonConvert.DeserializeObject<Pagination<FeedbackRequestDTO>>(cached);
-            }
+             
 
             // Lấy từ DB
             var trips = await _commentRepository.GettAllFeedbackByProductId(id, paginationParameter);
 
-            // Map sang DTO (trips có thể rỗng)
             var tripModels = _mapper.Map<List<FeedbackRequestDTO>>(trips);
 
             var paginationResult = new Pagination<FeedbackRequestDTO>(
@@ -156,11 +149,6 @@ namespace Application.UseCases
                 trips.PageSize
             );
 
-            // Ghi cache
-            await db.StringSetAsync(cacheKey,
-                JsonConvert.SerializeObject(paginationResult),
-                TimeSpan.FromMinutes(300)
-            );
 
             return paginationResult;
         }
@@ -188,38 +176,13 @@ namespace Application.UseCases
         {
             try
             {
-                var cacheKey = "Data";
-                var db = _redis.GetDatabase();
-
-                // Nếu có dữ liệu trong cache, có thể deserialize và trả về (đoạn này đang comment)
-                // var cachedData = await db.StringGetAsync(cacheKey);
-                // if (cachedData.HasValue)
-                // {
-                //     var cachedResult = JsonConvert.DeserializeObject<Pagination<FeedbackRequestDTO>>(cachedData);
-                //     return cachedResult;
-                // }
-
-                // Lấy dữ liệu từ repository
                 var trips = await _commentRepository.GettAllCommentByAccountId(id, paginationParameter);
-
-                // Kiểm tra null cho trips và trips.Items
-                if (!trips.Any())
-                {
-                    throw new Exception("No data!");
-                }
-
-                // Map danh sách Feedback sang FeedbackRequestDTO
                 var tripModels = _mapper.Map<List<FeedbackRequestDTO>>(trips);
-
-                // Tạo đối tượng Pagination<FeedbackRequestDTO> mới dựa trên các thuộc tính của trips
                 var paginationResult = new Pagination<FeedbackRequestDTO>(
                     tripModels,
                     trips.TotalCount,
                     trips.CurrentPage,
                     trips.PageSize);
-
-                // Ghi cache kết quả vào Redis trong 300 phút
-                await db.StringSetAsync(cacheKey, JsonConvert.SerializeObject(paginationResult), TimeSpan.FromMinutes(300));
 
                 return paginationResult;
             }

@@ -145,11 +145,11 @@ namespace Application.UseCases
             }
         }
 
-        public async Task<Pagination<UserRequestDTO>> GetAllUserAscyn(PaginationParameter paginationParameter)
+        public async Task<Pagination<UserRequestDTO>> GetAllUserAscyn(int id, PaginationParameter paginationParameter)
         {
             try
             {
-                var trips = await _userManagementRepository.GetAllUser(paginationParameter);
+                var trips = await _userManagementRepository.GetAllUser(id, paginationParameter);
                 if (!trips.Any())
                 {
                     throw new Exception("No data!");
@@ -158,6 +158,31 @@ namespace Application.UseCases
                 var tripModels = _mapper.Map<List<UserRequestDTO>>(trips);
 
                 // write down cache
+                var paginationResult = new Pagination<UserRequestDTO>(tripModels,
+                    trips.TotalCount,
+                    trips.CurrentPage,
+                    trips.PageSize);
+                return paginationResult;
+            }
+
+            catch (Exception ex)
+            {
+                throw new Exception("An error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<Pagination<UserRequestDTO>> GetUserByGmailHandler(string gmail, PaginationParameter paginationParameter)
+        {
+            try
+            {
+                var trips = await _userManagementRepository.SearchUsers(gmail, paginationParameter);
+                if (!trips.Any())
+                {
+                    throw new Exception("No data!");
+                }
+
+                var tripModels = _mapper.Map<List<UserRequestDTO>>(trips);
+
                 var paginationResult = new Pagination<UserRequestDTO>(tripModels,
                     trips.TotalCount,
                     trips.CurrentPage,
